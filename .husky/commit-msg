@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Validate commit message format (optional)
+# You can add commitlint here if needed
+# pnpm exec commitlint --edit $1

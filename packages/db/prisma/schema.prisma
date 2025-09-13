@@ -170,6 +170,8 @@ model User {
   donationsReceived    Donation[]          @relation("DonationTo")
   payoutAccount        PayoutAccount?
   badges               UserBadge[]
+  authorClaimsMade     AuthorClaim[]       @relation("AuthorClaimClaimant")
+  authorClaimsReviewed AuthorClaim[]       @relation("AuthorClaimReviewer")
   authorMetrics        AuthorMetricDaily[]
 
   @@index([role])
@@ -249,6 +251,7 @@ model Rule {
   donations      Donation[]
   crawlItems     CrawlItem[]
   search         RuleSearch?
+  authorClaims   AuthorClaim[]
 
   @@index([status])
   @@index([contentType])
@@ -668,4 +671,56 @@ model RuleSearch {
   rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 
   @@map("rule_search")
+}
+
+// ============================================================================
+// MODERATION & AUDIT
+// ============================================================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   @db.VarChar(100) // e.g., "rule.publish", "comment.delete", "claim.approve"
+  actorId   String?  // User who performed the action
+  targetId  String?  // ID of the affected resource
+  targetType String? @db.VarChar(50) // Type of resource (rule, comment, user, etc.)
+  metadata  Json?    // Additional context data
+  reason    String?  @db.Text // Reason for moderation action
+  createdAt DateTime @default(now())
+
+  // Relations
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([action])
+  @@index([actorId])
+  @@index([targetId, targetType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AuthorClaim {
+  id          String           @id @default(cuid())
+  ruleId      String
+  claimantId  String           // User claiming authorship
+  status      AuthorClaimStatus @default(PENDING)
+  evidence    String?          @db.Text // Evidence provided by claimant
+  reviewerId  String?          // Admin who reviewed the claim
+  reviewNote  String?          @db.Text // Admin's review notes
+  createdAt   DateTime         @default(now())
+  reviewedAt  DateTime?
+
+  // Relations
+  rule      Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  claimant  User @relation("AuthorClaimClaimant", fields: [claimantId], references: [id])
+  reviewer  User? @relation("AuthorClaimReviewer", fields: [reviewerId], references: [id])
+
+  @@unique([ruleId, claimantId]) // One claim per user per rule
+  @@index([status])
+  @@index([createdAt])
+  @@map("author_claims")
+}
+
+enum AuthorClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

@@ -9,6 +9,8 @@ import { socialRouter } from "./social";
 import { badgesRouter } from "./badges";
 import { leaderboardRouter } from "./leaderboard";
 import { donationsRouter } from "./donations";
+import { adminRouter } from "./admin";
+import { claimsRouter } from "./claims";
 import { GamificationService } from "../services/gamification";
 
 // Import placeholder routers for remaining functionality
@@ -333,53 +335,7 @@ const socialRouter = router({
     }),
 });
 
-// Placeholder routers for remaining functionality
-const claimsRouter = router({
-  submit: rateLimitedProcedure
-    .input(
-      z.object({
-        ruleId: z.string(),
-        evidenceUrl: z.string().url().optional(),
-        description: z.string().min(10).max(1000),
-        idempotencyKey: z.string().optional(),
-      })
-    )
-    .output(z.object({ id: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const { ruleId, evidenceUrl, description } = input;
-
-      const claim = await ctx.prisma.claim.create({
-        data: {
-          ruleId,
-          claimantUserId: ctx.user.id,
-          evidenceUrl,
-          status: "PENDING",
-        },
-      });
-
-      return { id: claim.id };
-    }),
-
-  listForReview: modProcedure
-    .input(
-      z.object({
-        cursor: z.string().optional(),
-        limit: z.number().min(1).max(100).default(20),
-        status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
-      })
-    )
-    .output(
-      z.object({
-        items: z.array(z.any()),
-        nextCursor: z.string().optional(),
-        hasMore: z.boolean(),
-      })
-    )
-    .query(async ({ input, ctx }) => {
-      // Placeholder implementation
-      return { items: [], nextCursor: undefined, hasMore: false };
-    }),
-});
+// Claims router is now imported from ./claims
 
 // Donations router is now imported from ./donations
 
@@ -399,6 +355,7 @@ export const appRouter = router({
   claims: claimsRouter,
   donations: donationsRouter,
   leaderboard: leaderboardRouter,
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -41,6 +41,9 @@ export const AbuseConfig = {
 
     // Badge and gamification
     badgeRecheckPerUserPerMin: 5,
+
+    // Author claims
+    claimsPerUserPerHour: 3,
   },
 
   // Time windows and deduplication
@@ -49,6 +52,7 @@ export const AbuseConfig = {
     viewDedupMs: 10 * 60_000, // 10 minutes for view deduplication
     idempotencyMs: 10 * 60_000, // 10 minutes for idempotency keys
     challengeValidMs: 30 * 60_000, // 30 minutes for challenge tokens
+    claimsPerUserPerHour: 1, // 1 hour for claim rate limiting
   },
 
   // Circuit breaker configuration
