@@ -3,14 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "tsup src/index.ts --format cjs --out-dir dist --clean",
+    "build": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --clean",
     "start": "node dist/index.js",
-    "dev": "tsup src/index.ts --format cjs --out-dir dist --watch --onSuccess 'node dist/index.js'",
-    "dev:wrangler": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "tsx src/index.ts",
     "lint": "biome lint .",
     "format": "biome format . --write",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@repo/config": "workspace:*",
@@ -18,15 +16,15 @@
     "@repo/trpc": "workspace:*",
     "@repo/utils": "workspace:*",
     "@hono/node-server": "^1.13.1",
-    "@trpc/server": "^11.0.0-rc.553",
-    "hono": "^4.6.3"
+    "hono": "^4.6.3",
+    "stripe": "^16.12.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@cloudflare/workers-types": "^4.20241106.0",
     "@types/node": "^22.8.1",
     "tsup": "^8.3.5",
-    "typescript": "^5.6.3",
-    "wrangler": "^3.84.0"
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
   }
 }
