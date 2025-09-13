@@ -334,3 +334,6 @@ export {
 } from "./metrics";
 
 export type { MetricsSummary, TrendingRule } from "./metrics";
+
+// Search helpers
+export * from "./search";

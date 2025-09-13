@@ -432,3 +432,48 @@ export const authorDonationStatsDTOSchema = z.object({
 export type AuthorDonationStatsDTO = z.infer<
   typeof authorDonationStatsDTOSchema
 >;
+
+// Search result DTO
+export const searchResultDTOSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  summary: z.string().nullable(),
+  author: z.object({
+    id: z.string(),
+    handle: z.string(),
+    displayName: z.string(),
+    avatarUrl: z.string().nullable(),
+  }),
+  tags: z.array(z.string()),
+  primaryModel: z.string().nullable(),
+  status: z.string(),
+  score: z.number(), // Blended FTS + trending score
+  ftsRank: z.number(), // Raw text relevance
+  trending: z.number(), // Normalized trending score (0-1)
+  snippetHtml: z.string().nullable(), // Highlighted snippet
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type SearchResultDTO = z.infer<typeof searchResultDTOSchema>;
+
+// Search suggestion DTO
+export const searchSuggestionDTOSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  similarity: z.number(),
+});
+
+export type SearchSuggestionDTO = z.infer<typeof searchSuggestionDTOSchema>;
+
+// Search facet DTO
+export const searchFacetDTOSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  count: z.number().int(),
+  selected: z.boolean().optional(),
+});
+
+export type SearchFacetDTO = z.infer<typeof searchFacetDTOSchema>;

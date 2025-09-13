@@ -13,6 +13,8 @@ export * from "./components/ui/toaster";
 export * from "./components/ui/textarea";
 export * from "./components/ui/skeleton";
 export * from "./components/ui/select";
+export * from "./components/ui/command";
+export * from "./components/ui/popover";
 
 // Export utilities
 export * from "./lib/utils";
