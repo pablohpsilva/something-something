@@ -123,12 +123,16 @@ export const commentDTOSchema = z.object({
   ruleId: ruleIdSchema,
   parentId: commentIdSchema.nullable(),
   author: authorDTOSchema,
-  body: z.string().nullable(), // null if deleted
+  bodyHtml: z.string().nullable(), // null if deleted, HTML-rendered
   isDeleted: z.boolean(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  edited: z.boolean(), // true if updatedAt > createdAt + 1min
+  depth: z.number().min(0),
   children: z.array(z.lazy(() => commentDTOSchema)).optional(),
   repliesCount: z.number().int().optional(),
+  canEdit: z.boolean().optional(), // if user can edit this comment
+  canDelete: z.boolean().optional(), // if user can delete this comment
 });
 
 export type CommentDTO = z.infer<typeof commentDTOSchema>;
@@ -217,7 +221,7 @@ export const voteSummaryDTOSchema = z.object({
   score: z.number().int(),
   upCount: z.number().int(),
   downCount: z.number().int(),
-  userVote: z.enum(["up", "down"]).nullable(),
+  myVote: z.number().min(-1).max(1), // -1, 0, or 1
 });
 
 export type VoteSummaryDTO = z.infer<typeof voteSummaryDTOSchema>;

@@ -1,85 +1,85 @@
 import { z } from "zod";
-import {
-  ruleIdSchema,
-  commentIdSchema,
-  commentBodySchema,
-  paginationSchema,
-  idempotencyKeySchema,
-} from "./base";
+import { cuidOrUuidSchema } from "./base";
 
-// Create comment schema
-export const createCommentSchema = z.object({
-  ruleId: ruleIdSchema,
-  parentId: commentIdSchema.optional(),
-  body: commentBodySchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Comment creation input schema
+ */
+export const commentCreateSchema = z.object({
+  ruleId: cuidOrUuidSchema,
+  parentId: cuidOrUuidSchema.optional(),
+  body: z
+    .string()
+    .min(1, "Comment cannot be empty")
+    .max(5000, "Comment too long"),
 });
 
-export type CreateCommentInput = z.infer<typeof createCommentSchema>;
-
-// List comments schema
-export const listCommentsSchema = z.object({
-  ruleId: ruleIdSchema,
-  ...paginationSchema.shape,
-  sort: z.enum(["new", "old", "top"]).default("new"),
-  includeReplies: z.boolean().default(true),
-  maxDepth: z.number().int().min(1).max(5).default(3),
+/**
+ * Comment list input schema
+ */
+export const commentListSchema = z.object({
+  ruleId: cuidOrUuidSchema,
+  cursor: z.string().optional(),
+  limit: z.number().min(1).max(50).default(20),
+  mode: z.enum(["flat", "tree"]).default("tree"),
 });
 
-export type ListCommentsInput = z.infer<typeof listCommentsSchema>;
-
-// Update comment schema
-export const updateCommentSchema = z.object({
-  commentId: commentIdSchema,
-  body: commentBodySchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Comment edit input schema
+ */
+export const commentEditSchema = z.object({
+  commentId: cuidOrUuidSchema,
+  body: z
+    .string()
+    .min(1, "Comment cannot be empty")
+    .max(5000, "Comment too long"),
 });
 
-export type UpdateCommentInput = z.infer<typeof updateCommentSchema>;
-
-// Soft delete comment schema
-export const softDeleteCommentSchema = z.object({
-  commentId: commentIdSchema,
-  reason: z.string().max(500).optional(),
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Comment delete input schema
+ */
+export const commentDeleteSchema = z.object({
+  commentId: cuidOrUuidSchema,
+  reason: z.string().max(200, "Reason too long").optional(),
 });
 
-export type SoftDeleteCommentInput = z.infer<typeof softDeleteCommentSchema>;
-
-// Get comment by ID schema
-export const getCommentByIdSchema = z.object({
-  commentId: commentIdSchema,
-  includeReplies: z.boolean().default(true),
-  maxDepth: z.number().int().min(1).max(5).default(3),
+/**
+ * Comment DTO schema for API responses
+ */
+export const commentDTOSchema = z.object({
+  id: z.string(),
+  ruleId: z.string(),
+  parentId: z.string().nullable(),
+  author: z.object({
+    id: z.string(),
+    handle: z.string(),
+    displayName: z.string(),
+    avatarUrl: z.string().nullable(),
+  }),
+  bodyHtml: z.string().nullable(), // null if deleted
+  isDeleted: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  edited: z.boolean(), // true if updatedAt > createdAt + 1min
+  depth: z.number().min(0),
+  children: z.array(z.lazy(() => commentDTOSchema)).optional(),
+  canEdit: z.boolean().optional(), // if user can edit this comment
+  canDelete: z.boolean().optional(), // if user can delete this comment
 });
 
-export type GetCommentByIdInput = z.infer<typeof getCommentByIdSchema>;
+export type CommentCreateInput = z.infer<typeof commentCreateSchema>;
+export type CommentListInput = z.infer<typeof commentListSchema>;
+export type CommentEditInput = z.infer<typeof commentEditSchema>;
+export type CommentDeleteInput = z.infer<typeof commentDeleteSchema>;
+export type CommentDTO = z.infer<typeof commentDTOSchema>;
 
-// Get comment thread schema
-export const getCommentThreadSchema = z.object({
-  commentId: commentIdSchema,
-  ...paginationSchema.shape,
-  sort: z.enum(["new", "old", "top"]).default("new"),
+/**
+ * Comment list response schema
+ */
+export const commentListResponseSchema = z.object({
+  items: z.array(commentDTOSchema),
+  nextCursor: z.string().optional(),
+  hasMore: z.boolean(),
+  totalCount: z.number(),
 });
 
-export type GetCommentThreadInput = z.infer<typeof getCommentThreadSchema>;
-
-// Report comment schema
-export const reportCommentSchema = z.object({
-  commentId: commentIdSchema,
-  reason: z.enum(["spam", "harassment", "inappropriate", "off-topic", "other"]),
-  details: z.string().max(1000).optional(),
-  idempotencyKey: idempotencyKeySchema,
-});
-
-export type ReportCommentInput = z.infer<typeof reportCommentSchema>;
-
-// Get comments by user schema
-export const getCommentsByUserSchema = z.object({
-  userId: z.string(),
-  ...paginationSchema.shape,
-  sort: z.enum(["new", "old"]).default("new"),
-  includeDeleted: z.boolean().default(false),
-});
-
-export type GetCommentsByUserInput = z.infer<typeof getCommentsByUserSchema>;
+export type CommentListResponse = z.infer<typeof commentListResponseSchema>;

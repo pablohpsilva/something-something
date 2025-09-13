@@ -36,6 +36,7 @@ export const RULE_TESTIDS = {
   WATCH_BUTTON: "rule-watch-button",
   VOTE_UP: "vote-up",
   VOTE_DOWN: "vote-down",
+  VOTE_SCORE: "vote-score",
   SHARE_BUTTON: "rule-share-button",
 } as const;
 

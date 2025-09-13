@@ -13,6 +13,7 @@ import { ViewTracker } from "@/components/rules/view-tracker";
 import { MetricsStrip } from "@/components/rules/metrics-strip";
 import { RuleActions } from "@/components/rules/rule-actions";
 import { RuleDetailSkeleton } from "@/components/rules/skeletons";
+import { CommentThread } from "@/components/comments/comment-thread";
 import { generateRuleMetadata } from "@/app-meta/seo";
 import { formatRelativeTime } from "@/lib/format";
 import Link from "next/link";
@@ -60,7 +61,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
   const trpc = await createServerCaller();
 
   try {
-    // Fetch rule details and metrics in parallel
+    // Fetch rule details, metrics, and vote data in parallel
     const [rule, metrics] = await Promise.all([
       trpc.rules.getBySlug({ slug: params.slug }),
       trpc.metrics.getOpenMetrics({ ruleId: "" }).catch(() => ({
@@ -82,10 +83,9 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
       notFound();
     }
 
-    // Update metrics call with actual rule ID
-    const actualMetrics = await trpc.metrics
-      .getOpenMetrics({ ruleId: rule.id })
-      .catch(() => ({
+    // Update metrics and vote data calls with actual rule ID
+    const [actualMetrics, voteData] = await Promise.all([
+      trpc.metrics.getOpenMetrics({ ruleId: rule.id }).catch(() => ({
         views7: 0,
         copies7: 0,
         saves7: 0,
@@ -97,7 +97,14 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
         forks30: 0,
         votes30: 0,
         score: 0,
-      }));
+      })),
+      trpc.votes.getRuleScore({ ruleId: rule.id }).catch(() => ({
+        score: 0,
+        upCount: 0,
+        downCount: 0,
+        myVote: 0,
+      })),
+    ]);
 
     return (
       <div className="container py-8">
@@ -211,6 +218,7 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
               }}
               currentVersionId={rule.currentVersion?.id}
               initialMetrics={actualMetrics}
+              initialVoteData={voteData}
             />
           </div>
 
@@ -316,17 +324,8 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
             </Card>
           )}
 
-          {/* Comments Section - Placeholder */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-xl font-semibold">Comments</h2>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground text-center py-8">
-                Comments feature coming soon...
-              </p>
-            </CardContent>
-          </Card>
+          {/* Comments Section */}
+          <CommentThread ruleId={rule.id} />
         </div>
       </div>
     );

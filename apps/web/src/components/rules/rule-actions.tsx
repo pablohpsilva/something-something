@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Copy, Heart, GitFork, Eye, Share2 } from "lucide-react";
+import { useState, useTransition, useEffect } from "react";
+import {
+  Copy,
+  Heart,
+  GitFork,
+  Eye,
+  Share2,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
   recordCopyAction,
   recordSaveAction,
   recordForkAction,
+  recordVoteAction,
 } from "@/lib/metrics/actions";
 import {
   useOptimisticMetrics,
@@ -15,7 +24,9 @@ import {
 } from "@/lib/metrics/read";
 import { copyRuleUrl, formatRuleForCopy } from "@/lib/copy";
 import { RULE_TESTIDS } from "@/lib/testids";
-import { createButtonProps } from "@/lib/a11y";
+import { createButtonProps, createVoteButtonProps } from "@/lib/a11y";
+import { api } from "@/lib/trpc";
+import type { VoteSummaryDTO } from "@repo/trpc/schemas/dto";
 
 interface RuleActionsProps {
   rule: {
@@ -30,7 +41,9 @@ interface RuleActionsProps {
   };
   currentVersionId?: string;
   initialMetrics: MetricsData;
+  initialVoteData?: VoteSummaryDTO;
   onMetricsUpdate?: (metrics: MetricsData) => void;
+  onVoteUpdate?: (voteData: VoteSummaryDTO) => void;
   className?: string;
 }
 
@@ -38,19 +51,94 @@ export function RuleActions({
   rule,
   currentVersionId,
   initialMetrics,
+  initialVoteData,
   onMetricsUpdate,
+  onVoteUpdate,
   className = "",
 }: RuleActionsProps) {
   const [isPending, startTransition] = useTransition();
   const [isSharing, setIsSharing] = useState(false);
+  const [voteData, setVoteData] = useState<VoteSummaryDTO>(
+    initialVoteData || { score: 0, upCount: 0, downCount: 0, myVote: 0 }
+  );
 
   const { currentMetrics, incrementMetric, revertMetric } =
     useOptimisticMetrics(initialMetrics);
+
+  // Voting mutations
+  const voteRuleMutation = api.votes.upsertRuleVote.useMutation({
+    onSuccess: (newVoteData) => {
+      setVoteData(newVoteData);
+      onVoteUpdate?.(newVoteData);
+    },
+    onError: (error) => {
+      showToast(error.message || "Failed to vote", "error");
+      // Revert optimistic vote update
+      setVoteData(
+        initialVoteData || { score: 0, upCount: 0, downCount: 0, myVote: 0 }
+      );
+    },
+  });
 
   // Update parent component when metrics change
   if (onMetricsUpdate && currentMetrics !== initialMetrics) {
     onMetricsUpdate(currentMetrics);
   }
+
+  const handleVote = async (voteType: "up" | "down" | "none") => {
+    // Optimistic update
+    const currentVote = voteData.myVote;
+    const newVote = voteType === "up" ? 1 : voteType === "down" ? -1 : 0;
+
+    // Calculate optimistic changes
+    let scoreDelta = 0;
+    let upDelta = 0;
+    let downDelta = 0;
+
+    // Remove current vote
+    if (currentVote === 1) {
+      scoreDelta -= 1;
+      upDelta -= 1;
+    } else if (currentVote === -1) {
+      scoreDelta += 1;
+      downDelta -= 1;
+    }
+
+    // Add new vote
+    if (newVote === 1) {
+      scoreDelta += 1;
+      upDelta += 1;
+    } else if (newVote === -1) {
+      scoreDelta -= 1;
+      downDelta += 1;
+    }
+
+    // Apply optimistic update
+    const optimisticVoteData = {
+      score: voteData.score + scoreDelta,
+      upCount: voteData.upCount + upDelta,
+      downCount: voteData.downCount + downDelta,
+      myVote: newVote,
+    };
+    setVoteData(optimisticVoteData);
+
+    // Submit vote
+    startTransition(async () => {
+      try {
+        await voteRuleMutation.mutateAsync({
+          ruleId: rule.id,
+          value: voteType,
+        });
+
+        // Record vote event for metrics
+        if (voteType !== "none") {
+          await recordVoteAction(rule.id, currentVersionId);
+        }
+      } catch (error) {
+        // Error handling is done in mutation onError
+      }
+    });
+  };
 
   const handleCopy = async () => {
     // Optimistically increment the counter
@@ -182,8 +270,60 @@ export function RuleActions({
     isSharing
   );
 
+  const upvoteProps = createVoteButtonProps(
+    "up",
+    RULE_TESTIDS.VOTE_UP,
+    voteData.myVote === 1,
+    voteData.upCount
+  );
+
+  const downvoteProps = createVoteButtonProps(
+    "down",
+    RULE_TESTIDS.VOTE_DOWN,
+    voteData.myVote === -1,
+    voteData.downCount
+  );
+
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
+      {/* Voting section */}
+      <div className="flex items-center space-x-1 mr-4">
+        <Button
+          {...upvoteProps}
+          variant={voteData.myVote === 1 ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleVote(voteData.myVote === 1 ? "none" : "up")}
+          disabled={isPending}
+          className="flex items-center space-x-1"
+        >
+          <ThumbsUp className="h-4 w-4" />
+          {voteData.upCount > 0 && (
+            <span className="text-xs">{voteData.upCount}</span>
+          )}
+        </Button>
+
+        <div
+          className="flex items-center px-2 text-sm font-medium"
+          data-testid={RULE_TESTIDS.VOTE_SCORE}
+          aria-label={`Score: ${voteData.score}`}
+        >
+          {voteData.score}
+        </div>
+
+        <Button
+          {...downvoteProps}
+          variant={voteData.myVote === -1 ? "destructive" : "outline"}
+          size="sm"
+          onClick={() => handleVote(voteData.myVote === -1 ? "none" : "down")}
+          disabled={isPending}
+          className="flex items-center space-x-1"
+        >
+          <ThumbsDown className="h-4 w-4" />
+          {voteData.downCount > 0 && (
+            <span className="text-xs">{voteData.downCount}</span>
+          )}
+        </Button>
+      </div>
       <Button
         {...copyProps}
         variant="outline"
