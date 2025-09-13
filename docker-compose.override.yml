@@ -1,0 +1,75 @@
+version: "3.8"
+
+# Development overrides for docker-compose.yml
+# This file is automatically loaded by docker-compose when present
+
+services:
+  # Disable migration service in development
+  # Use `pnpm db:push` manually or in dev startup
+  migrate:
+    profiles:
+      - production
+
+  # Development overrides for web app
+  web:
+    build:
+      target: base # Use base stage for development
+    command: >
+      sh -c "
+        echo 'Installing dependencies...' &&
+        pnpm install &&
+        echo 'Generating Prisma client...' &&
+        pnpm db:generate &&
+        echo 'Pushing database schema...' &&
+        pnpm db:push || echo 'Schema push failed or skipped' &&
+        echo 'Starting development server...' &&
+        pnpm --filter @repo/web dev
+      "
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: 1 # Enable polling for file watching in Docker
+      WATCHPACK_POLLING: 1 # Enable polling for webpack
+    volumes:
+      # Mount source code for hot reloading
+      - .:/srv
+      - /srv/node_modules # Prevent overwriting node_modules
+      - /srv/.next # Prevent overwriting .next
+    depends_on:
+      db:
+        condition: service_healthy
+      # Remove migrate dependency for dev
+
+  # Development overrides for ingest app
+  ingest:
+    build:
+      target: base # Use base stage for development
+    command: >
+      sh -c "
+        echo 'Installing dependencies...' &&
+        pnpm install &&
+        echo 'Generating Prisma client...' &&
+        pnpm db:generate &&
+        echo 'Starting development server...' &&
+        pnpm --filter @repo/ingest dev
+      "
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: 1 # Enable polling for file watching in Docker
+    volumes:
+      # Mount source code for hot reloading
+      - .:/srv
+      - /srv/node_modules # Prevent overwriting node_modules
+      - /srv/apps/ingest/dist # Prevent overwriting dist
+    depends_on:
+      db:
+        condition: service_healthy
+      # Remove migrate dependency for dev
+
+  # Development database with exposed port for external access
+  db:
+    ports:
+      - "5432:5432" # Expose for external database tools
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app

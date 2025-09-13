@@ -32,7 +32,13 @@
     "ingest:dev": "pnpm --filter @repo/ingest dev",
     "ingest:build": "pnpm --filter @repo/ingest build",
     "ingest:deploy": "pnpm --filter @repo/ingest deploy",
-    "ui:add": "pnpm --filter @repo/ui ui:add"
+    "ui:add": "pnpm --filter @repo/ui ui:add",
+    "docker:up": "docker-compose up --build",
+    "docker:up:prod": "docker-compose -f docker-compose.yml up --build",
+    "docker:down": "docker-compose down",
+    "docker:down:clean": "docker-compose down -v",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build --no-cache"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

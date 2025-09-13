@@ -39,9 +39,16 @@ This monorepo uses **pnpm workspaces** and **Turbo** for efficient development a
 
 ## 📋 Prerequisites
 
+### Local Development
+
 - **Node.js**: v20.18.0 or higher
 - **pnpm**: v9.0.0 or higher
 - **PostgreSQL**: Running instance (local or remote)
+
+### Docker Development
+
+- **Docker**: v20.10.0 or higher
+- **Docker Compose**: v2.0.0 or higher
 
 ## 🛠️ Setup
 
@@ -102,6 +109,170 @@ pnpm web:dev      # Next.js app on http://localhost:3000
 pnpm ingest:dev   # Hono API on http://localhost:8787
 ```
 
+## 🐳 Docker Setup
+
+### Quick Start with Docker
+
+The easiest way to get the entire stack running is with Docker Compose:
+
+```bash
+# 1. Clone the repository
+git clone <your-repo-url>
+cd something-something
+
+# 2. Copy and configure environment variables
+cp env.docker.example .env.docker
+# Edit .env.docker with your actual values
+
+# 3. Start all services (production-like)
+docker-compose up --build
+
+# Or start in detached mode
+docker-compose up -d --build
+```
+
+This will start:
+
+- **PostgreSQL** database on `localhost:5432`
+- **Next.js web app** on `http://localhost:3000`
+- **Hono ingest API** on `http://localhost:8787`
+- **Automatic database migrations** and seeding
+
+### Development with Docker
+
+For development with hot reloading and code mounting:
+
+```bash
+# Start in development mode (uses docker-compose.override.yml automatically)
+docker-compose up --build
+
+# Or explicitly specify development profile
+docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build
+```
+
+Development mode features:
+
+- **Hot reloading** for both web and ingest apps
+- **Source code mounting** for instant changes
+- **File watching** with polling enabled for Docker
+- **Database exposed** on `localhost:5432` for external tools
+
+### Docker Commands
+
+```bash
+# Build all images
+docker-compose build
+
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+docker-compose logs -f web    # Web app logs only
+docker-compose logs -f ingest # Ingest API logs only
+
+# Stop services
+docker-compose down
+
+# Stop and remove volumes (⚠️ This will delete all data)
+docker-compose down -v
+
+# Restart a specific service
+docker-compose restart web
+
+# Execute commands in running containers
+docker-compose exec web sh
+docker-compose exec ingest sh
+docker-compose exec db psql -U app -d app
+
+# Run database commands
+docker-compose exec web pnpm db:studio
+docker-compose exec web pnpm db:seed
+```
+
+### Production Deployment
+
+For production deployment, use the base `docker-compose.yml` without the override:
+
+```bash
+# Production build and start
+docker-compose -f docker-compose.yml up -d --build
+
+# Or disable the override file
+mv docker-compose.override.yml docker-compose.override.yml.disabled
+docker-compose up -d --build
+```
+
+### Docker Architecture
+
+#### Multi-stage Dockerfiles
+
+Both applications use optimized multi-stage builds:
+
+**Web App (`apps/web/Dockerfile`)**:
+
+- `base`: Node.js 20 Alpine with pnpm enabled
+- `deps`: Dependency installation with pnpm fetch
+- `builder`: Full build with Prisma generation
+- `runner`: Minimal production image with Next.js standalone output
+
+**Ingest API (`apps/ingest/Dockerfile`)**:
+
+- `base`: Node.js 20 Alpine with pnpm enabled
+- `deps`: Dependency installation with pnpm fetch
+- `builder`: TypeScript compilation with tsup
+- `runner`: Minimal production image with compiled JavaScript
+
+#### Health Checks
+
+All services include health checks:
+
+- **Database**: `pg_isready` check
+- **Web**: HTTP check on `/api/health`
+- **Ingest**: HTTP check on `/health`
+
+#### Networking
+
+Services communicate via Docker's internal network:
+
+- Web app → Ingest API: `http://ingest:8787`
+- Apps → Database: `postgres://app:app@db:5432/app`
+
+### Troubleshooting Docker
+
+**Build Issues**:
+
+```bash
+# Clean build (no cache)
+docker-compose build --no-cache
+
+# Remove all containers and images
+docker-compose down --rmi all
+docker system prune -a
+```
+
+**Permission Issues**:
+
+```bash
+# Fix file permissions (Linux/macOS)
+sudo chown -R $USER:$USER .
+```
+
+**Database Issues**:
+
+```bash
+# Reset database
+docker-compose down -v
+docker-compose up -d db
+docker-compose up migrate
+```
+
+**Development Hot Reload Issues**:
+
+- Ensure `CHOKIDAR_USEPOLLING=1` is set in development
+- Check that source code is properly mounted
+- Restart the specific service: `docker-compose restart web`
+
 ## 📜 Available Scripts
 
 ### Root Scripts
@@ -136,9 +307,42 @@ pnpm ingest:deploy # Deploy to Cloudflare Workers
 
 # UI Components
 pnpm ui:add       # Add new shadcn/ui components
+
+# Docker Commands
+pnpm docker:up           # Start all services with Docker
+pnpm docker:up:prod      # Start in production mode
+pnpm docker:down         # Stop all services
+pnpm docker:down:clean   # Stop and remove volumes
+pnpm docker:logs         # View all logs
+pnpm docker:build        # Rebuild all images
 ```
 
 ## 🏃‍♂️ Development Workflow
+
+### Docker Development Workflow
+
+```bash
+# 1. Start the stack
+pnpm docker:up
+
+# 2. Make code changes (hot reload enabled)
+# Edit files in apps/web/src or apps/ingest/src
+
+# 3. View logs
+pnpm docker:logs
+
+# 4. Access services
+# Web: http://localhost:3000
+# API: http://localhost:8787
+# DB: localhost:5432 (user: app, password: app, database: app)
+
+# 5. Run database operations
+docker-compose exec web pnpm db:studio
+docker-compose exec web pnpm db:seed
+
+# 6. Stop when done
+pnpm docker:down
+```
 
 ### Adding New UI Components
 
