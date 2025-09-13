@@ -1,142 +1,212 @@
 import { z } from "zod";
-import {
-  userIdSchema,
-  ruleIdSchema,
-  paginationSchema,
-  idempotencyKeySchema,
-} from "./base";
+import { cuidOrUuidSchema } from "./base";
 
-// Follow author schema
-export const followAuthorSchema = z.object({
-  authorUserId: userIdSchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Toggle follow input schema
+ */
+export const toggleFollowInputSchema = z.object({
+  authorUserId: cuidOrUuidSchema,
 });
 
-export type FollowAuthorInput = z.infer<typeof followAuthorSchema>;
-
-// Unfollow author schema
-export const unfollowAuthorSchema = z.object({
-  authorUserId: userIdSchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Toggle watch input schema
+ */
+export const toggleWatchInputSchema = z.object({
+  ruleId: cuidOrUuidSchema,
 });
 
-export type UnfollowAuthorInput = z.infer<typeof unfollowAuthorSchema>;
-
-// Watch rule schema
-export const watchRuleSchema = z.object({
-  ruleId: ruleIdSchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * List followers input schema
+ */
+export const listFollowersInputSchema = z.object({
+  authorUserId: cuidOrUuidSchema,
+  cursor: z.string().optional(),
+  limit: z.number().int().min(1).max(100).default(20),
 });
 
-export type WatchRuleInput = z.infer<typeof watchRuleSchema>;
-
-// Unwatch rule schema
-export const unwatchRuleSchema = z.object({
-  ruleId: ruleIdSchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * List following input schema
+ */
+export const listFollowingInputSchema = z.object({
+  userId: cuidOrUuidSchema,
+  cursor: z.string().optional(),
+  limit: z.number().int().min(1).max(100).default(20),
 });
 
-export type UnwatchRuleInput = z.infer<typeof unwatchRuleSchema>;
-
-// Favorite rule schema
-export const favoriteRuleSchema = z.object({
-  ruleId: ruleIdSchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Notifications list input schema
+ */
+export const notificationsListInputSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.number().int().min(1).max(100).default(30),
+  filter: z.enum(["all", "unread"]).default("all"),
 });
 
-export type FavoriteRuleInput = z.infer<typeof favoriteRuleSchema>;
-
-// Unfavorite rule schema
-export const unfavoriteRuleSchema = z.object({
-  ruleId: ruleIdSchema,
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Mark notification as read input schema
+ */
+export const markReadInputSchema = z.object({
+  id: cuidOrUuidSchema,
 });
 
-export type UnfavoriteRuleInput = z.infer<typeof unfavoriteRuleSchema>;
+/**
+ * Mark many notifications as read input schema
+ */
+export const markManyReadInputSchema = z.object({
+  ids: z.array(cuidOrUuidSchema).min(1).max(200),
+});
 
-// List notifications schema
-export const listNotificationsSchema = z.object({
-  ...paginationSchema.shape,
-  unreadOnly: z.boolean().default(false),
-  types: z
-    .array(
-      z.enum([
+/**
+ * Delete notification input schema
+ */
+export const deleteNotificationInputSchema = z.object({
+  id: cuidOrUuidSchema,
+});
+
+/**
+ * Follow response schema
+ */
+export const followResponseSchema = z.object({
+  following: z.boolean(),
+  followersCount: z.number().int(),
+  followingCount: z.number().int(),
+});
+
+/**
+ * Watch response schema
+ */
+export const watchResponseSchema = z.object({
+  watching: z.boolean(),
+  watchersCount: z.number().int(),
+});
+
+/**
+ * Followers list response schema
+ */
+export const followersListResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      handle: z.string(),
+      displayName: z.string(),
+      avatarUrl: z.string().nullable(),
+      isVerified: z.boolean().optional(),
+      followedAt: z.date(),
+    })
+  ),
+  nextCursor: z.string().optional(),
+  hasMore: z.boolean(),
+  totalCount: z.number().int(),
+});
+
+/**
+ * Following list response schema
+ */
+export const followingListResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      handle: z.string(),
+      displayName: z.string(),
+      avatarUrl: z.string().nullable(),
+      isVerified: z.boolean().optional(),
+      followedAt: z.date(),
+    })
+  ),
+  nextCursor: z.string().optional(),
+  hasMore: z.boolean(),
+  totalCount: z.number().int(),
+});
+
+/**
+ * Notifications list response schema
+ */
+export const notificationsListResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      type: z.enum([
         "NEW_VERSION",
         "COMMENT_REPLY",
         "AUTHOR_PUBLISHED",
         "CLAIM_VERDICT",
         "DONATION_RECEIVED",
-      ])
-    )
-    .optional(),
+      ]),
+      payload: z.record(z.unknown()),
+      readAt: z.date().nullable(),
+      createdAt: z.date(),
+      // Parsed fields for easier UI rendering
+      title: z.string().optional(),
+      message: z.string().optional(),
+      actionUrl: z.string().optional(),
+      actor: z
+        .object({
+          id: z.string(),
+          handle: z.string(),
+          displayName: z.string(),
+          avatarUrl: z.string().nullable(),
+        })
+        .optional(),
+    })
+  ),
+  nextCursor: z.string().optional(),
+  hasMore: z.boolean(),
+  totalCount: z.number().int(),
+  unreadCount: z.number().int(),
 });
 
-export type ListNotificationsInput = z.infer<typeof listNotificationsSchema>;
-
-// Mark notification read schema
-export const markNotificationReadSchema = z.object({
-  notificationId: z.string(),
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Unread count response schema
+ */
+export const unreadCountResponseSchema = z.object({
+  count: z.number().int(),
 });
 
-export type MarkNotificationReadInput = z.infer<
-  typeof markNotificationReadSchema
+/**
+ * Mark read response schema
+ */
+export const markReadResponseSchema = z.object({
+  success: z.boolean(),
+});
+
+/**
+ * Mark many read response schema
+ */
+export const markManyReadResponseSchema = z.object({
+  updated: z.number().int(),
+});
+
+/**
+ * Delete notification response schema
+ */
+export const deleteNotificationResponseSchema = z.object({
+  success: z.boolean(),
+});
+
+// Type exports
+export type ToggleFollowInput = z.infer<typeof toggleFollowInputSchema>;
+export type ToggleWatchInput = z.infer<typeof toggleWatchInputSchema>;
+export type ListFollowersInput = z.infer<typeof listFollowersInputSchema>;
+export type ListFollowingInput = z.infer<typeof listFollowingInputSchema>;
+export type NotificationsListInput = z.infer<
+  typeof notificationsListInputSchema
+>;
+export type MarkReadInput = z.infer<typeof markReadInputSchema>;
+export type MarkManyReadInput = z.infer<typeof markManyReadInputSchema>;
+export type DeleteNotificationInput = z.infer<
+  typeof deleteNotificationInputSchema
 >;
 
-// Mark all notifications read schema
-export const markAllNotificationsReadSchema = z.object({
-  beforeDate: z.date().optional(),
-  idempotencyKey: idempotencyKeySchema,
-});
-
-export type MarkAllNotificationsReadInput = z.infer<
-  typeof markAllNotificationsReadSchema
+export type FollowResponse = z.infer<typeof followResponseSchema>;
+export type WatchResponse = z.infer<typeof watchResponseSchema>;
+export type FollowersListResponse = z.infer<typeof followersListResponseSchema>;
+export type FollowingListResponse = z.infer<typeof followingListResponseSchema>;
+export type NotificationsListResponse = z.infer<
+  typeof notificationsListResponseSchema
 >;
-
-// Get followers schema
-export const getFollowersSchema = z.object({
-  authorUserId: userIdSchema,
-  ...paginationSchema.shape,
-});
-
-export type GetFollowersInput = z.infer<typeof getFollowersSchema>;
-
-// Get following schema
-export const getFollowingSchema = z.object({
-  userId: userIdSchema,
-  ...paginationSchema.shape,
-});
-
-export type GetFollowingInput = z.infer<typeof getFollowingSchema>;
-
-// Get favorites schema
-export const getFavoritesSchema = z.object({
-  userId: userIdSchema.optional(), // If not provided, uses current user
-  ...paginationSchema.shape,
-  sort: z.enum(["new", "old"]).default("new"),
-});
-
-export type GetFavoritesInput = z.infer<typeof getFavoritesSchema>;
-
-// Get watched rules schema
-export const getWatchedRulesSchema = z.object({
-  ...paginationSchema.shape,
-  sort: z.enum(["new", "old", "activity"]).default("activity"),
-});
-
-export type GetWatchedRulesInput = z.infer<typeof getWatchedRulesSchema>;
-
-// Get social stats schema
-export const getSocialStatsSchema = z.object({
-  userId: userIdSchema.optional(), // If not provided, uses current user
-});
-
-export type GetSocialStatsInput = z.infer<typeof getSocialStatsSchema>;
-
-// Get rule social info schema
-export const getRuleSocialInfoSchema = z.object({
-  ruleId: ruleIdSchema,
-  includeUserActions: z.boolean().default(false),
-});
-
-export type GetRuleSocialInfoInput = z.infer<typeof getRuleSocialInfoSchema>;
+export type UnreadCountResponse = z.infer<typeof unreadCountResponseSchema>;
+export type MarkReadResponse = z.infer<typeof markReadResponseSchema>;
+export type MarkManyReadResponse = z.infer<typeof markManyReadResponseSchema>;
+export type DeleteNotificationResponse = z.infer<
+  typeof deleteNotificationResponseSchema
+>;

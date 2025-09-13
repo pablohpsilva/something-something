@@ -272,3 +272,32 @@ export const focus = {
     return () => container.removeEventListener("keydown", handleTabKey);
   },
 };
+
+/**
+ * Create props for vote buttons with accessibility
+ * @param voteType Type of vote (up/down)
+ * @param testId Test ID for the button
+ * @param isActive Whether the vote is currently active
+ * @param count Vote count for this type
+ * @returns Button props with accessibility attributes
+ */
+export function createVoteButtonProps(
+  voteType: "up" | "down",
+  testId: string,
+  isActive: boolean,
+  count: number
+): {
+  "data-testid": string;
+  "aria-label": string;
+  "aria-pressed": boolean;
+} {
+  const action = isActive ? "Remove" : "Add";
+  const voteLabel = voteType === "up" ? "upvote" : "downvote";
+  const countLabel = count > 0 ? ` (${count} ${voteType}votes)` : "";
+
+  return {
+    "data-testid": testId,
+    "aria-label": `${action} ${voteLabel}${countLabel}`,
+    "aria-pressed": isActive,
+  };
+}

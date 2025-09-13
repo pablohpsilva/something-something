@@ -14,6 +14,7 @@ import { MetricsStrip } from "@/components/rules/metrics-strip";
 import { RuleActions } from "@/components/rules/rule-actions";
 import { RuleDetailSkeleton } from "@/components/rules/skeletons";
 import { CommentThread } from "@/components/comments/comment-thread";
+import { WatchButton } from "@/components/social/watch-button";
 import { generateRuleMetadata } from "@/app-meta/seo";
 import { formatRelativeTime } from "@/lib/format";
 import Link from "next/link";
@@ -83,8 +84,8 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
       notFound();
     }
 
-    // Update metrics and vote data calls with actual rule ID
-    const [actualMetrics, voteData] = await Promise.all([
+    // Update metrics, vote data, and watch stats calls with actual rule ID
+    const [actualMetrics, voteData, watchStats] = await Promise.all([
       trpc.metrics.getOpenMetrics({ ruleId: rule.id }).catch(() => ({
         views7: 0,
         copies7: 0,
@@ -104,6 +105,15 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
         downCount: 0,
         myVote: 0,
       })),
+      trpc.social
+        .getWatchStats({
+          ruleId: rule.id,
+          currentUserId: undefined, // Will be set by server context if authenticated
+        })
+        .catch(() => ({
+          watchersCount: 0,
+          isWatching: false,
+        })),
     ]);
 
     return (
@@ -205,21 +215,30 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
             </div>
 
             {/* Rule Actions */}
-            <RuleActions
-              rule={{
-                id: rule.id,
-                slug: rule.slug,
-                title: rule.title,
-                body: rule.currentVersion?.body || "",
-                author: {
-                  handle: rule.author.handle,
-                  displayName: rule.author.displayName,
-                },
-              }}
-              currentVersionId={rule.currentVersion?.id}
-              initialMetrics={actualMetrics}
-              initialVoteData={voteData}
-            />
+            <div className="flex items-center justify-between">
+              <RuleActions
+                rule={{
+                  id: rule.id,
+                  slug: rule.slug,
+                  title: rule.title,
+                  body: rule.currentVersion?.body || "",
+                  author: {
+                    handle: rule.author.handle,
+                    displayName: rule.author.displayName,
+                  },
+                }}
+                currentVersionId={rule.currentVersion?.id}
+                initialMetrics={actualMetrics}
+                initialVoteData={voteData}
+              />
+
+              <WatchButton
+                ruleId={rule.id}
+                initialWatching={watchStats.isWatching}
+                initialWatchersCount={watchStats.watchersCount}
+                size="md"
+              />
+            </div>
           </div>
 
           {/* Rule Content */}

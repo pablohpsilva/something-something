@@ -143,3 +143,14 @@ export const THEME_TESTIDS = {
   DARK: "theme-dark",
   SYSTEM: "theme-system",
 } as const;
+
+// Notifications
+export const NOTIFICATIONS_TESTIDS = {
+  BELL: "notifications-bell",
+  LIST: "notifications-list",
+  ITEM: "notification-item",
+  MARK_READ: "notification-mark-read",
+  MARK_ALL: "notification-mark-all",
+  LOAD_MORE: "notifications-load-more",
+  DELETE: "notification-delete",
+} as const;

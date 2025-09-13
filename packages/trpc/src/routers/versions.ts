@@ -17,6 +17,7 @@ import {
   setCurrentVersionSchema,
 } from "../schemas/version";
 import { ruleVersionDetailDTOSchema } from "../schemas/dto";
+import { Notifications } from "../services/notify";
 import { createPaginatedSchema } from "../schemas/base";
 
 // Helper function to increment semver
@@ -281,32 +282,36 @@ export const versionsRouter = router({
           },
         });
 
-        // Create notifications for watchers
-        const watchers = await tx.watch.findMany({
-          where: { ruleId },
-          select: { userId: true },
-        });
-
-        if (watchers.length > 0) {
-          await tx.notification.createMany({
-            data: watchers
-              .filter((w) => w.userId !== ctx.user.id) // Don't notify the creator
-              .map((w) => ({
-                userId: w.userId,
-                type: "NEW_VERSION",
-                payload: {
-                  ruleId,
-                  versionId: version.id,
-                  version: newVersion,
-                  authorId: ctx.user.id,
-                  authorName: ctx.user.displayName,
-                },
-              })),
-          });
-        }
-
         return { id: version.id, version: newVersion };
       });
+
+      // Send notifications (fire-and-forget)
+      try {
+        // Notify watchers about new version
+        await Notifications.newVersion({
+          ruleId,
+          ruleSlug: rule.slug,
+          versionId: result.id,
+          version: result.version,
+          authorId: ctx.user!.id,
+          authorHandle: ctx.user!.handle,
+          authorDisplayName: ctx.user!.displayName,
+        });
+
+        // If this is a published rule, notify followers about author activity
+        if (rule.status === "PUBLISHED") {
+          await Notifications.authorPublished({
+            ruleId,
+            ruleSlug: rule.slug,
+            ruleTitle: rule.title,
+            authorId: ctx.user!.id,
+            authorHandle: ctx.user!.handle,
+            authorDisplayName: ctx.user!.displayName,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to send version notifications:", error);
+      }
 
       return result;
     }),

@@ -275,3 +275,57 @@ export const userProfileDTOSchema = z.object({
 });
 
 export type UserProfileDTO = z.infer<typeof userProfileDTOSchema>;
+
+// Follower DTO
+export const followerDTOSchema = z.object({
+  id: z.string(),
+  handle: z.string(),
+  displayName: z.string(),
+  avatarUrl: z.string().nullable(),
+  isVerified: z.boolean().optional(),
+  followedAt: z.date(),
+});
+
+export type FollowerDTO = z.infer<typeof followerDTOSchema>;
+
+// Enhanced Notification DTO
+export const enhancedNotificationDTOSchema = z.object({
+  id: z.string(),
+  type: z.enum([
+    "NEW_VERSION",
+    "COMMENT_REPLY",
+    "AUTHOR_PUBLISHED",
+    "CLAIM_VERDICT",
+    "DONATION_RECEIVED",
+  ]),
+  payload: z.record(z.unknown()),
+  readAt: z.date().nullable(),
+  createdAt: z.date(),
+  // Parsed fields for UI
+  title: z.string(),
+  message: z.string(),
+  actionUrl: z.string().optional(),
+  actor: z
+    .object({
+      id: z.string(),
+      handle: z.string(),
+      displayName: z.string(),
+      avatarUrl: z.string().nullable(),
+    })
+    .optional(),
+});
+
+export type EnhancedNotificationDTO = z.infer<
+  typeof enhancedNotificationDTOSchema
+>;
+
+// Social stats DTO
+export const socialStatsDTO = z.object({
+  followersCount: z.number().int(),
+  followingCount: z.number().int(),
+  watchersCount: z.number().int().optional(),
+  isFollowing: z.boolean().optional(),
+  isWatching: z.boolean().optional(),
+});
+
+export type SocialStatsDTO = z.infer<typeof socialStatsDTO>;

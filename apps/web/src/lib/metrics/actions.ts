@@ -122,6 +122,19 @@ export async function recordVoteAction(
 }
 
 /**
+ * Record a VOTE event
+ * @param ruleId Rule ID
+ * @param ruleVersionId Rule version ID (optional)
+ * @returns Promise that resolves to success status
+ */
+export async function recordVoteAction(
+  ruleId: string,
+  ruleVersionId?: string
+): Promise<{ success: boolean; error?: string }> {
+  return recordActionEvent("VOTE", ruleId, ruleVersionId);
+}
+
+/**
  * Record a COMMENT event
  * @param ruleId Rule ID
  * @param ruleVersionId Rule version ID (optional)

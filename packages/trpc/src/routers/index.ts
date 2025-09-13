@@ -5,6 +5,7 @@ import { tagsRouter } from "./tags";
 import { commentsRouter } from "./comments";
 import { votesRouter } from "./votes";
 import { searchRouter } from "./search";
+import { socialRouter } from "./social";
 
 // Import placeholder routers for remaining functionality
 import { z } from "zod";

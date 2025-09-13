@@ -1,131 +1,163 @@
 "use client";
 
 import { useState } from "react";
-import { Bell } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
 } from "@repo/ui/components/ui/dropdown-menu";
-import { Badge } from "@repo/ui/components/ui/badge";
+import { Bell, Check } from "lucide-react";
 import { api } from "@/lib/trpc";
-import { NOTIFICATION_TESTIDS } from "@/lib/testids";
-import { createButtonProps } from "@/lib/a11y";
 import { formatRelativeTime } from "@/lib/format";
-import Link from "next/link";
+import { NOTIFICATIONS_TESTIDS } from "@/lib/testids";
 
 export function NotificationsBell() {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch notifications with unread count
-  const { data: notifications, isLoading } =
-    api.social.listNotifications.useQuery(
-      { limit: 5 },
-      {
-        enabled: true,
-        refetchInterval: 30000, // Refetch every 30 seconds
-      }
-    );
-
-  const unreadCount = notifications?.items.filter((n) => !n.readAt).length || 0;
-
-  const bellProps = createButtonProps(
-    unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications",
-    NOTIFICATION_TESTIDS.BELL
+  // Get unread count
+  const { data: unreadData } = api.social.notifications.unreadCount.useQuery(
+    undefined,
+    {
+      refetchInterval: 30000, // Refetch every 30 seconds
+    }
   );
+
+  // Get recent notifications for dropdown
+  const { data: notificationsData } = api.social.notifications.list.useQuery(
+    { limit: 10 },
+    {
+      enabled: isOpen, // Only fetch when dropdown is open
+    }
+  );
+
+  const markReadMutation = api.social.notifications.markRead.useMutation({
+    onSuccess: () => {
+      // Refetch unread count and notifications
+      api.useUtils().social.notifications.unreadCount.invalidate();
+      api.useUtils().social.notifications.list.invalidate();
+    },
+  });
+
+  const handleMarkRead = (id: string) => {
+    markReadMutation.mutate({ id });
+  };
+
+  const unreadCount = unreadData?.count || 0;
+  const notifications = notificationsData?.items || [];
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button {...bellProps} variant="ghost" size="sm" className="relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="relative"
+          data-testid={NOTIFICATIONS_TESTIDS.BELL}
+          aria-label={`Notifications${
+            unreadCount > 0 ? ` (${unreadCount} unread)` : ""
+          }`}
+        >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge
-              data-testid={NOTIFICATION_TESTIDS.BADGE}
               variant="destructive"
-              className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
+              aria-live="polite"
             >
-              {unreadCount > 9 ? "9+" : unreadCount}
+              {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between p-2">
-          <h3 className="font-semibold">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button
-              data-testid={NOTIFICATION_TESTIDS.MARK_ALL_READ}
-              variant="ghost"
-              size="sm"
-              className="h-auto p-1 text-xs"
-              onClick={() => {
-                // TODO: Implement mark all as read
-                console.log("Mark all as read");
-              }}
-            >
-              Mark all read
-            </Button>
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Notifications</h3>
+            {notifications.length > 0 && (
+              <Link href="/notifications">
+                <Button variant="ghost" size="sm" className="text-xs">
+                  View all
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <div className="max-h-96 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">
+              <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No notifications yet</p>
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`relative p-3 border-b last:border-b-0 hover:bg-accent/50 ${
+                  !notification.readAt ? "bg-accent/20" : ""
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {notification.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {notification.message}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatRelativeTime(notification.createdAt)}
+                    </p>
+                  </div>
+
+                  {!notification.readAt && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 shrink-0 z-10 relative"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleMarkRead(notification.id);
+                      }}
+                      aria-label="Mark as read"
+                    >
+                      <Check className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+
+                {notification.actionUrl && (
+                  <Link
+                    href={notification.actionUrl}
+                    className="absolute inset-0"
+                    onClick={() => {
+                      if (!notification.readAt) {
+                        handleMarkRead(notification.id);
+                      }
+                      setIsOpen(false);
+                    }}
+                  >
+                    <span className="sr-only">View notification</span>
+                  </Link>
+                )}
+              </div>
+            ))
           )}
         </div>
 
-        <DropdownMenuSeparator />
-
-        {isLoading ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            Loading notifications...
-          </div>
-        ) : !notifications?.items.length ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">
-            No notifications yet
-          </div>
-        ) : (
-          <>
-            {notifications.items.map((notification) => (
-              <DropdownMenuItem
-                key={notification.id}
-                data-testid={NOTIFICATION_TESTIDS.ITEM}
-                className={`flex flex-col items-start p-3 ${
-                  !notification.readAt ? "bg-accent/50" : ""
-                }`}
-                asChild
-              >
-                <Link href={`/notifications#${notification.id}`}>
-                  <div className="flex w-full items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {notification.body}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatRelativeTime(notification.createdAt)}
-                      </p>
-                    </div>
-                    {!notification.readAt && (
-                      <div className="ml-2 h-2 w-2 rounded-full bg-primary" />
-                    )}
-                  </div>
-                </Link>
-              </DropdownMenuItem>
-            ))}
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuItem asChild>
-              <Link
-                href="/notifications"
-                className="w-full text-center text-sm font-medium"
-              >
+        {notifications.length > 0 && (
+          <div className="p-3 border-t">
+            <Link href="/notifications">
+              <Button variant="outline" size="sm" className="w-full">
                 View all notifications
-              </Link>
-            </DropdownMenuItem>
-          </>
+              </Button>
+            </Link>
+          </div>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

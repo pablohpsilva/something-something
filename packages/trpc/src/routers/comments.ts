@@ -16,6 +16,7 @@ import {
   commentListResponseSchema,
 } from "../schemas/comment";
 import { commentDTOSchema } from "../schemas/dto";
+import { Notifications } from "../services/notify";
 
 // Rate limited procedure for comments (6 per minute)
 const commentRateLimitedProcedure = rateLimitedProcedure("comments", 6);
@@ -321,15 +322,23 @@ export const commentsRouter = router({
           });
         }
 
-        // Create notification records
-        if (notifications.length > 0) {
-          await tx.notification.createMany({
-            data: notifications,
-          });
-        }
-
         return comment;
       });
+
+      // Send notifications (fire-and-forget)
+      try {
+        await Notifications.commentReply({
+          ruleId,
+          ruleSlug: rule.slug || ruleId, // Use slug if available
+          commentId: result.id,
+          parentAuthorId: parentComment?.authorUserId,
+          actorUserId: userId,
+          actorHandle: ctx.user!.handle,
+          actorDisplayName: ctx.user!.displayName,
+        });
+      } catch (error) {
+        console.error("Failed to send comment reply notifications:", error);
+      }
 
       // Emit COMMENT event to ingest (fire-and-forget)
       try {
