@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCProvider } from "@/lib/trpc";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { Header } from "@/components/shell/header";
+import { Footer } from "@/components/shell/footer";
+import { defaultMetadata } from "@/app-meta/seo";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Core Directory Engine",
-  description: "A comprehensive directory for AI prompts, rules, and guides",
-};
+export const metadata: Metadata = defaultMetadata;
 
 export default function RootLayout({
   children,
@@ -21,9 +22,17 @@ export default function RootLayout({
       afterSignInUrl="/"
       afterSignUpUrl="/onboarding"
     >
-      <html lang="en">
-        <body>
-          <TRPCProvider>{children}</TRPCProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className="min-h-screen bg-background font-sans antialiased">
+          <ThemeProvider>
+            <TRPCProvider>
+              <div className="relative flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            </TRPCProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -8,7 +8,7 @@ import superjson from "superjson";
 import type { AppRouter } from "@repo/trpc";
 
 // Create the tRPC React hooks
-export const trpc = createTRPCReact<AppRouter>();
+export const api = createTRPCReact<AppRouter>();
 
 function getBaseUrl() {
   if (typeof window !== "undefined") {
@@ -34,6 +34,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             // With SSR, we usually want to set some default staleTime
             // above 0 to avoid refetching immediately on the client
             staleTime: 30 * 1000, // 30 seconds
+            refetchOnWindowFocus: false,
             retry: (failureCount, error: any) => {
               // Don't retry on 4xx errors (client errors)
               if (
@@ -54,7 +55,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [trpcClient] = useState(() =>
-    trpc.createClient({
+    api.createClient({
       transformer: superjson,
       links: [
         httpBatchLink({
@@ -71,11 +72,8 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
+    </api.Provider>
   );
 }
-
-// Export the trpc hooks for use in components
-export { trpc as api };
