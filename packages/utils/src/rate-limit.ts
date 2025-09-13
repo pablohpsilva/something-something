@@ -1,156 +1,338 @@
 /**
- * Simple in-memory rate limiter
- * For production, consider using Redis or a dedicated rate limiting service
+ * Rate limiting system with sliding window implementation
  */
 
-interface RateLimitConfig {
-  windowMs: number; // Time window in milliseconds
-  maxRequests: number; // Maximum requests per window
+export type LimitOutcome = 
+  | { ok: true; remaining: number; resetMs: number }
+  | { ok: false; retryAfterMs: number; resetMs: number };
+
+export interface RateLimitStore {
+  consume(key: string, weight: number, windowMs: number, limit: number): Promise<LimitOutcome>;
+  getWindow(key: string, windowMs: number, limit: number): Promise<{ remaining: number; resetMs: number } | null>;
+  clear(key: string): Promise<void>;
+  clearAll(): Promise<void>;
 }
 
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
+export type BucketKey = {
+  bucket: string;
+  userId?: string;
+  ipHash?: string;
+  uaHash?: string;
+  extra?: string;
+};
+
+/**
+ * Create a composite key from bucket components
+ */
+export function makeKey(k: BucketKey): string {
+  return [
+    k.bucket,
+    k.userId ?? "-",
+    k.ipHash ?? "-", 
+    k.uaHash ?? "-",
+    k.extra ?? "-"
+  ].join(":");
 }
 
-class RateLimiter {
-  private store = new Map<string, RateLimitEntry>();
-  private config: RateLimitConfig;
+/**
+ * In-memory sliding window rate limiter
+ */
+export class MemoryRateLimitStore implements RateLimitStore {
+  private buckets = new Map<string, number[]>(); // key -> timestamps array
+  private cleanupInterval: NodeJS.Timeout;
 
-  constructor(config: RateLimitConfig) {
-    this.config = config;
+  constructor(cleanupIntervalMs = 60_000) {
+    // Periodic cleanup of expired entries
+    this.cleanupInterval = setInterval(() => {
+      this.cleanup();
+    }, cleanupIntervalMs);
   }
 
-  /**
-   * Check if a request is allowed for the given identifier
-   */
-  isAllowed(identifier: string): boolean {
+  async consume(
+    key: string, 
+    weight: number, 
+    windowMs: number, 
+    limit: number
+  ): Promise<LimitOutcome> {
     const now = Date.now();
-    const entry = this.store.get(identifier);
-
-    // Clean up expired entries
-    this.cleanup(now);
-
-    if (!entry) {
-      // First request for this identifier
-      this.store.set(identifier, {
-        count: 1,
-        resetTime: now + this.config.windowMs,
-      });
-      return true;
+    const windowStart = now - windowMs;
+    
+    // Get or create bucket
+    let timestamps = this.buckets.get(key) ?? [];
+    
+    // Remove expired timestamps
+    timestamps = timestamps.filter(ts => ts > windowStart);
+    
+    // Check if we can consume
+    const currentUsage = timestamps.length;
+    if (currentUsage + weight > limit) {
+      // Calculate retry after based on oldest timestamp
+      const oldestTimestamp = timestamps[0] ?? now;
+      const retryAfterMs = Math.max(1000, oldestTimestamp + windowMs - now);
+      const resetMs = windowMs - (now - oldestTimestamp);
+      
+      // Update bucket without adding new timestamps
+      this.buckets.set(key, timestamps);
+      
+      return {
+        ok: false,
+        retryAfterMs,
+        resetMs: Math.max(0, resetMs),
+      };
     }
-
-    if (now >= entry.resetTime) {
-      // Window has expired, reset
-      this.store.set(identifier, {
-        count: 1,
-        resetTime: now + this.config.windowMs,
-      });
-      return true;
+    
+    // Add new timestamps for the weight
+    for (let i = 0; i < weight; i++) {
+      timestamps.push(now);
     }
+    
+    // Update bucket
+    this.buckets.set(key, timestamps);
+    
+    const remaining = Math.max(0, limit - timestamps.length);
+    const oldestTimestamp = timestamps[0] ?? now;
+    const resetMs = windowMs - (now - oldestTimestamp);
+    
+    return {
+      ok: true,
+      remaining,
+      resetMs: Math.max(0, resetMs),
+    };
+  }
 
-    if (entry.count >= this.config.maxRequests) {
-      // Rate limit exceeded
-      return false;
+  async getWindow(
+    key: string, 
+    windowMs: number, 
+    limit: number
+  ): Promise<{ remaining: number; resetMs: number } | null> {
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    
+    let timestamps = this.buckets.get(key);
+    if (!timestamps || timestamps.length === 0) {
+      return { remaining: limit, resetMs: windowMs };
     }
+    
+    // Remove expired timestamps
+    timestamps = timestamps.filter(ts => ts > windowStart);
+    this.buckets.set(key, timestamps);
+    
+    if (timestamps.length === 0) {
+      return { remaining: limit, resetMs: windowMs };
+    }
+    
+    const remaining = Math.max(0, limit - timestamps.length);
+    const oldestTimestamp = timestamps[0];
+    const resetMs = windowMs - (now - oldestTimestamp);
+    
+    return {
+      remaining,
+      resetMs: Math.max(0, resetMs),
+    };
+  }
 
-    // Increment count
-    entry.count++;
-    return true;
+  async clear(key: string): Promise<void> {
+    this.buckets.delete(key);
+  }
+
+  async clearAll(): Promise<void> {
+    this.buckets.clear();
   }
 
   /**
-   * Get remaining requests for an identifier
+   * Clean up expired entries to prevent memory leaks
    */
-  getRemaining(identifier: string): number {
-    const entry = this.store.get(identifier);
-    if (!entry || Date.now() >= entry.resetTime) {
-      return this.config.maxRequests;
-    }
-    return Math.max(0, this.config.maxRequests - entry.count);
-  }
-
-  /**
-   * Get reset time for an identifier
-   */
-  getResetTime(identifier: string): number | null {
-    const entry = this.store.get(identifier);
-    if (!entry || Date.now() >= entry.resetTime) {
-      return null;
-    }
-    return entry.resetTime;
-  }
-
-  /**
-   * Clean up expired entries
-   */
-  private cleanup(now: number): void {
-    for (const [key, entry] of this.store.entries()) {
-      if (now >= entry.resetTime) {
-        this.store.delete(key);
+  private cleanup(): void {
+    const now = Date.now();
+    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+    
+    for (const [key, timestamps] of this.buckets.entries()) {
+      // Remove timestamps older than maxAge
+      const filtered = timestamps.filter(ts => now - ts < maxAge);
+      
+      if (filtered.length === 0) {
+        this.buckets.delete(key);
+      } else if (filtered.length !== timestamps.length) {
+        this.buckets.set(key, filtered);
       }
     }
   }
 
   /**
-   * Clear all entries (useful for testing)
+   * Get current memory usage stats
    */
-  clear(): void {
-    this.store.clear();
+  getStats(): {
+    totalBuckets: number;
+    totalTimestamps: number;
+    memoryUsageBytes: number;
+  } {
+    let totalTimestamps = 0;
+    for (const timestamps of this.buckets.values()) {
+      totalTimestamps += timestamps.length;
+    }
+    
+    // Rough memory calculation (key + timestamps array)
+    const memoryUsageBytes = Array.from(this.buckets.entries()).reduce((acc, [key, timestamps]) => {
+      return acc + key.length * 2 + timestamps.length * 8; // Rough estimate
+    }, 0);
+    
+    return {
+      totalBuckets: this.buckets.size,
+      totalTimestamps,
+      memoryUsageBytes,
+    };
+  }
+
+  /**
+   * Destroy the store and cleanup resources
+   */
+  destroy(): void {
+    clearInterval(this.cleanupInterval);
+    this.buckets.clear();
   }
 }
 
-// Default rate limiter instances
-export const defaultRateLimiter = new RateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 100,
-});
-
-export const strictRateLimiter = new RateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 10,
-});
-
-export const apiRateLimiter = new RateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  maxRequests: 60,
-});
-
-// Export the class for custom instances
-export { RateLimiter, type RateLimitConfig };
+// Global store instance
+let globalStore: MemoryRateLimitStore | null = null;
 
 /**
- * Utility function to create rate limit headers
+ * Get or create the global rate limit store
  */
-export function createRateLimitHeaders(
-  limiter: RateLimiter,
-  identifier: string
-): Record<string, string> {
-  const remaining = limiter.getRemaining(identifier);
-  const resetTime = limiter.getResetTime(identifier);
-
-  return {
-    "X-RateLimit-Limit": limiter["config"].maxRequests.toString(),
-    "X-RateLimit-Remaining": remaining.toString(),
-    ...(resetTime && {
-      "X-RateLimit-Reset": Math.ceil(resetTime / 1000).toString(),
-    }),
-  };
+export function getGlobalStore(): MemoryRateLimitStore {
+  if (!globalStore) {
+    globalStore = new MemoryRateLimitStore();
+  }
+  return globalStore;
 }
 
 /**
- * Get client identifier from request (IP, user ID, etc.)
+ * High-level rate limiting function
  */
-export function getClientIdentifier(request: Request, userId?: string): string {
-  if (userId) {
-    return `user:${userId}`;
+export async function limit(
+  bucket: BucketKey, 
+  config: { limit: number; windowMs: number; weight?: number }
+): Promise<LimitOutcome> {
+  const store = getGlobalStore();
+  const key = makeKey(bucket);
+  const weight = config.weight ?? 1;
+  
+  return store.consume(key, weight, config.windowMs, config.limit);
+}
+
+/**
+ * Check current rate limit status without consuming
+ */
+export async function check(
+  bucket: BucketKey,
+  config: { limit: number; windowMs: number }
+): Promise<{ remaining: number; resetMs: number } | null> {
+  const store = getGlobalStore();
+  const key = makeKey(bucket);
+  
+  return store.getWindow(key, config.windowMs, config.limit);
+}
+
+/**
+ * Clear rate limit for a specific bucket
+ */
+export async function clearLimit(bucket: BucketKey): Promise<void> {
+  const store = getGlobalStore();
+  const key = makeKey(bucket);
+  
+  return store.clear(key);
+}
+
+/**
+ * Token bucket implementation (alternative to sliding window)
+ */
+export class TokenBucketStore implements RateLimitStore {
+  private buckets = new Map<string, {
+    tokens: number;
+    lastRefill: number;
+    capacity: number;
+    refillRate: number; // tokens per second
+  }>();
+
+  async consume(
+    key: string,
+    weight: number,
+    windowMs: number,
+    limit: number
+  ): Promise<LimitOutcome> {
+    const now = Date.now();
+    const refillRate = limit / (windowMs / 1000); // tokens per second
+    
+    let bucket = this.buckets.get(key);
+    if (!bucket) {
+      bucket = {
+        tokens: limit,
+        lastRefill: now,
+        capacity: limit,
+        refillRate,
+      };
+    }
+    
+    // Refill tokens based on elapsed time
+    const elapsed = (now - bucket.lastRefill) / 1000;
+    const tokensToAdd = elapsed * bucket.refillRate;
+    bucket.tokens = Math.min(bucket.capacity, bucket.tokens + tokensToAdd);
+    bucket.lastRefill = now;
+    
+    // Check if we can consume
+    if (bucket.tokens < weight) {
+      const tokensNeeded = weight - bucket.tokens;
+      const retryAfterMs = (tokensNeeded / bucket.refillRate) * 1000;
+      
+      this.buckets.set(key, bucket);
+      
+      return {
+        ok: false,
+        retryAfterMs: Math.ceil(retryAfterMs),
+        resetMs: Math.ceil(retryAfterMs),
+      };
+    }
+    
+    // Consume tokens
+    bucket.tokens -= weight;
+    this.buckets.set(key, bucket);
+    
+    return {
+      ok: true,
+      remaining: Math.floor(bucket.tokens),
+      resetMs: Math.ceil((bucket.capacity - bucket.tokens) / bucket.refillRate * 1000),
+    };
   }
 
-  // Try to get IP from various headers
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const cfConnectingIp = request.headers.get("cf-connecting-ip");
+  async getWindow(
+    key: string,
+    windowMs: number,
+    limit: number
+  ): Promise<{ remaining: number; resetMs: number } | null> {
+    const bucket = this.buckets.get(key);
+    if (!bucket) {
+      return { remaining: limit, resetMs: 0 };
+    }
+    
+    // Refill tokens
+    const now = Date.now();
+    const elapsed = (now - bucket.lastRefill) / 1000;
+    const tokensToAdd = elapsed * bucket.refillRate;
+    bucket.tokens = Math.min(bucket.capacity, bucket.tokens + tokensToAdd);
+    bucket.lastRefill = now;
+    
+    this.buckets.set(key, bucket);
+    
+    return {
+      remaining: Math.floor(bucket.tokens),
+      resetMs: Math.ceil((bucket.capacity - bucket.tokens) / bucket.refillRate * 1000),
+    };
+  }
 
-  const ip = forwarded?.split(",")[0] || realIp || cfConnectingIp || "unknown";
-  return `ip:${ip}`;
+  async clear(key: string): Promise<void> {
+    this.buckets.delete(key);
+  }
+
+  async clearAll(): Promise<void> {
+    this.buckets.clear();
+  }
 }

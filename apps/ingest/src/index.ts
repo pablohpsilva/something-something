@@ -4,6 +4,8 @@ import { cors } from "hono/cors";
 import { getEnv } from "./env";
 import { logger } from "./logger";
 import { errorHandler, requestLogger } from "./middleware/error";
+import { rateLimitIngest, burstProtection } from "./middleware/rate-limit";
+import { circuitBreakerGuard } from "./middleware/circuit-breaker";
 
 // Import routes
 import { health } from "./routes/health";
@@ -11,6 +13,7 @@ import { ingestEvents } from "./routes/ingest-events";
 import { stripeWebhook } from "./routes/stripe-webhook";
 import { ingestCrawl } from "./routes/ingest-crawl";
 import { cronRollup } from "./routes/cron-rollup";
+import { adminAbuse } from "./routes/admin-abuse";
 
 // Create main Hono app
 const app = new Hono();
@@ -45,12 +48,23 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-// Mount routes
+// Mount routes with anti-abuse protection
 app.route("/health", health);
+
+// Protected ingest routes with rate limiting and circuit breaker
+app.use("/ingest/*", circuitBreakerGuard);
+app.use("/ingest/*", rateLimitIngest);
+app.use("/ingest/*", burstProtection);
+
 app.route("/ingest/events", ingestEvents);
 app.route("/ingest/stripe/webhook", stripeWebhook);
 app.route("/ingest/crawl", ingestCrawl);
+
+// Cron routes (internal only, no rate limiting)
 app.route("/cron/rollup", cronRollup);
+
+// Admin routes (internal only, no rate limiting)
+app.route("/admin/abuse", adminAbuse);
 
 // Root endpoint
 app.get("/", (c) => {

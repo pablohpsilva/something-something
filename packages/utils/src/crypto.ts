@@ -1,201 +1,164 @@
+import { createHmac, createHash } from "crypto";
+
 /**
- * Crypto utilities for hashing, encryption, and secure operations
- * Note: These are basic implementations. For production, consider using dedicated crypto libraries.
+ * Privacy-preserving cryptographic utilities for anti-abuse systems
  */
 
 /**
- * Generate a secure random string
+ * Create a SHA-256 hash of a string (internal use)
  */
-export function generateSecureRandom(length: number = 32): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
+export function sha256(input: string): string {
+  return createHash("sha256").update(input).digest("hex");
+}
 
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    // Browser/modern environment
-    const array = new Uint8Array(length);
-    crypto.getRandomValues(array);
-    for (let i = 0; i < length; i++) {
-      result += chars[array[i] % chars.length];
-    }
-  } else {
-    // Fallback for older environments
-    for (let i = 0; i < length; i++) {
-      result += chars[Math.floor(Math.random() * chars.length)];
-    }
+/**
+ * Create a salted HMAC-SHA256 hash
+ */
+export function hashWithSalt(value: string, salt: string): string {
+  return createHmac("sha256", salt).update(value).digest("hex");
+}
+
+/**
+ * Hash an IP address with salt for privacy-preserving rate limiting
+ */
+export function hashIp(ipRaw: string, salt: string): string {
+  // Normalize IP (remove port, handle IPv6, etc.)
+  const normalizedIp = normalizeIp(ipRaw);
+  return hashWithSalt(normalizedIp, salt);
+}
+
+/**
+ * Hash a User-Agent string with salt for device fingerprinting
+ */
+export function hashUA(uaRaw: string, salt: string): string {
+  // Normalize UA (remove version numbers for better grouping)
+  const normalizedUA = normalizeUA(uaRaw);
+  return hashWithSalt(normalizedUA, salt);
+}
+
+/**
+ * Normalize IP address for consistent hashing
+ */
+function normalizeIp(ip: string): string {
+  if (!ip || ip === "unknown") return "unknown";
+  
+  // Handle comma-separated IPs (X-Forwarded-For)
+  const firstIp = ip.split(",")[0].trim();
+  
+  // Remove port if present
+  const withoutPort = firstIp.replace(/:\d+$/, "");
+  
+  // Handle IPv6 brackets
+  return withoutPort.replace(/^\[|\]$/g, "").toLowerCase();
+}
+
+/**
+ * Normalize User-Agent for better grouping while preserving uniqueness
+ */
+function normalizeUA(ua: string): string {
+  if (!ua || ua === "unknown") return "unknown";
+  
+  // Remove specific version numbers but keep major versions
+  return ua
+    .replace(/\d+\.\d+\.\d+\.\d+/g, "X.X.X.X") // Remove detailed versions
+    .replace(/Chrome\/\d+\.\d+\.\d+/g, "Chrome/X.X.X") // Normalize Chrome
+    .replace(/Firefox\/\d+\.\d+/g, "Firefox/X.X") // Normalize Firefox
+    .replace(/Safari\/\d+\.\d+/g, "Safari/X.X") // Normalize Safari
+    .replace(/Edge\/\d+\.\d+/g, "Edge/X.X") // Normalize Edge
+    .trim();
+}
+
+/**
+ * Generate a secure random string for idempotency keys
+ */
+export function generateIdempotencyKey(): string {
+  return createHash("sha256")
+    .update(Date.now().toString())
+    .update(Math.random().toString())
+    .digest("hex")
+    .substring(0, 32);
+}
+
+/**
+ * Calculate entropy of a string (for anomaly detection)
+ */
+export function calculateEntropy(str: string): number {
+  if (!str) return 0;
+  
+  const frequencies = new Map<string, number>();
+  for (const char of str) {
+    frequencies.set(char, (frequencies.get(char) || 0) + 1);
   }
-
-  return result;
-}
-
-/**
- * Simple hash function (not cryptographically secure)
- * For production, use a proper hashing library like bcrypt
- */
-export function simpleHash(input: string): string {
-  let hash = 0;
-  if (input.length === 0) return hash.toString();
-
-  for (let i = 0; i < input.length; i++) {
-    const char = input.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
+  
+  let entropy = 0;
+  const length = str.length;
+  
+  for (const count of frequencies.values()) {
+    const probability = count / length;
+    entropy -= probability * Math.log2(probability);
   }
-
-  return Math.abs(hash).toString(36);
+  
+  return entropy;
 }
 
 /**
- * Generate a hash using Web Crypto API (if available)
+ * Hash a combination of values for composite keys
  */
-export async function sha256Hash(input: string): Promise<string> {
-  if (typeof crypto === "undefined" || !crypto.subtle) {
-    throw new Error("Web Crypto API not available");
-  }
-
-  const encoder = new TextEncoder();
-  const data = encoder.encode(input);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  return hashHex;
+export function hashComposite(...values: string[]): string {
+  return sha256(values.join("|"));
 }
 
 /**
- * Generate a HMAC signature
+ * Time-based hash for sliding window buckets
  */
-export async function generateHMAC(
-  message: string,
-  secret: string
-): Promise<string> {
-  if (typeof crypto === "undefined" || !crypto.subtle) {
-    throw new Error("Web Crypto API not available");
-  }
-
-  const encoder = new TextEncoder();
-  const keyData = encoder.encode(secret);
-  const messageData = encoder.encode(message);
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    keyData,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign("HMAC", key, messageData);
-  const signatureArray = Array.from(new Uint8Array(signature));
-  const signatureHex = signatureArray
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  return signatureHex;
+export function hashTimeWindow(value: string, windowMs: number): string {
+  const windowStart = Math.floor(Date.now() / windowMs) * windowMs;
+  return hashComposite(value, windowStart.toString());
 }
 
 /**
- * Verify HMAC signature
+ * Secure comparison of hashes (timing attack resistant)
  */
-export async function verifyHMAC(
-  message: string,
-  signature: string,
-  secret: string
-): Promise<boolean> {
-  try {
-    const expectedSignature = await generateHMAC(message, secret);
-    return expectedSignature === signature;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Generate a JWT-like token (simplified, not a real JWT)
- * For production, use a proper JWT library
- */
-export function generateSimpleToken(
-  payload: Record<string, any>,
-  secret: string
-): string {
-  const header = { alg: "HS256", typ: "JWT" };
-  const encodedHeader = btoa(JSON.stringify(header));
-  const encodedPayload = btoa(JSON.stringify(payload));
-  const signature = simpleHash(`${encodedHeader}.${encodedPayload}.${secret}`);
-
-  return `${encodedHeader}.${encodedPayload}.${signature}`;
-}
-
-/**
- * Verify and decode simple token
- */
-export function verifySimpleToken(
-  token: string,
-  secret: string
-): Record<string, any> | null {
-  try {
-    const [encodedHeader, encodedPayload, signature] = token.split(".");
-    const expectedSignature = simpleHash(
-      `${encodedHeader}.${encodedPayload}.${secret}`
-    );
-
-    if (signature !== expectedSignature) {
-      return null;
-    }
-
-    const payload = JSON.parse(atob(encodedPayload));
-
-    // Check expiration if present
-    if (payload.exp && Date.now() / 1000 > payload.exp) {
-      return null;
-    }
-
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Mask sensitive data (like API keys, emails)
- */
-export function maskSensitiveData(
-  data: string,
-  visibleChars: number = 4
-): string {
-  if (data.length <= visibleChars * 2) {
-    return "*".repeat(data.length);
-  }
-
-  const start = data.slice(0, visibleChars);
-  const end = data.slice(-visibleChars);
-  const middle = "*".repeat(data.length - visibleChars * 2);
-
-  return `${start}${middle}${end}`;
-}
-
-/**
- * Generate a secure API key
- */
-export function generateApiKey(prefix: string = "sk"): string {
-  const randomPart = generateSecureRandom(32);
-  return `${prefix}_${randomPart}`;
-}
-
-/**
- * Constant-time string comparison (prevents timing attacks)
- */
-export function constantTimeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-
+export function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  
   let result = 0;
   for (let i = 0; i < a.length; i++) {
     result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
-
+  
   return result === 0;
+}
+
+/**
+ * Extract IP from various header formats
+ */
+export function extractIp(headers: Record<string, string | string[] | undefined>): string {
+  // Try various headers in order of preference
+  const candidates = [
+    headers["x-forwarded-for"],
+    headers["x-real-ip"],
+    headers["cf-connecting-ip"], // Cloudflare
+    headers["x-client-ip"],
+    headers["x-cluster-client-ip"],
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string") {
+      const ip = candidate.split(",")[0].trim();
+      if (ip && ip !== "unknown") return ip;
+    }
+  }
+
+  return "unknown";
+}
+
+/**
+ * Extract User-Agent from headers
+ */
+export function extractUA(headers: Record<string, string | string[] | undefined>): string {
+  const ua = headers["user-agent"];
+  if (typeof ua === "string") return ua;
+  if (Array.isArray(ua) && ua.length > 0) return ua[0];
+  return "unknown";
 }

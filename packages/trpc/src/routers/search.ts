@@ -25,11 +25,26 @@ import {
   searchRulesSimple,
   type SearchFilters,
 } from "@repo/db/search";
+import { createRateLimitedProcedure, withIPRateLimit } from "../middleware/rate-limit";
 
-// Rate limited procedures for search operations
-const searchRateLimitedProcedure = rateLimitedProcedure("search", 120); // 120 per minute
-const suggestRateLimitedProcedure = rateLimitedProcedure("suggest", 60); // 60 per minute
-const adminSearchProcedure = rateLimitedProcedure("adminSearch", 10); // 10 per minute for admin
+// Enhanced rate limited procedures for search operations
+const searchRateLimitedProcedure = createRateLimitedProcedure(
+  publicProcedure,
+  "searchPerIpPerMin",
+  { requireAuth: false, weight: 1 }
+);
+
+const suggestRateLimitedProcedure = createRateLimitedProcedure(
+  publicProcedure,
+  "suggestionsPerIpPerMin", 
+  { requireAuth: false, weight: 1 }
+);
+
+const adminSearchProcedure = createRateLimitedProcedure(
+  protectedProcedure,
+  "adminOpsPerUserPerMin",
+  { requireAuth: true }
+);
 
 export const searchRouter = router({
   /**

@@ -17,9 +17,27 @@ import {
 } from "../schemas/comment";
 import { commentDTOSchema } from "../schemas/dto";
 import { Notifications } from "../services/notify";
+import { createRateLimitedProcedure } from "../middleware/rate-limit";
+import { isShadowBanned } from "@repo/config/abuse";
 
-// Rate limited procedure for comments (6 per minute)
-const commentRateLimitedProcedure = rateLimitedProcedure("comments", 6);
+// Enhanced rate limited procedures with anti-abuse protection
+const commentCreateProcedure = createRateLimitedProcedure(
+  protectedProcedure,
+  "commentsPerUserPerMin",
+  { requireAuth: true, burstProtection: true }
+);
+
+const commentEditProcedure = createRateLimitedProcedure(
+  protectedProcedure,
+  "commentsPerUserPerMin",
+  { requireAuth: true }
+);
+
+const commentDeleteProcedure = createRateLimitedProcedure(
+  protectedProcedure,
+  "commentsPerUserPerMin",
+  { requireAuth: true }
+);
 
 export const commentsRouter = router({
   list: publicProcedure
@@ -196,12 +214,18 @@ export const commentsRouter = router({
       }
     }),
 
-  create: commentRateLimitedProcedure
+  create: commentCreateProcedure
     .input(commentCreateSchema)
     .output(commentDTOSchema)
     .mutation(async ({ input, ctx }) => {
       const { ruleId, parentId, body } = input;
       const userId = ctx.user!.id;
+
+      // Handle shadow banned users
+      if (ctx.shadowBanned) {
+        // Create comment but don't notify or make it visible to others
+        // This is handled in the list query by filtering shadow banned content
+      }
 
       // Validate rule exists
       const rule = await ctx.prisma.rule.findUnique({
@@ -387,7 +411,7 @@ export const commentsRouter = router({
       };
     }),
 
-  edit: protectedProcedure
+  edit: commentEditProcedure
     .input(commentEditSchema)
     .output(commentDTOSchema)
     .mutation(async ({ input, ctx }) => {
@@ -508,7 +532,7 @@ export const commentsRouter = router({
       };
     }),
 
-  softDelete: protectedProcedure
+  softDelete: commentDeleteProcedure
     .input(commentDeleteSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {

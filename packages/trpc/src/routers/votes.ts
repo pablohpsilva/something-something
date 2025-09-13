@@ -16,9 +16,14 @@ import {
 } from "../schemas/vote";
 import { voteSummaryDTOSchema } from "../schemas/dto";
 import { GamificationService } from "../services/gamification";
+import { createRateLimitedProcedure } from "../middleware/rate-limit";
 
-// Rate limited procedure for votes (20 per minute)
-const voteRateLimitedProcedure = rateLimitedProcedure("votes", 20);
+// Enhanced rate limited procedures for voting
+const voteRateLimitedProcedure = createRateLimitedProcedure(
+  protectedProcedure,
+  "votesPerUserPerMin",
+  { requireAuth: true, burstProtection: true }
+);
 
 export const votesRouter = router({
   upsertRuleVote: voteRateLimitedProcedure

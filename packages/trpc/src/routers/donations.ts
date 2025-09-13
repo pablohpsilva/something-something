@@ -18,9 +18,14 @@ import {
   connectOnboardingResponseSchema,
   connectStatusResponseSchema,
 } from "../schemas/donations";
+import { createRateLimitedProcedure } from "../middleware/rate-limit";
 
-// Rate limited procedures
-const donationRateLimitedProcedure = rateLimitedProcedure("donations", 10);
+// Enhanced rate limited procedures for donations
+const donationRateLimitedProcedure = createRateLimitedProcedure(
+  protectedProcedure,
+  "donationsCreatePerUserPerMin",
+  { requireAuth: true, burstProtection: true }
+);
 
 export const donationsRouter = router({
   /**
