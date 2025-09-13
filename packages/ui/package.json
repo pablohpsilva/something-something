@@ -7,7 +7,14 @@
   "exports": {
     ".": "./src/index.ts",
     "./components/*": "./src/components/*.tsx",
-    "./styles": "./src/styles/globals.css"
+    "./components/ui/*": "./src/components/ui/*.tsx",
+    "./lib/utils": "./src/lib/utils.ts",
+    "./styles": "./src/styles/globals.css",
+    "./button": "./src/components/ui/button.tsx",
+    "./badge": "./src/components/ui/badge.tsx",
+    "./card": "./src/components/ui/card.tsx",
+    "./input": "./src/components/ui/input.tsx",
+    "./label": "./src/components/ui/label.tsx"
   },
   "scripts": {
     "lint": "biome lint .",
@@ -34,6 +41,7 @@
     "@radix-ui/react-tooltip": "^1.1.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.451.0",
     "tailwind-merge": "^2.5.4"
   },

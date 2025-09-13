@@ -569,24 +569,6 @@ model Claim {
   @@map("claims")
 }
 
-model AuditLog {
-  id           String    @id @default(cuid())
-  actorUserId  String?
-  action       String    @db.VarChar(100)
-  entityType   String    @db.VarChar(50)
-  entityId     String    @db.VarChar(255)
-  diff         Json?
-  ipHash       String    @db.VarChar(64)
-  createdAt    DateTime  @default(now())
-
-  // Relations
-  actor User? @relation(fields: [actorUserId], references: [id])
-
-  @@index([actorUserId])
-  @@index([entityType, entityId])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
 
 // ============================================================================
 // DONATIONS

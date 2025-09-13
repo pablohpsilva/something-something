@@ -8,7 +8,14 @@
     ".": "./src/index.ts",
     "./rate-limit": "./src/rate-limit.ts",
     "./ids": "./src/ids.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./metrics": "./src/metrics.ts",
+    "./crypto": "./src/crypto.ts",
+    "./anomaly": "./src/anomaly.ts",
+    "./idempotency": "./src/idempotency.ts",
+    "./trending": "./src/trending.ts",
+    "./dates": "./src/dates.ts",
+    "./strings": "./src/strings.ts"
   },
   "scripts": {
     "lint": "biome lint .",

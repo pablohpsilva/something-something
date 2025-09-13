@@ -23,8 +23,24 @@ export const AUTH_TESTIDS = {
 // Search
 export const SEARCH_TESTIDS = {
   GLOBAL_INPUT: "global-search-input",
+  INPUT: "global-search-input",
   GLOBAL_SUBMIT: "global-search-submit",
+  SUBMIT: "global-search-submit",
   GLOBAL_CLEAR: "global-search-clear",
+  CLEAR: "global-search-clear",
+  SUGGEST_ITEM: "global-search-suggest-item",
+  RECENT_ITEM: "global-search-recent-item",
+  QUERY_ITEM: "global-search-query-item",
+  RESULTS_LIST: "global-search-results-list",
+  RESULTS: "rules-search-results",
+  RESULT_ITEM: "rules-result-item",
+  NO_RESULTS: "global-search-no-results",
+  EMPTY_STATE: "rules-empty-state",
+  LOADING: "global-search-loading",
+  FILTER_TAG: "rules-filter-tag",
+  FILTER_MODEL: "rules-filter-model",
+  FILTER_STATUS: "rules-filter-status",
+  FILTER_CONTENT_TYPE: "rules-filter-content-type",
 } as const;
 
 // Rules
@@ -153,20 +169,4 @@ export const NOTIFICATIONS_TESTIDS = {
   MARK_ALL: "notification-mark-all",
   LOAD_MORE: "notifications-load-more",
   DELETE: "notification-delete",
-} as const;
-
-export const SEARCH_TESTIDS = {
-  INPUT: "global-search-input",
-  SUBMIT: "global-search-submit",
-  CLEAR: "global-search-clear",
-  SUGGEST_ITEM: "global-search-suggest-item",
-  RECENT_ITEM: "global-search-recent-item",
-  QUERY_ITEM: "global-search-query-item",
-  RESULTS: "rules-search-results",
-  RESULT_ITEM: "rules-result-item",
-  EMPTY_STATE: "rules-empty-state",
-  FILTER_TAG: "rules-filter-tag",
-  FILTER_MODEL: "rules-filter-model",
-  FILTER_STATUS: "rules-filter-status",
-  FILTER_CONTENT_TYPE: "rules-filter-content-type",
 } as const;

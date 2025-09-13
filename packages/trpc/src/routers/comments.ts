@@ -17,6 +17,7 @@ import {
 } from "../schemas/comment";
 import { commentDTOSchema } from "../schemas/dto";
 import { Notifications } from "../services/notify";
+import { AuditLogService } from "../services/audit-log";
 import { createRateLimitedProcedure } from "../middleware/rate-limit";
 import { isShadowBanned } from "@repo/config/abuse";
 
@@ -565,29 +566,24 @@ export const commentsRouter = router({
         });
       }
 
-      // Soft delete in transaction
-      await ctx.prisma.$transaction(async (tx) => {
-        await tx.comment.update({
-          where: { id: commentId },
-          data: { deletedAt: new Date() },
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            action: "comment.delete",
-            entityType: "comment",
-            entityId: commentId,
-            userId,
-            ipHash: ctx.reqIpHash,
-            diff: {
-              reason: reason || null,
-              deletedBy: isModerator ? "moderator" : "author",
-              body: comment.body.substring(0, 100),
-            },
-          },
-        });
+      // Soft delete the comment
+      await ctx.prisma.comment.update({
+        where: { id: commentId },
+        data: { deletedAt: new Date() },
       });
+
+      // Create audit log
+      await AuditLogService.logCommentDelete(
+        commentId,
+        userId,
+        reason || undefined,
+        {
+          deletedBy: isModerator ? "moderator" : "author",
+          authorId: comment.authorUserId,
+          ruleId: comment.ruleId,
+          bodyPreview: comment.body.substring(0, 100),
+        }
+      );
 
       return { success: true };
     }),

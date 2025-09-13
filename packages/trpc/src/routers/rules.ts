@@ -24,6 +24,7 @@ import {
 } from "../schemas/rule";
 import { ruleCardDTOSchema, ruleDetailDTOSchema } from "../schemas/dto";
 import { GamificationService } from "../services/gamification";
+import { AuditLogService } from "../services/audit-log";
 import { createPaginatedSchema } from "../schemas/base";
 
 export const rulesRouter = router({
@@ -691,6 +692,13 @@ export const rulesRouter = router({
       await ctx.prisma.rule.update({
         where: { id: ruleId },
         data: { status: "PUBLISHED" },
+      });
+
+      // Log the publication
+      await AuditLogService.logRulePublish(ruleId, ctx.user!.id, {
+        title: rule.title,
+        slug: rule.slug,
+        previousStatus: rule.status,
       });
 
       // Award first contribution badge if this is their first published rule
