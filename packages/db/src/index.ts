@@ -322,3 +322,15 @@ export async function updateRuleMetrics(
     },
   });
 }
+
+// Metrics helpers
+export {
+  sumRuleMetrics,
+  sumRuleEventsFallback,
+  getRuleOpenMetrics,
+  getTrendingRulesDb,
+  getRulesNeedingRollup,
+  updateRuleCurrentScore,
+} from "./metrics";
+
+export type { MetricsSummary, TrendingRule } from "./metrics";

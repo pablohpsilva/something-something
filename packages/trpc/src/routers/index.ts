@@ -18,92 +18,143 @@ import {
   audit,
 } from "../trpc";
 
-// Simple metrics router
+// Metrics router with ingest service integration
 const metricsRouter = router({
   recordEvent: eventRateLimitedProcedure
     .input(
       z.object({
-        type: z.enum(["VIEW", "COPY", "SAVE", "FORK"]),
+        type: z.enum(["VIEW", "COPY", "SAVE", "FORK", "VOTE", "COMMENT"]),
         ruleId: z.string().optional(),
         ruleVersionId: z.string().optional(),
         idempotencyKey: z.string().optional(),
       })
     )
-    .output(z.object({ success: z.boolean() }))
+    .output(z.object({ success: z.boolean(), error: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
-      const { type, ruleId, ruleVersionId } = input;
+      const { type, ruleId, ruleVersionId, idempotencyKey } = input;
 
-      await ctx.prisma.event.create({
-        data: {
-          type,
-          userId: ctx.user?.id || null,
-          ruleId: ruleId || null,
-          ruleVersionId: ruleVersionId || null,
-          ipHash: ctx.reqIpHash,
-          uaHash: ctx.uaHash,
-        },
-      });
+      // For tRPC calls, we'll send directly to ingest service
+      const ingestBaseUrl = process.env.INGEST_BASE_URL;
+      const ingestAppToken = process.env.INGEST_APP_TOKEN;
 
-      return { success: true };
+      if (!ingestBaseUrl || !ingestAppToken) {
+        // Fallback: store directly in database
+        await ctx.prisma.event.create({
+          data: {
+            type,
+            userId: ctx.user?.id || null,
+            ruleId: ruleId || null,
+            ruleVersionId: ruleVersionId || null,
+            ipHash: ctx.reqIpHash || "unknown",
+            uaHash: ctx.reqUAHeader || "unknown",
+            idempotencyKey,
+          },
+        });
+        return { success: true };
+      }
+
+      try {
+        const response = await fetch(`${ingestBaseUrl}/ingest/events`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-app-token": ingestAppToken,
+            "x-forwarded-for": ctx.reqIpHeader || "0.0.0.0",
+            "user-agent": ctx.reqUAHeader || "",
+          },
+          body: JSON.stringify({
+            events: [
+              {
+                type,
+                ruleId,
+                ruleVersionId,
+                userId: ctx.user?.id || null,
+                ts: new Date().toISOString(),
+                idempotencyKey,
+              },
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "Unknown error");
+          console.error(
+            `Ingest service error: ${response.status} - ${errorText}`
+          );
+
+          // For non-VIEW events, surface the error
+          if (type !== "VIEW") {
+            return {
+              success: false,
+              error: `Ingest service error: ${response.status}`,
+            };
+          }
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error("Failed to send event to ingest service:", error);
+
+        // For non-VIEW events, surface the error
+        if (type !== "VIEW") {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          };
+        }
+
+        return { success: true }; // VIEW events are fire-and-forget
+      }
     }),
 
   getOpenMetrics: publicProcedure
     .input(
       z.object({
         ruleId: z.string(),
-        period: z.enum(["day", "week", "month", "all"]).default("week"),
       })
     )
     .output(
       z.object({
-        views: z.number(),
-        copies: z.number(),
-        saves: z.number(),
-        forks: z.number(),
+        views7: z.number(),
+        copies7: z.number(),
+        saves7: z.number(),
+        forks7: z.number(),
+        votes7: z.number(),
+        views30: z.number(),
+        copies30: z.number(),
+        saves30: z.number(),
+        forks30: z.number(),
+        votes30: z.number(),
         score: z.number(),
       })
     )
     .query(async ({ input, ctx }) => {
-      const { ruleId, period } = input;
+      const { ruleId } = input;
 
-      let startDate: Date | undefined;
-      if (period !== "all") {
-        startDate = new Date();
-        switch (period) {
-          case "day":
-            startDate.setDate(startDate.getDate() - 1);
-            break;
-          case "week":
-            startDate.setDate(startDate.getDate() - 7);
-            break;
-          case "month":
-            startDate.setDate(startDate.getDate() - 30);
-            break;
-        }
+      // Use the database helper to get open metrics
+      const { getRuleOpenMetrics } = await import("@repo/db");
+
+      try {
+        const metrics = await getRuleOpenMetrics(ruleId);
+        return metrics;
+      } catch (error) {
+        console.error("Failed to get open metrics:", error);
+
+        // Fallback to zero metrics
+        return {
+          views7: 0,
+          copies7: 0,
+          saves7: 0,
+          forks7: 0,
+          votes7: 0,
+          views30: 0,
+          copies30: 0,
+          saves30: 0,
+          forks30: 0,
+          votes30: 0,
+          score: 0,
+        };
       }
-
-      const metrics = await ctx.prisma.event.groupBy({
-        by: ["type"],
-        where: {
-          ruleId,
-          ...(startDate && { createdAt: { gte: startDate } }),
-          type: { in: ["VIEW", "COPY", "SAVE", "FORK"] },
-        },
-        _count: true,
-      });
-
-      const rule = await ctx.prisma.rule.findUnique({
-        where: { id: ruleId },
-        select: { score: true },
-      });
-
-      return {
-        views: metrics.find((m) => m.type === "VIEW")?._count || 0,
-        copies: metrics.find((m) => m.type === "COPY")?._count || 0,
-        saves: metrics.find((m) => m.type === "SAVE")?._count || 0,
-        forks: metrics.find((m) => m.type === "FORK")?._count || 0,
-        score: rule?.score || 0,
-      };
     }),
 });
 

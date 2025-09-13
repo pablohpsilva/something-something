@@ -105,7 +105,11 @@ export default function HomePage() {
             </div>
 
             <Suspense fallback={<RuleListSkeleton count={6} />}>
-              <RuleList initialFilters={{ sort: "trending" }} limit={6} />
+              <RuleList
+                initialFilters={{ sort: "trending" }}
+                limit={6}
+                showAuthor={true}
+              />
             </Suspense>
 
             <div className="text-center">

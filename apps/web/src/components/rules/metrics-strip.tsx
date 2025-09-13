@@ -4,26 +4,44 @@ import { METRICS_TESTIDS } from "@/lib/testids";
 import { createMetricProps } from "@/lib/a11y";
 
 interface MetricsStripProps {
-  views?: number;
-  copies?: number;
-  saves?: number;
-  forks?: number;
-  votes?: number;
+  views7?: number;
+  copies7?: number;
+  saves7?: number;
+  forks7?: number;
+  votes7?: number;
+  views30?: number;
+  copies30?: number;
+  saves30?: number;
+  forks30?: number;
+  votes30?: number;
   score?: number;
   className?: string;
   size?: "sm" | "md" | "lg";
+  period?: 7 | 30;
 }
 
 export function MetricsStrip({
-  views = 0,
-  copies = 0,
-  saves = 0,
-  forks = 0,
-  votes = 0,
+  views7 = 0,
+  copies7 = 0,
+  saves7 = 0,
+  forks7 = 0,
+  votes7 = 0,
+  views30 = 0,
+  copies30 = 0,
+  saves30 = 0,
+  forks30 = 0,
+  votes30 = 0,
   score = 0,
   className = "",
   size = "md",
+  period = 7,
 }: MetricsStripProps) {
+  // Use the appropriate period's metrics
+  const views = period === 7 ? views7 : views30;
+  const copies = period === 7 ? copies7 : copies30;
+  const saves = period === 7 ? saves7 : saves30;
+  const forks = period === 7 ? forks7 : forks30;
+  const votes = period === 7 ? votes7 : votes30;
   const iconSize = {
     sm: "h-3 w-3",
     md: "h-4 w-4",
@@ -85,7 +103,7 @@ export function MetricsStrip({
     >
       {visibleMetrics.map(({ icon: Icon, value, label, testId }) => {
         const metricProps = createMetricProps(
-          label,
+          `${label} last ${period} days`,
           formatNumber(value),
           testId
         );

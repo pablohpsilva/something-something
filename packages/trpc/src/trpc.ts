@@ -11,6 +11,8 @@ export interface Context {
   user: User | null;
   reqIpHash: string;
   uaHash: string;
+  reqIpHeader: string;
+  reqUAHeader: string;
   now: Date;
 }
 
@@ -18,12 +20,16 @@ export function createContext(opts: {
   user?: User | null;
   reqIpHash?: string;
   uaHash?: string;
+  reqIpHeader?: string;
+  reqUAHeader?: string;
 }): Context {
   return {
     prisma,
     user: opts.user || null,
     reqIpHash: opts.reqIpHash || "unknown",
     uaHash: opts.uaHash || "unknown",
+    reqIpHeader: opts.reqIpHeader || "0.0.0.0",
+    reqUAHeader: opts.reqUAHeader || "",
     now: new Date(),
   };
 }

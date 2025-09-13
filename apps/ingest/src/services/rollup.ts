@@ -1,7 +1,20 @@
 import { prisma } from "../prisma";
 import { logger } from "../logger";
-import { getEnv } from "../env";
-import type { LeaderboardPeriod, LeaderboardScope } from "../schemas/rollup";
+import { env } from "../env";
+import {
+  decayWeight,
+  calculateTrendingScore,
+  capViewCount,
+  METRICS_WINDOW_RECENT_DAYS,
+  MAX_EVENTS_PER_IP_PER_MINUTE,
+  TREND_WEIGHTS,
+} from "@repo/utils/metrics";
+import type {
+  LeaderboardPeriod,
+  LeaderboardScope,
+  RuleStatus,
+  EventType,
+} from "@repo/db";
 
 export interface RollupResult {
   rulesUpdated: number;
@@ -22,20 +35,19 @@ export async function performRollup(
   daysBack?: number
 ): Promise<RollupResult> {
   const startTime = Date.now();
-  const env = getEnv();
-  
+
   // Default to today UTC if no date provided
   const date = targetDate || new Date();
   date.setHours(0, 0, 0, 0);
-  
-  const rollupDays = daysBack || env.ROLLUP_DAYS_BACK;
-  
+
+  const rollupDays = daysBack || METRICS_WINDOW_RECENT_DAYS;
+
   logger.info("Starting rollup", {
     date: date.toISOString(),
     daysBack: rollupDays,
     dryRun,
   });
-  
+
   const result: RollupResult = {
     rulesUpdated: 0,
     authorsUpdated: 0,
@@ -47,23 +59,36 @@ export async function performRollup(
     tookMs: 0,
     dryRun,
   };
-  
+
   if (!dryRun) {
     // Perform actual rollup in transaction
     await prisma.$transaction(async (tx) => {
       // Update rule metrics
       result.rulesUpdated = await updateRuleMetrics(tx, date, rollupDays);
-      
-      // Update author metrics  
+
+      // Update author metrics
       result.authorsUpdated = await updateAuthorMetrics(tx, date, rollupDays);
-      
+
       // Update leaderboard snapshots
-      result.snapshots.daily = await updateLeaderboardSnapshot(tx, "DAILY", date);
-      result.snapshots.weekly = await updateLeaderboardSnapshot(tx, "WEEKLY", date);
-      result.snapshots.monthly = await updateLeaderboardSnapshot(tx, "MONTHLY", date);
-      
+      result.snapshots.daily = await updateLeaderboardSnapshot(
+        tx,
+        "DAILY",
+        date
+      );
+      result.snapshots.weekly = await updateLeaderboardSnapshot(
+        tx,
+        "WEEKLY",
+        date
+      );
+      result.snapshots.monthly = await updateLeaderboardSnapshot(
+        tx,
+        "MONTHLY",
+        date
+      );
+
       // Update ALL snapshot occasionally (e.g., once per week)
-      if (date.getDay() === 0) { // Sunday
+      if (date.getDay() === 0) {
+        // Sunday
         result.snapshots.all = await updateLeaderboardSnapshot(tx, "ALL", date);
       }
     });
@@ -75,11 +100,11 @@ export async function performRollup(
     result.snapshots.weekly = 1;
     result.snapshots.monthly = 1;
   }
-  
+
   result.tookMs = Date.now() - startTime;
-  
+
   logger.info("Rollup completed", result);
-  
+
   return result;
 }
 
@@ -90,7 +115,7 @@ async function updateRuleMetrics(
 ): Promise<number> {
   const startDate = new Date(targetDate);
   startDate.setDate(startDate.getDate() - daysBack);
-  
+
   // Get all rules that have events in the time window
   const rulesWithEvents = await tx.event.groupBy({
     by: ["ruleId"],
@@ -102,15 +127,20 @@ async function updateRuleMetrics(
       },
     },
   });
-  
+
   let updatedCount = 0;
-  
+
   for (const { ruleId } of rulesWithEvents) {
     if (!ruleId) continue;
-    
+
     // Calculate metrics for this rule
-    const metrics = await calculateRuleMetrics(tx, ruleId, targetDate, daysBack);
-    
+    const metrics = await calculateRuleMetrics(
+      tx,
+      ruleId,
+      targetDate,
+      daysBack
+    );
+
     // Upsert rule metric daily record
     await tx.ruleMetricDaily.upsert({
       where: {
@@ -126,16 +156,16 @@ async function updateRuleMetrics(
         ...metrics,
       },
     });
-    
+
     // Update rule's overall score
     await tx.rule.update({
       where: { id: ruleId },
       data: { score: metrics.score },
     });
-    
+
     updatedCount++;
   }
-  
+
   return updatedCount;
 }
 
@@ -145,14 +175,11 @@ async function calculateRuleMetrics(
   targetDate: Date,
   daysBack: number
 ) {
-  const env = getEnv();
-  const lambda = env.TRENDING_DECAY_LAMBDA;
-  
   // Calculate date range
   const endDate = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
   const startDate = new Date(targetDate);
   startDate.setDate(startDate.getDate() - daysBack);
-  
+
   // Get events grouped by type and day
   const events = await tx.event.findMany({
     where: {
@@ -166,38 +193,54 @@ async function calculateRuleMetrics(
       userId: true,
     },
   });
-  
+
   // Group events by day and apply anti-gaming measures
-  const dailyMetrics = new Map<string, {
-    views: Set<string>;
-    copies: number;
-    saves: number;
-    forks: number;
-    votes: number;
-  }>();
-  
+  const dailyMetrics = new Map<
+    string,
+    {
+      views: Map<string, number>; // ipHash -> count
+      copies: number;
+      saves: number;
+      forks: number;
+      votes: number;
+    }
+  >();
+
+  // Track events per IP per minute for rate limiting detection
+  const ipMinuteCounts = new Map<string, number>();
+
   for (const event of events) {
     const dayKey = event.createdAt.toISOString().split("T")[0];
-    
+    const minuteKey = event.createdAt.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+    const ipMinuteKey = `${event.ipHash}:${minuteKey}`;
+
+    // Check for rate limiting (anti-gaming)
+    const ipMinuteCount = ipMinuteCounts.get(ipMinuteKey) || 0;
+    if (ipMinuteCount >= MAX_EVENTS_PER_IP_PER_MINUTE) {
+      logger.warn(
+        `Rate limit exceeded for IP ${event.ipHash} at ${minuteKey}, skipping event`
+      );
+      continue;
+    }
+    ipMinuteCounts.set(ipMinuteKey, ipMinuteCount + 1);
+
     if (!dailyMetrics.has(dayKey)) {
       dailyMetrics.set(dayKey, {
-        views: new Set(),
+        views: new Map(),
         copies: 0,
         saves: 0,
         forks: 0,
         votes: 0,
       });
     }
-    
+
     const dayMetrics = dailyMetrics.get(dayKey)!;
-    
+
     switch (event.type) {
       case "VIEW":
-        // Dedupe views by IP hash (max 5 per IP per day)
-        const viewKey = `${event.ipHash}:${event.userId || "anon"}`;
-        if (dayMetrics.views.size < 5 || !dayMetrics.views.has(viewKey)) {
-          dayMetrics.views.add(viewKey);
-        }
+        // Track views per IP, will be capped later
+        const currentViews = dayMetrics.views.get(event.ipHash) || 0;
+        dayMetrics.views.set(event.ipHash, currentViews + 1);
         break;
       case "COPY":
         dayMetrics.copies++;
@@ -213,40 +256,60 @@ async function calculateRuleMetrics(
         break;
     }
   }
-  
-  // Calculate totals with exponential decay
-  let totalViews = 0;
-  let totalCopies = 0;
-  let totalSaves = 0;
-  let totalForks = 0;
-  let totalVotes = 0;
-  
+
+  // Calculate daily metrics array for trending score
+  const dailyMetricsArray: Array<{
+    views: number;
+    copies: number;
+    saves: number;
+    votes: number;
+  }> = [];
+
+  // Process each day and apply caps
   for (const [dayKey, metrics] of dailyMetrics) {
     const dayDate = new Date(dayKey);
-    const daysAgo = Math.floor((targetDate.getTime() - dayDate.getTime()) / (24 * 60 * 60 * 1000));
-    const decayWeight = Math.exp(-lambda * daysAgo);
-    
-    totalViews += metrics.views.size * decayWeight;
-    totalCopies += metrics.copies * decayWeight;
-    totalSaves += metrics.saves * decayWeight;
-    totalForks += metrics.forks * decayWeight;
-    totalVotes += metrics.votes * decayWeight;
+    const daysAgo = Math.floor(
+      (targetDate.getTime() - dayDate.getTime()) / (24 * 60 * 60 * 1000)
+    );
+
+    // Apply view caps per IP per day
+    let cappedViews = 0;
+    for (const [ipHash, viewCount] of metrics.views) {
+      cappedViews += capViewCount(viewCount);
+    }
+
+    dailyMetricsArray[daysAgo] = {
+      views: cappedViews,
+      copies: metrics.copies,
+      saves: metrics.saves,
+      votes: metrics.votes,
+    };
   }
-  
-  // Calculate trending score
-  const score = Math.round(
-    0.4 * totalViews +
-    0.3 * totalCopies +
-    0.2 * totalSaves +
-    0.1 * totalVotes
-  );
-  
+
+  // Fill missing days with zeros
+  for (let i = 0; i < daysBack; i++) {
+    if (!dailyMetricsArray[i]) {
+      dailyMetricsArray[i] = { views: 0, copies: 0, saves: 0, votes: 0 };
+    }
+  }
+
+  // Calculate trending score using the utility function
+  const score = calculateTrendingScore(dailyMetricsArray);
+
+  // Calculate totals for the day
+  const todayMetrics = dailyMetricsArray[0] || {
+    views: 0,
+    copies: 0,
+    saves: 0,
+    votes: 0,
+  };
+
   return {
-    views: Math.round(totalViews),
-    copies: Math.round(totalCopies),
-    saves: Math.round(totalSaves),
-    forks: Math.round(totalForks),
-    votes: Math.round(totalVotes),
+    views: todayMetrics.views,
+    copies: todayMetrics.copies,
+    saves: todayMetrics.saves,
+    forks: 0, // Forks are not tracked in daily metrics yet
+    votes: todayMetrics.votes,
     score,
   };
 }
@@ -258,7 +321,7 @@ async function updateAuthorMetrics(
 ): Promise<number> {
   const startDate = new Date(targetDate);
   startDate.setDate(startDate.getDate() - daysBack);
-  
+
   // Get authors with activity
   const authorsWithActivity = await tx.rule.groupBy({
     by: ["createdByUserId"],
@@ -273,15 +336,20 @@ async function updateAuthorMetrics(
       },
     },
   });
-  
+
   let updatedCount = 0;
-  
+
   for (const { createdByUserId } of authorsWithActivity) {
     if (!createdByUserId) continue;
-    
+
     // Calculate author metrics
-    const metrics = await calculateAuthorMetrics(tx, createdByUserId, targetDate, daysBack);
-    
+    const metrics = await calculateAuthorMetrics(
+      tx,
+      createdByUserId,
+      targetDate,
+      daysBack
+    );
+
     // Upsert author metric daily record
     await tx.authorMetricDaily.upsert({
       where: {
@@ -297,10 +365,10 @@ async function updateAuthorMetrics(
         ...metrics,
       },
     });
-    
+
     updatedCount++;
   }
-  
+
   return updatedCount;
 }
 
@@ -313,7 +381,7 @@ async function calculateAuthorMetrics(
   const endDate = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
   const startDate = new Date(targetDate);
   startDate.setDate(startDate.getDate() - daysBack);
-  
+
   // Get aggregated metrics for author's rules
   const ruleMetrics = await tx.event.groupBy({
     by: ["type"],
@@ -323,7 +391,7 @@ async function calculateAuthorMetrics(
     },
     _count: true,
   });
-  
+
   // Get donation metrics
   const donations = await tx.donation.count({
     where: {
@@ -332,7 +400,7 @@ async function calculateAuthorMetrics(
       createdAt: { gte: startDate, lt: endDate },
     },
   });
-  
+
   const donationsCents = await tx.donation.aggregate({
     where: {
       toUserId: authorUserId,
@@ -341,11 +409,11 @@ async function calculateAuthorMetrics(
     },
     _sum: { amountCents: true },
   });
-  
+
   const metricsByType = Object.fromEntries(
-    ruleMetrics.map(m => [m.type, m._count])
+    ruleMetrics.map((m) => [m.type, m._count])
   );
-  
+
   return {
     views: metricsByType.VIEW || 0,
     copies: metricsByType.COPY || 0,
@@ -365,7 +433,7 @@ async function updateLeaderboardSnapshot(
 ): Promise<number> {
   // Calculate date range based on period
   let startDate: Date;
-  
+
   switch (period) {
     case "DAILY":
       startDate = new Date(targetDate);
@@ -382,7 +450,7 @@ async function updateLeaderboardSnapshot(
       startDate = new Date("2020-01-01"); // Far back date
       break;
   }
-  
+
   // Get top rules for global leaderboard
   const topRules = await tx.ruleMetricDaily.groupBy({
     by: ["ruleId"],
@@ -399,9 +467,9 @@ async function updateLeaderboardSnapshot(
     },
     take: 100,
   });
-  
+
   // Get rule details
-  const ruleIds = topRules.map(r => r.ruleId);
+  const ruleIds = topRules.map((r) => r.ruleId);
   const rules = await tx.rule.findMany({
     where: { id: { in: ruleIds } },
     include: {
@@ -415,15 +483,15 @@ async function updateLeaderboardSnapshot(
       },
     },
   });
-  
-  const ruleMap = new Map(rules.map(r => [r.id, r]));
-  
+
+  const ruleMap = new Map(rules.map((r) => [r.id, r]));
+
   // Build leaderboard data
   const leaderboardData = topRules
     .map((metric, index) => {
       const rule = ruleMap.get(metric.ruleId);
       if (!rule) return null;
-      
+
       return {
         rank: index + 1,
         ruleId: rule.id,
@@ -436,7 +504,7 @@ async function updateLeaderboardSnapshot(
       };
     })
     .filter(Boolean);
-  
+
   // Upsert leaderboard snapshot
   await tx.leaderboardSnapshot.upsert({
     where: {
@@ -458,14 +526,17 @@ async function updateLeaderboardSnapshot(
       data: leaderboardData,
     },
   });
-  
+
   return 1;
 }
 
-async function countRulesForUpdate(targetDate: Date, daysBack: number): Promise<number> {
+async function countRulesForUpdate(
+  targetDate: Date,
+  daysBack: number
+): Promise<number> {
   const startDate = new Date(targetDate);
   startDate.setDate(startDate.getDate() - daysBack);
-  
+
   const count = await prisma.event.groupBy({
     by: ["ruleId"],
     where: {
@@ -476,14 +547,17 @@ async function countRulesForUpdate(targetDate: Date, daysBack: number): Promise<
       },
     },
   });
-  
+
   return count.length;
 }
 
-async function countAuthorsForUpdate(targetDate: Date, daysBack: number): Promise<number> {
+async function countAuthorsForUpdate(
+  targetDate: Date,
+  daysBack: number
+): Promise<number> {
   const startDate = new Date(targetDate);
   startDate.setDate(startDate.getDate() - daysBack);
-  
+
   const count = await prisma.rule.groupBy({
     by: ["createdByUserId"],
     where: {
@@ -497,6 +571,6 @@ async function countAuthorsForUpdate(targetDate: Date, daysBack: number): Promis
       },
     },
   });
-  
+
   return count.length;
 }

@@ -34,6 +34,8 @@ export const createServerCaller = cache(async () => {
     user,
     reqIpHash: ipHash,
     uaHash: uaHash,
+    reqIpHeader: clientIp,
+    reqUAHeader: userAgent || "",
   });
 
   return createCaller(ctx);
