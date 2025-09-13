@@ -15,6 +15,7 @@ import {
   voteValueToNumber,
 } from "../schemas/vote";
 import { voteSummaryDTOSchema } from "../schemas/dto";
+import { GamificationService } from "../services/gamification";
 
 // Rate limited procedure for votes (20 per minute)
 const voteRateLimitedProcedure = rateLimitedProcedure("votes", 20);
@@ -135,6 +136,19 @@ export const votesRouter = router({
           }
         } catch (error) {
           // Ignore ingest errors
+        }
+      }
+
+      // Check for ten upvotes badge after vote
+      if (numericValue !== 0) {
+        try {
+          const awardContext = {
+            prisma: ctx.prisma,
+            now: new Date(),
+          };
+          await GamificationService.checkTenUpvotes(awardContext, ruleId);
+        } catch (error) {
+          console.error("Failed to check ten upvotes badge:", error);
         }
       }
 

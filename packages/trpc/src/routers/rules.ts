@@ -23,6 +23,7 @@ import {
   getRuleStatsSchema,
 } from "../schemas/rule";
 import { ruleCardDTOSchema, ruleDetailDTOSchema } from "../schemas/dto";
+import { GamificationService } from "../services/gamification";
 import { createPaginatedSchema } from "../schemas/base";
 
 export const rulesRouter = router({
@@ -692,7 +693,19 @@ export const rulesRouter = router({
         data: { status: "PUBLISHED" },
       });
 
-      // TODO: Send notifications to followers
+      // Award first contribution badge if this is their first published rule
+      try {
+        const awardContext = {
+          prisma: ctx.prisma,
+          now: new Date(),
+        };
+        await GamificationService.checkFirstContribution(
+          awardContext,
+          ctx.user!.id
+        );
+      } catch (error) {
+        console.error("Failed to check first contribution badge:", error);
+      }
 
       return { success: true };
     }),

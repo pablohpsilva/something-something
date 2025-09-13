@@ -9,6 +9,7 @@ import {
   MAX_EVENTS_PER_IP_PER_MINUTE,
   TREND_WEIGHTS,
 } from "@repo/utils/metrics";
+import { performGamificationTasks } from "./gamification-rollup";
 import type {
   LeaderboardPeriod,
   LeaderboardScope,
@@ -24,6 +25,11 @@ export interface RollupResult {
     weekly: number;
     monthly: number;
     all?: number;
+  };
+  badgesAwarded: {
+    hundredCopies: number;
+    top10Week: number;
+    tenUpvotes: number;
   };
   tookMs: number;
   dryRun: boolean;
@@ -55,6 +61,11 @@ export async function performRollup(
       daily: 0,
       weekly: 0,
       monthly: 0,
+    },
+    badgesAwarded: {
+      hundredCopies: 0,
+      top10Week: 0,
+      tenUpvotes: 0,
     },
     tookMs: 0,
     dryRun,
@@ -92,6 +103,9 @@ export async function performRollup(
         result.snapshots.all = await updateLeaderboardSnapshot(tx, "ALL", date);
       }
     });
+
+    // After rollup, perform gamification tasks
+    await performGamificationTasks(date, result);
   } else {
     // Dry run - just count what would be updated
     result.rulesUpdated = await countRulesForUpdate(date, rollupDays);

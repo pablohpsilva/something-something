@@ -6,6 +6,9 @@ import { commentsRouter } from "./comments";
 import { votesRouter } from "./votes";
 import { searchRouter } from "./search";
 import { socialRouter } from "./social";
+import { badgesRouter } from "./badges";
+import { leaderboardRouter } from "./leaderboard";
+import { GamificationService } from "../services/gamification";
 
 // Import placeholder routers for remaining functionality
 import { z } from "zod";
@@ -395,29 +398,7 @@ const donationsRouter = router({
     }),
 });
 
-const leaderboardRouter = router({
-  get: publicProcedure
-    .input(
-      z.object({
-        period: z.enum(["DAILY", "WEEKLY", "MONTHLY", "ALL"]),
-        scope: z.enum(["GLOBAL", "TAG", "MODEL"]),
-        scopeRef: z.string().optional(),
-        cursor: z.string().optional(),
-        limit: z.number().min(1).max(100).default(20),
-      })
-    )
-    .output(
-      z.object({
-        items: z.array(z.any()),
-        nextCursor: z.string().optional(),
-        hasMore: z.boolean(),
-      })
-    )
-    .query(async ({ input, ctx }) => {
-      // Placeholder implementation
-      return { items: [], nextCursor: undefined, hasMore: false };
-    }),
-});
+// Leaderboard router is now imported from ./leaderboard
 
 // Main app router
 export const appRouter = router({
@@ -429,6 +410,7 @@ export const appRouter = router({
   search: searchRouter,
   metrics: metricsRouter,
   social: socialRouter,
+  badges: badgesRouter,
   claims: claimsRouter,
   donations: donationsRouter,
   leaderboard: leaderboardRouter,

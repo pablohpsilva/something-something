@@ -329,3 +329,36 @@ export const socialStatsDTO = z.object({
 });
 
 export type SocialStatsDTO = z.infer<typeof socialStatsDTO>;
+
+// Leaderboard entry DTO
+export const leaderboardEntryDTOSchema = z.object({
+  rank: z.number().int().positive(),
+  ruleId: z.string(),
+  ruleSlug: z.string(),
+  title: z.string(),
+  author: z.object({
+    id: z.string(),
+    handle: z.string(),
+    displayName: z.string(),
+    avatarUrl: z.string().nullable(),
+  }),
+  score: z.number(),
+  copies: z.number().int(),
+  views: z.number().int(),
+  saves: z.number().int().optional(),
+  forks: z.number().int().optional(),
+  votes: z.number().int().optional(),
+  rankDelta: z.number().int().nullable().optional(),
+});
+
+export type LeaderboardEntryDTO = z.infer<typeof leaderboardEntryDTOSchema>;
+
+// Badge DTO
+export const badgeDTOSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  awardedAt: z.date().optional(), // present when listing user badges
+});
+
+export type BadgeDTO = z.infer<typeof badgeDTOSchema>;
