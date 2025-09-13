@@ -1,0 +1,30 @@
+{
+  "name": "@repo/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tailwind": "./tailwind.js",
+    "./tsconfig": "./tsconfig.json",
+    "./biome": "./biome.json"
+  },
+  "scripts": {
+    "lint": "biome lint .",
+    "format": "biome format . --write",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.8.1",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^4.1.0"
+  }
+}

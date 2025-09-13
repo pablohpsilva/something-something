@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@repo/config": ["../../packages/config/src"],
+      "@repo/db": ["../../packages/db/src"],
+      "@repo/trpc": ["../../packages/trpc/src"],
+      "@repo/ui": ["../../packages/ui/src"],
+      "@repo/utils": ["../../packages/utils/src"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

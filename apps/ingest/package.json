@@ -1,0 +1,28 @@
+{
+  "name": "@repo/ingest",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "lint": "biome lint .",
+    "format": "biome format . --write",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/config": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/trpc": "workspace:*",
+    "@repo/utils": "workspace:*",
+    "@trpc/server": "^11.0.0-rc.553",
+    "hono": "^4.6.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@cloudflare/workers-types": "^4.20241106.0",
+    "@types/node": "^22.8.1",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.84.0"
+  }
+}

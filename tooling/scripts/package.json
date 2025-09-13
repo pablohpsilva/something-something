@@ -1,0 +1,25 @@
+{
+  "name": "@repo/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "seed": "tsx src/seed.ts",
+    "cron": "tsx src/cron.ts",
+    "migrate": "tsx src/migrate.ts",
+    "backup": "tsx src/backup.ts",
+    "lint": "biome lint .",
+    "format": "biome format . --write",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/config": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.8.1",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}
