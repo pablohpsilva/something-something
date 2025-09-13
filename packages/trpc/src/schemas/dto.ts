@@ -362,3 +362,73 @@ export const badgeDTOSchema = z.object({
 });
 
 export type BadgeDTO = z.infer<typeof badgeDTOSchema>;
+
+// Donation DTO
+export const donationDTOSchema = z.object({
+  id: z.string(),
+  from: z
+    .object({
+      id: z.string(),
+      handle: z.string(),
+      displayName: z.string(),
+      avatarUrl: z.string().nullable(),
+    })
+    .nullable(),
+  to: z.object({
+    id: z.string(),
+    handle: z.string(),
+    displayName: z.string(),
+    avatarUrl: z.string().nullable(),
+  }),
+  rule: z
+    .object({
+      id: z.string(),
+      slug: z.string(),
+      title: z.string(),
+    })
+    .nullable(),
+  amountCents: z.number().int(),
+  currency: z.string(),
+  status: z.enum(["INIT", "SUCCEEDED", "FAILED"]),
+  createdAt: z.date(),
+  message: z.string().nullable(),
+});
+
+export type DonationDTO = z.infer<typeof donationDTOSchema>;
+
+// Author donation stats DTO
+export const authorDonationStatsDTOSchema = z.object({
+  totalCentsAllTime: z.number().int(),
+  totalCentsWindow: z.number().int(),
+  countWindow: z.number().int(),
+  topRules: z.array(
+    z.object({
+      ruleId: z.string(),
+      slug: z.string(),
+      title: z.string(),
+      totalCents: z.number().int(),
+      count: z.number().int(),
+    })
+  ),
+  byDay: z.array(
+    z.object({
+      date: z.string(), // YYYY-MM-DD format
+      cents: z.number().int(),
+      count: z.number().int(),
+    })
+  ),
+  recentDonors: z.array(
+    z.object({
+      id: z.string(),
+      handle: z.string(),
+      displayName: z.string(),
+      avatarUrl: z.string().nullable(),
+      totalCents: z.number().int(),
+      lastDonationAt: z.date(),
+    })
+  ),
+});
+
+export type AuthorDonationStatsDTO = z.infer<
+  typeof authorDonationStatsDTOSchema
+>;

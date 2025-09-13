@@ -27,6 +27,7 @@ import { RULE_TESTIDS } from "@/lib/testids";
 import { createButtonProps, createVoteButtonProps } from "@/lib/a11y";
 import { api } from "@/lib/trpc";
 import type { VoteSummaryDTO } from "@repo/trpc/schemas/dto";
+import { DonateButton } from "@/components/authors/donate-button";
 
 interface RuleActionsProps {
   rule: {
@@ -35,6 +36,7 @@ interface RuleActionsProps {
     title: string;
     body: string;
     author: {
+      id: string;
       handle: string;
       displayName: string;
     };
@@ -382,6 +384,16 @@ export function RuleActions({
         <Share2 className="h-4 w-4" />
         <span>Share</span>
       </Button>
+
+      <DonateButton
+        toUserId={rule.author.id}
+        toUserHandle={rule.author.handle}
+        toUserDisplayName={rule.author.displayName}
+        ruleId={rule.id}
+        ruleTitle={rule.title}
+        size="sm"
+        variant="outline"
+      />
     </div>
   );
 }

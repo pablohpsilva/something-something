@@ -12,6 +12,7 @@ export * from "./components/ui/toast";
 export * from "./components/ui/toaster";
 export * from "./components/ui/textarea";
 export * from "./components/ui/skeleton";
+export * from "./components/ui/select";
 
 // Export utilities
 export * from "./lib/utils";

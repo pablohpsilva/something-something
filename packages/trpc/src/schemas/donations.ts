@@ -1,73 +1,189 @@
 import { z } from "zod";
-import {
-  userIdSchema,
-  ruleIdSchema,
-  currencySchema,
-  paginationSchema,
-  idempotencyKeySchema,
-} from "./base";
+import { cuidOrUuidSchema, cursorSchema, limitSchema } from "./base";
 
-// Create checkout schema
-export const createCheckoutSchema = z.object({
-  toUserId: userIdSchema,
-  ruleId: ruleIdSchema.optional(),
-  amountCents: z.number().int().positive().max(100000000), // Max $1M
-  currency: currencySchema,
-  message: z.string().max(500).optional(),
-  isAnonymous: z.boolean().default(false),
-  idempotencyKey: idempotencyKeySchema,
+/**
+ * Create checkout session input schema
+ */
+export const createCheckoutInputSchema = z.object({
+  toUserId: cuidOrUuidSchema,
+  ruleId: cuidOrUuidSchema.optional(),
+  amountCents: z.number().int().min(100).max(20000), // $1.00 - $200.00
+  currency: z.string().length(3).default("USD"),
+  message: z.string().max(240).optional(), // Optional donor note
 });
 
-export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>;
-
-// List my donations schema
-export const listMyDonationsSchema = z.object({
-  ...paginationSchema.shape,
-  type: z.enum(["sent", "received", "all"]).default("all"),
-  status: z.enum(["INIT", "SUCCEEDED", "FAILED"]).optional(),
-  sort: z.enum(["new", "old", "amount"]).default("new"),
+/**
+ * List donations input schema
+ */
+export const listDonationsInputSchema = z.object({
+  cursor: cursorSchema.optional(),
+  limit: limitSchema.optional().default(20),
+  type: z.enum(["received", "sent"]).default("received"),
 });
 
-export type ListMyDonationsInput = z.infer<typeof listMyDonationsSchema>;
+/**
+ * Author donation stats input schema
+ */
+export const authorStatsInputSchema = z.object({
+  authorUserId: cuidOrUuidSchema.optional(), // defaults to current user if omitted
+  windowDays: z.number().int().min(7).max(365).default(30),
+});
 
-// Get donation by ID schema
-export const getDonationByIdSchema = z.object({
+/**
+ * Donation status enum
+ */
+export const donationStatusSchema = z.enum(["INIT", "SUCCEEDED", "FAILED"]);
+
+/**
+ * Donation provider enum
+ */
+export const donationProviderSchema = z.enum(["STRIPE"]);
+
+/**
+ * Create checkout response schema
+ */
+export const createCheckoutResponseSchema = z.object({
+  url: z.string().url(),
   donationId: z.string(),
 });
 
-export type GetDonationByIdInput = z.infer<typeof getDonationByIdSchema>;
-
-// Get donation stats schema
-export const getDonationStatsSchema = z.object({
-  userId: userIdSchema.optional(), // If not provided, uses current user
-  period: z.enum(["day", "week", "month", "year", "all"]).default("month"),
+/**
+ * Donation list response schema
+ */
+export const donationListResponseSchema = z.object({
+  donations: z.array(
+    z.object({
+      id: z.string(),
+      from: z
+        .object({
+          id: z.string(),
+          handle: z.string(),
+          displayName: z.string(),
+          avatarUrl: z.string().nullable(),
+        })
+        .nullable(),
+      to: z.object({
+        id: z.string(),
+        handle: z.string(),
+        displayName: z.string(),
+        avatarUrl: z.string().nullable(),
+      }),
+      rule: z
+        .object({
+          id: z.string(),
+          slug: z.string(),
+          title: z.string(),
+        })
+        .nullable(),
+      amountCents: z.number().int(),
+      currency: z.string(),
+      status: donationStatusSchema,
+      createdAt: z.date(),
+      message: z.string().nullable(),
+    })
+  ),
+  pagination: z.object({
+    nextCursor: z.string().optional(),
+    hasMore: z.boolean(),
+    totalCount: z.number().int(),
+  }),
 });
 
-export type GetDonationStatsInput = z.infer<typeof getDonationStatsSchema>;
-
-// Get top donors schema
-export const getTopDonorsSchema = z.object({
-  ...paginationSchema.shape,
-  period: z.enum(["day", "week", "month", "year", "all"]).default("month"),
-  toUserId: userIdSchema.optional(),
+/**
+ * Author donation stats response schema
+ */
+export const authorDonationStatsResponseSchema = z.object({
+  totalCentsAllTime: z.number().int(),
+  totalCentsWindow: z.number().int(),
+  countWindow: z.number().int(),
+  topRules: z.array(
+    z.object({
+      ruleId: z.string(),
+      slug: z.string(),
+      title: z.string(),
+      totalCents: z.number().int(),
+      count: z.number().int(),
+    })
+  ),
+  byDay: z.array(
+    z.object({
+      date: z.string(), // YYYY-MM-DD format
+      cents: z.number().int(),
+      count: z.number().int(),
+    })
+  ),
+  recentDonors: z.array(
+    z.object({
+      id: z.string(),
+      handle: z.string(),
+      displayName: z.string(),
+      avatarUrl: z.string().nullable(),
+      totalCents: z.number().int(),
+      lastDonationAt: z.date(),
+    })
+  ),
 });
 
-export type GetTopDonorsInput = z.infer<typeof getTopDonorsSchema>;
+/**
+ * Supported currencies
+ */
+export const supportedCurrenciesSchema = z.enum([
+  "USD",
+  "EUR",
+  "GBP",
+  "CAD",
+  "AUD",
+  "JPY",
+  "CHF",
+  "SEK",
+  "NOK",
+  "DKK",
+]);
 
-// Get top recipients schema
-export const getTopRecipientsSchema = z.object({
-  ...paginationSchema.shape,
-  period: z.enum(["day", "week", "month", "year", "all"]).default("month"),
+/**
+ * Connect account status (Phase 2)
+ */
+export const connectAccountStatusSchema = z.enum([
+  "NONE",
+  "PENDING",
+  "VERIFIED",
+  "REJECTED",
+]);
+
+/**
+ * Connect onboarding response (Phase 2)
+ */
+export const connectOnboardingResponseSchema = z.object({
+  url: z.string().url(),
+  accountId: z.string(),
 });
 
-export type GetTopRecipientsInput = z.infer<typeof getTopRecipientsSchema>;
-
-// Process webhook schema (internal)
-export const processWebhookSchema = z.object({
-  provider: z.enum(["STRIPE"]),
-  eventType: z.string(),
-  payload: z.record(z.unknown()),
-  signature: z.string(),
+/**
+ * Connect status response (Phase 2)
+ */
+export const connectStatusResponseSchema = z.object({
+  status: connectAccountStatusSchema,
+  accountId: z.string().nullable(),
+  canReceivePayouts: z.boolean(),
+  requirements: z.array(z.string()).optional(),
 });
 
-export type ProcessWebhookInput = z.infer<typeof processWebhookSchema>;
+// Type exports
+export type CreateCheckoutInput = z.infer<typeof createCheckoutInputSchema>;
+export type ListDonationsInput = z.infer<typeof listDonationsInputSchema>;
+export type AuthorStatsInput = z.infer<typeof authorStatsInputSchema>;
+export type DonationStatus = z.infer<typeof donationStatusSchema>;
+export type DonationProvider = z.infer<typeof donationProviderSchema>;
+export type CreateCheckoutResponse = z.infer<
+  typeof createCheckoutResponseSchema
+>;
+export type DonationListResponse = z.infer<typeof donationListResponseSchema>;
+export type AuthorDonationStatsResponse = z.infer<
+  typeof authorDonationStatsResponseSchema
+>;
+export type SupportedCurrency = z.infer<typeof supportedCurrenciesSchema>;
+export type ConnectAccountStatus = z.infer<typeof connectAccountStatusSchema>;
+export type ConnectOnboardingResponse = z.infer<
+  typeof connectOnboardingResponseSchema
+>;
+export type ConnectStatusResponse = z.infer<typeof connectStatusResponseSchema>;

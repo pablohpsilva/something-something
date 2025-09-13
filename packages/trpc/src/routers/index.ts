@@ -8,6 +8,7 @@ import { searchRouter } from "./search";
 import { socialRouter } from "./social";
 import { badgesRouter } from "./badges";
 import { leaderboardRouter } from "./leaderboard";
+import { donationsRouter } from "./donations";
 import { GamificationService } from "../services/gamification";
 
 // Import placeholder routers for remaining functionality
@@ -380,23 +381,7 @@ const claimsRouter = router({
     }),
 });
 
-const donationsRouter = router({
-  createCheckout: rateLimitedProcedure
-    .input(
-      z.object({
-        toUserId: z.string(),
-        ruleId: z.string().optional(),
-        amountCents: z.number().int().positive(),
-        currency: z.string().length(3),
-        idempotencyKey: z.string().optional(),
-      })
-    )
-    .output(z.object({ checkoutUrl: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      // Placeholder - would integrate with Stripe
-      return { checkoutUrl: "https://checkout.stripe.com/placeholder" };
-    }),
-});
+// Donations router is now imported from ./donations
 
 // Leaderboard router is now imported from ./leaderboard
 
