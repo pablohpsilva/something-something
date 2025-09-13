@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.7.0",
     "@repo/config": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/trpc": "workspace:*",
@@ -22,7 +23,9 @@
     "@trpc/server": "^11.0.0-rc.553",
     "next": "^15.0.3",
     "react": "^19.0.0-rc-66855b96-20241106",
-    "react-dom": "^19.0.0-rc-66855b96-20241106"
+    "react-dom": "^19.0.0-rc-66855b96-20241106",
+    "svix": "^1.37.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
