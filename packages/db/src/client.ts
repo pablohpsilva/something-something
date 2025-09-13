@@ -5,7 +5,7 @@ declare global {
   var __prisma: PrismaClient | undefined;
 }
 
-export const db =
+export const prisma =
   globalThis.__prisma ??
   new PrismaClient({
     log:
@@ -15,5 +15,8 @@ export const db =
   });
 
 if (process.env.NODE_ENV !== "production") {
-  globalThis.__prisma = db;
+  globalThis.__prisma = prisma;
 }
+
+// Legacy export for backward compatibility
+export const db = prisma;

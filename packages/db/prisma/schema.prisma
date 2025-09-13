@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Core Directory Engine Database Schema
+// PostgreSQL 16 with Prisma 5.x
 
 generator client {
   provider = "prisma-client-js"
@@ -11,41 +11,659 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  USER
+  MOD
+  ADMIN
+
+  @@map("user_role")
+}
+
+enum ContentType {
+  PROMPT
+  RULE
+  MCP
+  GUIDE
+
+  @@map("content_type")
+}
+
+enum RuleStatus {
+  DRAFT
+  PUBLISHED
+  DEPRECATED
+
+  @@map("rule_status")
+}
+
+enum SourceType {
+  USER_SUBMISSION
+  CRAWLED
+  PARTNER_API
+
+  @@map("source_type")
+}
+
+enum CrawlStatus {
+  NEW
+  MERGED
+  SKIPPED
+
+  @@map("crawl_status")
+}
+
+enum CrawlPolicy {
+  OPEN
+  ROBOTS
+  PARTNER_ONLY
+  BLOCK
+
+  @@map("crawl_policy")
+}
+
+enum EventType {
+  VIEW
+  COPY
+  SAVE
+  FORK
+  COMMENT
+  VOTE
+  DONATE
+  CLAIM
+
+  @@map("event_type")
+}
+
+enum NotificationType {
+  NEW_VERSION
+  COMMENT_REPLY
+  AUTHOR_PUBLISHED
+  CLAIM_VERDICT
+  DONATION_RECEIVED
+
+  @@map("notification_type")
+}
+
+enum DonationStatus {
+  INIT
+  SUCCEEDED
+  FAILED
+
+  @@map("donation_status")
+}
+
+enum Provider {
+  STRIPE
+
+  @@map("provider")
+}
+
+enum PayoutStatus {
+  NONE
+  PENDING
+  VERIFIED
+
+  @@map("payout_status")
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL
+
+  @@map("leaderboard_period")
+}
+
+enum LeaderboardScope {
+  GLOBAL
+  TAG
+  MODEL
+
+  @@map("leaderboard_scope")
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("claim_status")
+}
+
+// ============================================================================
+// ACCOUNTS & PROFILES
+// ============================================================================
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  clerkId     String   @unique @db.VarChar(255)
+  handle      String   @unique @db.VarChar(50)
+  displayName String   @db.VarChar(100)
+  avatarUrl   String?  @db.Text
+  bio         String?  @db.Text
+  role        UserRole @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  posts Post[]
+  authorProfile        AuthorProfile?
+  rulesCreated         Rule[]              @relation("RuleCreatedBy")
+  ruleVersionsCreated  RuleVersion[]       @relation("RuleVersionCreatedBy")
+  comments             Comment[]
+  votes                Vote[]
+  voteVersions         VoteVersion[]
+  favorites            Favorite[]
+  followersAsFollowee  Follow[]            @relation("UserFollowee")
+  followingAsFollower  Follow[]            @relation("UserFollower")
+  watches              Watch[]
+  notifications        Notification[]
+  events               Event[]
+  claims               Claim[]
+  claimsReviewed       Claim[]             @relation("ClaimReviewer")
+  auditLogs            AuditLog[]
+  donationsGiven       Donation[]          @relation("DonationFrom")
+  donationsReceived    Donation[]          @relation("DonationTo")
+  payoutAccount        PayoutAccount?
+  badges               UserBadge[]
+  authorMetrics        AuthorMetricDaily[]
 
+  @@index([role])
+  @@index([createdAt])
   @@map("users")
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
+model AuthorProfile {
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  website    String?   @db.VarChar(255)
+  github     String?   @db.VarChar(100)
+  x          String?   @db.VarChar(100)
+  isVerified Boolean   @default(false)
+  claimedAt  DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("author_profiles")
+}
+
+// ============================================================================
+// CONTENT & TAXONOMY
+// ============================================================================
+
+model Source {
+  id             String      @id @default(cuid())
+  type           SourceType
+  name           String      @db.VarChar(255)
+  url            String      @db.Text
+  crawlPolicy    CrawlPolicy @default(OPEN)
+  lastCrawledAt  DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  rules      Rule[]
+  crawlItems CrawlItem[]
+
+  @@index([type])
+  @@index([crawlPolicy])
+  @@index([lastCrawledAt])
+  @@map("sources")
+}
+
+model Rule {
+  id               String      @id @default(cuid())
+  slug             String      @unique @db.VarChar(100)
+  title            String      @db.VarChar(255)
+  summary          String?     @db.Text
+  contentType      ContentType @default(RULE)
+  status           RuleStatus  @default(DRAFT)
+  primaryModel     String?     @db.VarChar(100)
+  createdByUserId  String
+  sourceId         String?
+  currentVersionId String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  createdBy      User           @relation("RuleCreatedBy", fields: [createdByUserId], references: [id])
+  source         Source?        @relation(fields: [sourceId], references: [id])
+  currentVersion RuleVersion?   @relation("RuleCurrentVersion", fields: [currentVersionId], references: [id])
+  versions       RuleVersion[]  @relation("RuleVersions")
+  tags           RuleTag[]
+  resourceLinks  ResourceLink[]
+  comments       Comment[]
+  votes          Vote[]
+  voteVersions   VoteVersion[]
+  favorites      Favorite[]
+  watches        Watch[]
+  events         Event[]
+  metrics        RuleMetricDaily[]
+  claims         Claim[]
+  donations      Donation[]
+  crawlItems     CrawlItem[]
+  search         RuleSearch?
+
+  @@index([status])
+  @@index([contentType])
+  @@index([createdByUserId])
+  @@index([sourceId])
+  @@index([currentVersionId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("rules")
+}
+
+model RuleVersion {
+  id                String    @id @default(cuid())
+  ruleId            String
+  version           String    @db.VarChar(50)
+  body              String    @db.Text
+  testedOn          Json // { models: string[], stacks: string[] }
+  changelog         String?   @db.Text
+  parentVersionId   String?
+  createdByUserId   String
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  rule               Rule           @relation("RuleVersions", fields: [ruleId], references: [id], onDelete: Cascade)
+  createdBy          User           @relation("RuleVersionCreatedBy", fields: [createdByUserId], references: [id])
+  parentVersion      RuleVersion?   @relation("VersionParent", fields: [parentVersionId], references: [id])
+  childVersions      RuleVersion[]  @relation("VersionParent")
+  rulesUsingAsCurrent Rule[]        @relation("RuleCurrentVersion")
+  voteVersions       VoteVersion[]
+  events             Event[]
+
+  @@unique([ruleId, version])
+  @@index([ruleId, createdAt(sort: Desc)])
+  @@index([createdByUserId])
+  @@index([parentVersionId])
+  @@map("rule_versions")
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  slug  String    @unique @db.VarChar(50)
+  name  String    @db.VarChar(100)
+
+  // Relations
+  rules RuleTag[]
+
+  @@map("tags")
+}
+
+model RuleTag {
+  ruleId String
+  tagId  String
+
+  // Relations
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([ruleId, tagId])
+  @@map("rule_tags")
+}
+
+model ResourceLink {
+  id     String @id @default(cuid())
+  ruleId String
+  label  String @db.VarChar(255)
+  url    String @db.Text
+  kind   String @db.VarChar(50) // DOCS | GITHUB | NPM | PACKAGE | VIDEO | ARTICLE
+
+  // Relations
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@index([kind])
+  @@map("resource_links")
+}
+
+// ============================================================================
+// COMMUNITY & SOCIAL
+// ============================================================================
+
+model Comment {
+  id             String    @id @default(cuid())
+  ruleId         String
+  parentId       String?
+  authorUserId   String
+  body           String    @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  // Relations
+  rule     Rule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentParent", fields: [parentId], references: [id])
+  children Comment[] @relation("CommentParent")
+  author   User      @relation(fields: [authorUserId], references: [id])
+
+  @@index([ruleId, parentId])
+  @@index([authorUserId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("comments")
+}
+
+model Vote {
+  userId String
+  ruleId String
+  value  Int // -1 or +1
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ruleId])
+  @@map("votes")
+}
+
+model VoteVersion {
+  userId        String
+  ruleVersionId String
+  value         Int // -1 or +1
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ruleVersion RuleVersion @relation(fields: [ruleVersionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ruleVersionId])
+  @@map("vote_versions")
+}
+
+model Favorite {
+  userId String
+  ruleId String
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ruleId])
+  @@map("favorites")
+}
+
+model Follow {
+  followerUserId String
+  authorUserId   String
+
+  // Relations
+  follower User @relation("UserFollower", fields: [followerUserId], references: [id], onDelete: Cascade)
+  author   User @relation("UserFollowee", fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@id([followerUserId, authorUserId])
+  @@map("follows")
+}
+
+model Watch {
+  userId String
+  ruleId String
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, ruleId])
+  @@map("watches")
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  userId    String
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime           @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================================================
+// METRICS (Open; anti-gaming)
+// ============================================================================
+
+model Event {
+  id            String     @id @default(cuid())
+  userId        String?
+  ruleId        String?
+  ruleVersionId String?
+  type          EventType
+  ipHash        String     @db.VarChar(64)
+  uaHash        String     @db.VarChar(64)
+  createdAt     DateTime   @default(now())
+
+  // Relations
+  user        User?        @relation(fields: [userId], references: [id])
+  rule        Rule?        @relation(fields: [ruleId], references: [id])
+  ruleVersion RuleVersion? @relation(fields: [ruleVersionId], references: [id])
+
+  @@index([ruleId, createdAt])
+  @@index([type, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("events")
+}
+
+model RuleMetricDaily {
+  date   DateTime @db.Date
+  ruleId String
+  views  Int      @default(0)
+  copies Int      @default(0)
+  saves  Int      @default(0)
+  forks  Int      @default(0)
+  votes  Int      @default(0)
+  score  Float    @default(0)
+
+  // Relations
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@id([date, ruleId])
+  @@index([date])
+  @@index([ruleId])
+  @@index([score])
+  @@map("rule_metrics_daily")
+}
+
+model AuthorMetricDaily {
+  date         DateTime @db.Date
+  authorUserId String
+  views        Int      @default(0)
+  copies       Int      @default(0)
+  donations    Int      @default(0)
+  score        Float    @default(0)
+
+  // Relations
+  author User @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@id([date, authorUserId])
+  @@index([date])
+  @@index([authorUserId])
+  @@index([score])
+  @@map("author_metrics_daily")
+}
+
+// ============================================================================
+// GAMIFICATION
+// ============================================================================
+
+model Badge {
+  id          String @id @default(cuid())
+  slug        String @unique @db.VarChar(50)
+  name        String @db.VarChar(100)
+  description String @db.Text
+  criteria    Json
+
+  // Relations
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  userId    String
+  badgeId   String
+  awardedAt DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, badgeId])
+  @@index([awardedAt])
+  @@map("user_badges")
+}
+
+model LeaderboardSnapshot {
+  id        String             @id @default(cuid())
+  period    LeaderboardPeriod
+  scope     LeaderboardScope
+  scopeRef  String?            @db.VarChar(100)
+  rank      Json
+  createdAt DateTime           @default(now())
+
+  @@unique([period, scope, scopeRef, createdAt])
+  @@index([period, scope, scopeRef, createdAt])
+  @@map("leaderboard_snapshots")
+}
+
+// ============================================================================
+// AUTHORSHIP & MODERATION
+// ============================================================================
+
+model Claim {
+  id               String       @id @default(cuid())
+  ruleId           String
+  claimantUserId   String
+  status           ClaimStatus  @default(PENDING)
+  evidenceUrl      String?      @db.Text
+  createdAt        DateTime     @default(now())
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+
+  // Relations
+  rule       Rule  @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  claimant   User  @relation(fields: [claimantUserId], references: [id])
+  reviewedBy User? @relation("ClaimReviewer", fields: [reviewedByUserId], references: [id])
+
+  @@index([ruleId])
+  @@index([claimantUserId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("claims")
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  actorUserId  String?
+  action       String    @db.VarChar(100)
+  entityType   String    @db.VarChar(50)
+  entityId     String    @db.VarChar(255)
+  diff         Json?
+  ipHash       String    @db.VarChar(64)
+  createdAt    DateTime  @default(now())
+
+  // Relations
+  actor User? @relation(fields: [actorUserId], references: [id])
+
+  @@index([actorUserId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================================
+// DONATIONS
+// ============================================================================
+
+model Donation {
+  id           String         @id @default(cuid())
+  fromUserId   String?
+  toUserId     String
+  ruleId       String?
+  amountCents  Int // > 0
+  currency     String         @db.Char(3)
+  status       DonationStatus @default(INIT)
+  provider     Provider       @default(STRIPE)
+  providerRef  String         @db.VarChar(255)
+  createdAt    DateTime       @default(now())
+
+  // Relations
+  from User? @relation("DonationFrom", fields: [fromUserId], references: [id])
+  to   User  @relation("DonationTo", fields: [toUserId], references: [id])
+  rule Rule? @relation(fields: [ruleId], references: [id])
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([ruleId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("donations")
+}
+
+model PayoutAccount {
+  id                String       @id @default(cuid())
+  userId            String       @unique
+  providerAccountId String       @db.VarChar(255)
+  status            PayoutStatus @default(NONE)
+  updatedAt         DateTime     @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("payout_accounts")
+}
+
+// ============================================================================
+// CRAWL/IMPORT
+// ============================================================================
+
+model CrawlItem {
+  id           String      @id @default(cuid())
+  sourceId     String
+  externalId   String      @db.VarChar(255)
+  url          String      @db.Text
+  title        String      @db.VarChar(255)
+  summary      String?     @db.Text
+  raw          Json
+  status       CrawlStatus @default(NEW)
+  mergedRuleId String?
+  createdAt    DateTime    @default(now())
+
+  // Relations
+  source     Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  mergedRule Rule?  @relation(fields: [mergedRuleId], references: [id])
+
+  @@unique([sourceId, externalId])
+  @@index([sourceId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("crawl_items")
+}
+
+// ============================================================================
+// SEARCH (FTS)
+// ============================================================================
+
+model RuleSearch {
+  ruleId    String   @id
+  tsv       Unsupported("tsvector")
   updatedAt DateTime @updatedAt
 
   // Relations
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId String
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 
-  @@map("posts")
-}
-
-model IngestEvent {
-  id        String   @id @default(cuid())
-  type      String
-  data      Json
-  processed Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("ingest_events")
+  @@map("rule_search")
 }
