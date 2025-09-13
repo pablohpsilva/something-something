@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Development overrides for docker-compose.yml
 # This file is automatically loaded by docker-compose when present
 
