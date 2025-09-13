@@ -31,7 +31,7 @@
     "web:start": "pnpm --filter @repo/web start",
     "ingest:dev": "pnpm --filter @repo/ingest dev",
     "ingest:build": "pnpm --filter @repo/ingest build",
-    "ingest:deploy": "pnpm --filter @repo/ingest deploy",
+    "ingest:start": "pnpm --filter @repo/ingest start",
     "ui:add": "pnpm --filter @repo/ui ui:add",
     "docker:up": "docker-compose up --build",
     "docker:up:prod": "docker-compose -f docker-compose.yml up --build",

@@ -1,120 +1,116 @@
+import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
-import { prettyJSON } from "hono/pretty-json";
-import { serve } from "@hono/node-server";
+import { getEnv } from "./env";
+import { logger } from "./logger";
+import { errorHandler, requestLogger } from "./middleware/error";
 
-type Env = {
-  DATABASE_URL: string;
-  CRON_SECRET: string;
-  STRIPE_SECRET_KEY?: string;
-  WEB_BASE_URL?: string;
-};
+// Import routes
+import { health } from "./routes/health";
+import { ingestEvents } from "./routes/ingest-events";
+import { stripeWebhook } from "./routes/stripe-webhook";
+import { ingestCrawl } from "./routes/ingest-crawl";
+import { cronRollup } from "./routes/cron-rollup";
 
-const app = new Hono<{ Bindings: Env }>();
+// Create main Hono app
+const app = new Hono();
 
-// Middleware
-app.use("*", logger());
-app.use("*", prettyJSON());
+// Global middleware
+app.use("*", requestLogger);
+app.use("*", errorHandler);
+
+// CORS - only allow for health endpoint
 app.use(
-  "*",
+  "/health",
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://web:3000",
-      "https://your-domain.com",
-    ],
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["POST", "GET", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
-    credentials: true,
+    origin: "*",
+    allowMethods: ["GET"],
   })
 );
 
-// Health check
+// Deny CORS for all other endpoints (server-to-server only)
+app.use("*", async (c, next) => {
+  // Skip CORS for health endpoint (already handled above)
+  if (c.req.path === "/health") {
+    await next();
+    return;
+  }
+
+  // For all other endpoints, deny browser requests
+  const origin = c.req.header("origin");
+  if (origin) {
+    return c.json({ error: "CORS not allowed" }, 403);
+  }
+
+  await next();
+});
+
+// Mount routes
+app.route("/health", health);
+app.route("/ingest/events", ingestEvents);
+app.route("/ingest/stripe/webhook", stripeWebhook);
+app.route("/ingest/crawl", ingestCrawl);
+app.route("/cron/rollup", cronRollup);
+
+// Root endpoint
 app.get("/", (c) => {
   return c.json({
-    message: "Ingest API is running",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development",
+    service: "ingest",
+    version: process.env.npm_package_version || "unknown",
+    endpoints: [
+      "GET /health",
+      "POST /ingest/events",
+      "POST /ingest/stripe/webhook",
+      "POST /ingest/crawl",
+      "POST /cron/rollup",
+      "POST /cron/rollup/rebuild-search",
+    ],
   });
 });
 
-// API routes
-app.get("/health", (c) => {
-  return c.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// Placeholder for data ingestion
-app.post("/ingest", async (c) => {
-  try {
-    const body = await c.req.json();
-
-    // TODO: Implement data validation and processing
-    console.log("Received data:", body);
-
-    // TODO: Store in database via @repo/db
-    // TODO: Apply rate limiting via @repo/utils
-
-    return c.json({
-      success: true,
-      message: "Data ingested successfully",
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error("Ingestion error:", error);
-    return c.json(
-      {
-        success: false,
-        error: "Failed to ingest data",
-        timestamp: new Date().toISOString(),
-      },
-      500
-    );
-  }
-});
-
-// Cron endpoint
-app.post("/cron", async (c) => {
-  const authHeader = c.req.header("Authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-
-  try {
-    // TODO: Implement cron job logic
-    console.log("Running cron job");
-
-    return c.json({
-      success: true,
-      message: "Cron job executed successfully",
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error("Cron job error:", error);
-    return c.json(
-      {
-        success: false,
-        error: "Cron job failed",
-        timestamp: new Date().toISOString(),
-      },
-      500
-    );
-  }
+// 404 handler
+app.notFound((c) => {
+  return c.json({ error: "endpoint not found" }, 404);
 });
 
 // Start server
-const port = parseInt(process.env.PORT || "8787");
+function startServer() {
+  const env = getEnv();
 
-if (process.env.NODE_ENV !== "test") {
-  console.log(`🚀 Ingest API server starting on port ${port}`);
-  serve({
-    fetch: app.fetch,
-    port,
+  logger.info("Starting ingest service", {
+    port: env.PORT,
+    nodeEnv: env.NODE_ENV,
+    logLevel: env.LOG_LEVEL,
   });
+
+  const server = serve({
+    fetch: app.fetch,
+    port: env.PORT,
+  });
+
+  // Graceful shutdown
+  process.on("SIGINT", () => {
+    logger.info("Received SIGINT, shutting down gracefully");
+    server.close(() => {
+      logger.info("Server closed");
+      process.exit(0);
+    });
+  });
+
+  process.on("SIGTERM", () => {
+    logger.info("Received SIGTERM, shutting down gracefully");
+    server.close(() => {
+      logger.info("Server closed");
+      process.exit(0);
+    });
+  });
+
+  logger.info(`🚀 Ingest service running on http://localhost:${env.PORT}`);
 }
 
-export default app;
+// Start the server if this file is run directly
+if (require.main === module) {
+  startServer();
+}
+
+export { app, startServer };
