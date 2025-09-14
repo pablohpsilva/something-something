@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@repo/ui";
 import { Card, CardContent, CardHeader } from "@repo/ui";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@repo/ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui";
 import { MetricsStrip } from "./metrics-strip";
 import { formatRelativeTime, truncateText } from "@/lib/format";
 import { RULE_TESTIDS, AUTHOR_TESTIDS } from "@/lib/testids";
@@ -161,11 +157,11 @@ export function RuleCard({
 
             {rule.metrics && (
               <MetricsStrip
-                views={rule.metrics.views7}
-                copies={rule.metrics.copies7}
-                saves={rule.metrics.saves7}
-                forks={rule.metrics.forks}
-                votes={rule.metrics.votes}
+                views7={rule.metrics.views7}
+                copies7={rule.metrics.copies7}
+                saves7={rule.metrics.saves7}
+                forks7={rule.metrics.forks}
+                votes7={rule.metrics.votes}
                 score={rule.score}
                 size="sm"
               />

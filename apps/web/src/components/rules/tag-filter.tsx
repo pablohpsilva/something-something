@@ -4,11 +4,7 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@repo/ui";
 import { Badge } from "@repo/ui";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@repo/ui";
+import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui";
 import {
   Command,
   CommandEmpty,
@@ -98,7 +94,7 @@ export function TagFilter({
                     <span>{tag.name}</span>
                   </div>
                   <Badge variant="outline" className="text-xs">
-                    {tag.ruleCount || 0}
+                    {tag.count || 0}
                   </Badge>
                 </CommandItem>
               ))}
@@ -114,7 +110,9 @@ export function TagFilter({
               key={selectedTags[index]}
               variant="secondary"
               className="cursor-pointer hover:bg-secondary/80"
-              onClick={() => handleTagToggle(selectedTags[index])}
+              onClick={() =>
+                selectedTags[index] && handleTagToggle(selectedTags[index])
+              }
             >
               {tagName}
               <X className="ml-1 h-3 w-3" />

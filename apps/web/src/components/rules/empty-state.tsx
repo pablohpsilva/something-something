@@ -75,8 +75,8 @@ export function EmptyState({
 
   const finalTitle = title || config.title;
   const finalDescription = description || config.description;
-  const finalActionLabel = actionLabel || config.actionLabel;
-  const finalActionHref = actionHref || config.actionHref;
+  const finalActionLabel = actionLabel || (config as any).actionLabel;
+  const finalActionHref = actionHref || (config as any).actionHref;
 
   return (
     <Card data-testid={LIST_TESTIDS.EMPTY_STATE}>
