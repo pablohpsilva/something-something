@@ -41,13 +41,13 @@ export function hashUA(uaRaw: string, salt: string): string {
  */
 function normalizeIp(ip: string): string {
   if (!ip || ip === "unknown") return "unknown";
-  
+
   // Handle comma-separated IPs (X-Forwarded-For)
-  const firstIp = ip.split(",")[0].trim();
-  
+  const firstIp = (ip.split(",")[0] || "").trim();
+
   // Remove port if present
   const withoutPort = firstIp.replace(/:\d+$/, "");
-  
+
   // Handle IPv6 brackets
   return withoutPort.replace(/^\[|\]$/g, "").toLowerCase();
 }
@@ -57,7 +57,7 @@ function normalizeIp(ip: string): string {
  */
 function normalizeUA(ua: string): string {
   if (!ua || ua === "unknown") return "unknown";
-  
+
   // Remove specific version numbers but keep major versions
   return ua
     .replace(/\d+\.\d+\.\d+\.\d+/g, "X.X.X.X") // Remove detailed versions
@@ -84,20 +84,20 @@ export function generateSecureIdempotencyKey(): string {
  */
 export function calculateEntropy(str: string): number {
   if (!str) return 0;
-  
+
   const frequencies = new Map<string, number>();
   for (const char of str) {
     frequencies.set(char, (frequencies.get(char) || 0) + 1);
   }
-  
+
   let entropy = 0;
   const length = str.length;
-  
+
   for (const count of frequencies.values()) {
     const probability = count / length;
     entropy -= probability * Math.log2(probability);
   }
-  
+
   return entropy;
 }
 
@@ -121,19 +121,21 @@ export function hashTimeWindow(value: string, windowMs: number): string {
  */
 export function secureCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
-  
+
   let result = 0;
   for (let i = 0; i < a.length; i++) {
     result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
-  
+
   return result === 0;
 }
 
 /**
  * Extract IP from various header formats
  */
-export function extractIp(headers: Record<string, string | string[] | undefined>): string {
+export function extractIp(
+  headers: Record<string, string | string[] | undefined>
+): string {
   // Try various headers in order of preference
   const candidates = [
     headers["x-forwarded-for"],
@@ -145,7 +147,7 @@ export function extractIp(headers: Record<string, string | string[] | undefined>
 
   for (const candidate of candidates) {
     if (typeof candidate === "string") {
-      const ip = candidate.split(",")[0].trim();
+      const ip = (candidate.split(",")[0] || "").trim();
       if (ip && ip !== "unknown") return ip;
     }
   }
@@ -156,9 +158,11 @@ export function extractIp(headers: Record<string, string | string[] | undefined>
 /**
  * Extract User-Agent from headers
  */
-export function extractUA(headers: Record<string, string | string[] | undefined>): string {
+export function extractUA(
+  headers: Record<string, string | string[] | undefined>
+): string {
   const ua = headers["user-agent"];
   if (typeof ua === "string") return ua;
-  if (Array.isArray(ua) && ua.length > 0) return ua[0];
+  if (Array.isArray(ua) && ua.length > 0) return ua[0] || "";
   return "unknown";
 }

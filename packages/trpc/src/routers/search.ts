@@ -25,7 +25,10 @@ import {
   searchRulesSimple,
   type SearchFilters,
 } from "@repo/db/search";
-import { createRateLimitedProcedure, withIPRateLimit } from "../middleware/rate-limit";
+import {
+  createRateLimitedProcedure,
+  withIPRateLimit,
+} from "../middleware/rate-limit";
 
 // Enhanced rate limited procedures for search operations
 const searchRateLimitedProcedure = createRateLimitedProcedure(
@@ -36,7 +39,7 @@ const searchRateLimitedProcedure = createRateLimitedProcedure(
 
 const suggestRateLimitedProcedure = createRateLimitedProcedure(
   publicProcedure,
-  "suggestionsPerIpPerMin", 
+  "suggestionsPerIpPerMin",
   { requireAuth: false, weight: 1 }
 );
 
@@ -53,7 +56,7 @@ export const searchRouter = router({
   query: searchRateLimitedProcedure
     .input(searchInputSchema)
     .output(searchResultResponseSchema)
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx }: { input: any; ctx: any }) => {
       const startTime = Date.now();
       const { q, filters, limit, offset } = input;
 
@@ -129,7 +132,7 @@ export const searchRouter = router({
   suggest: suggestRateLimitedProcedure
     .input(suggestInputSchema)
     .output(suggestResponseSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input }: { input: any }) => {
       const { q, limit } = input;
 
       try {
@@ -168,7 +171,11 @@ export const searchRouter = router({
             _count: {
               select: {
                 rules: {
-                  where: { status: "PUBLISHED" },
+                  where: {
+                    rule: {
+                      status: "PUBLISHED",
+                    },
+                  },
                 },
               },
             },
@@ -180,16 +187,21 @@ export const searchRouter = router({
         });
 
         // Get popular models
-        const models = await ctx.prisma.rule.groupBy({
+        const modelsData = await ctx.prisma.rule.groupBy({
           by: ["primaryModel"],
           where: {
             status: "PUBLISHED",
             primaryModel: { not: null },
           },
-          _count: true,
-          orderBy: { _count: "desc" },
-          take: input.limit,
+          _count: {
+            _all: true,
+          },
         });
+
+        // Sort by count and take top results
+        const models = modelsData
+          .sort((a, b) => b._count._all - a._count._all)
+          .slice(0, input.limit);
 
         // Get active authors
         const authors = await ctx.prisma.user.findMany({
@@ -214,12 +226,18 @@ export const searchRouter = router({
         });
 
         // Get content type distribution
-        const contentTypes = await ctx.prisma.rule.groupBy({
+        const contentTypesData = await ctx.prisma.rule.groupBy({
           by: ["contentType"],
           where: { status: "PUBLISHED" },
-          _count: true,
-          orderBy: { _count: "desc" },
+          _count: {
+            _all: true,
+          },
         });
+
+        // Sort by count
+        const contentTypes = contentTypesData.sort(
+          (a, b) => b._count._all - a._count._all
+        );
 
         return {
           tags: tags
@@ -231,7 +249,7 @@ export const searchRouter = router({
             })),
           models: models.map((model) => ({
             name: model.primaryModel!,
-            count: model._count,
+            count: model._count._all,
           })),
           authors: authors
             .filter((author) => author._count.rulesCreated > 0)
@@ -242,7 +260,7 @@ export const searchRouter = router({
             })),
           contentTypes: contentTypes.map((ct) => ({
             type: ct.contentType,
-            count: ct._count,
+            count: ct._count._all,
           })),
         };
       } catch (error) {
@@ -283,7 +301,8 @@ export const searchRouter = router({
   /**
    * Get search statistics (admin only)
    */
-  getStats: requireRole("ADMIN")
+  getStats: publicProcedure
+    .use(requireRole("ADMIN"))
     .output(searchStatsResponseSchema)
     .query(async () => {
       try {
@@ -350,7 +369,7 @@ export const searchRouter = router({
         offset: z.number().int().min(0).max(1000).default(0),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input }: { input: any }) => {
       // Advanced search implementation would go here
       // For now, fall back to basic search
       const basicFilters: SearchFilters = {

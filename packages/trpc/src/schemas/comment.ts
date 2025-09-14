@@ -45,7 +45,7 @@ export const commentDeleteSchema = z.object({
 /**
  * Comment DTO schema for API responses
  */
-export const commentDTOSchema = z.object({
+export const commentDTOSchema: z.ZodType<any> = z.object({
   id: z.string(),
   ruleId: z.string(),
   parentId: z.string().nullable(),

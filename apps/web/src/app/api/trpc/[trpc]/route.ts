@@ -6,8 +6,8 @@ import { getCurrentUserServer } from "@/lib/auth";
 export const runtime = "nodejs";
 
 const handler = async (req: Request) => {
-  // Get user from authentication
-  const user = await getCurrentUserServer();
+  // Authentication has been removed
+  const user = null;
 
   // Extract IP and User-Agent for rate limiting and audit logs
   const forwarded = req.headers.get("x-forwarded-for");

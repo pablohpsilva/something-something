@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@clerk/nextjs";
-import { SignInButton, UserButton } from "@clerk/nextjs";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@repo/ui";
@@ -14,12 +12,10 @@ import {
 } from "@repo/ui";
 import { Nav } from "./nav";
 import { SearchBar } from "./search-bar";
-import { NotificationsBell } from "../social/notifications-bell";
-import { AUTH_TESTIDS, THEME_TESTIDS } from "@/lib/testids";
+import { THEME_TESTIDS } from "@/lib/testids";
 import { createButtonProps } from "@/lib/a11y";
 
 export function Header() {
-  const { isSignedIn, isLoaded } = useAuth();
   const { theme, setTheme } = useTheme();
 
   const themeToggleProps = createButtonProps(
@@ -45,7 +41,7 @@ export function Header() {
             <span className="hidden sm:inline">Core Directory</span>
           </Link>
 
-          <Nav isAuthenticated={isSignedIn} className="hidden md:flex" />
+          <Nav isAuthenticated={false} className="hidden md:flex" />
         </div>
 
         {/* Search bar - hidden on mobile */}
@@ -89,34 +85,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Auth and notifications */}
-          {isLoaded && (
-            <>
-              {isSignedIn ? (
-                <div className="flex items-center space-x-2">
-                  <NotificationsBell />
-                  <UserButton
-                    afterSignOutUrl="/"
-                    appearance={{
-                      elements: {
-                        avatarBox: "h-8 w-8",
-                      },
-                    }}
-                  />
-                </div>
-              ) : (
-                <SignInButton mode="modal">
-                  <Button
-                    data-testid={AUTH_TESTIDS.SIGN_IN_BUTTON}
-                    variant="default"
-                    size="sm"
-                  >
-                    Sign In
-                  </Button>
-                </SignInButton>
-              )}
-            </>
-          )}
+          {/* Authentication removed - no sign in button */}
         </div>
       </div>
 

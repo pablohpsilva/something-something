@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUserServer } from "@/lib/auth";
 import { ProfileForm } from "@/components/auth/ProfileForm";
-import { UserButton } from "@clerk/nextjs";
 
 // Force Node.js runtime for Prisma compatibility
 export const runtime = "nodejs";
@@ -28,13 +27,7 @@ export default async function ProfileSettingsPage() {
                   Manage your account information and preferences
                 </p>
               </div>
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: "w-10 h-10",
-                  },
-                }}
-              />
+              {/* Authentication removed */}
             </div>
           </div>
 
@@ -58,14 +51,7 @@ export default async function ProfileSettingsPage() {
                     Manage your email and password settings
                   </p>
                 </div>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      userButtonAvatarBox: "w-8 h-8",
-                      userButtonPopoverCard: "shadow-lg",
-                    },
-                  }}
-                />
+                {/* Authentication removed */}
               </div>
 
               <div className="flex items-center justify-between">

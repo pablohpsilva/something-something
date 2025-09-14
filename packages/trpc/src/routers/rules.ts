@@ -185,7 +185,11 @@ export const rulesRouter = router({
           ? {
               id: rule.currentVersion.id,
               version: rule.currentVersion.version,
-              testedOn: (rule.currentVersion.testedOn as { models?: string[]; stacks?: string[] }) || null,
+              testedOn:
+                (rule.currentVersion.testedOn as {
+                  models?: string[];
+                  stacks?: string[];
+                }) || null,
               createdAt: rule.currentVersion.createdAt,
             }
           : null,
@@ -261,7 +265,6 @@ export const rulesRouter = router({
           resourceLinks: true,
           versions: {
             select: { id: true },
-            where: { deletedAt: null },
           },
           _count: {
             select: {
@@ -288,7 +291,7 @@ export const rulesRouter = router({
           ctx.prisma.vote.findUnique({
             where: {
               userId_ruleId: {
-                userId: ctx.user.id,
+                userId: (ctx.user as any)?.id,
                 ruleId: rule.id,
               },
             },
@@ -296,7 +299,7 @@ export const rulesRouter = router({
           ctx.prisma.favorite.findUnique({
             where: {
               userId_ruleId: {
-                userId: ctx.user.id,
+                userId: (ctx.user as any)?.id,
                 ruleId: rule.id,
               },
             },
@@ -304,7 +307,7 @@ export const rulesRouter = router({
           ctx.prisma.watch.findUnique({
             where: {
               userId_ruleId: {
-                userId: ctx.user.id,
+                userId: (ctx.user as any)?.id,
                 ruleId: rule.id,
               },
             },
@@ -352,7 +355,7 @@ export const rulesRouter = router({
         id: rule.id,
         slug: rule.slug,
         title: rule.title,
-        summary: rule.summary,
+        summary: rule.summary || undefined,
         contentType: rule.contentType,
         status: rule.status,
         primaryModel: rule.primaryModel,
@@ -380,7 +383,11 @@ export const rulesRouter = router({
           ? {
               id: rule.currentVersion.id,
               version: rule.currentVersion.version,
-              testedOn: rule.currentVersion.testedOn,
+              testedOn:
+                (rule.currentVersion.testedOn as {
+                  models?: string[];
+                  stacks?: string[];
+                }) || null,
               createdAt: rule.currentVersion.createdAt,
             }
           : null,
@@ -420,9 +427,9 @@ export const rulesRouter = router({
       if (idempotencyKey) {
         const existing = await ctx.prisma.auditLog.findFirst({
           where: {
-            actorUserId: ctx.user.id,
+            actorId: (ctx.user as any)?.id,
             action: "rule.create",
-            diff: {
+            metadata: {
               path: ["idempotencyKey"],
               equals: idempotencyKey,
             },
@@ -435,7 +442,10 @@ export const rulesRouter = router({
           existing &&
           existing.createdAt > new Date(Date.now() - 10 * 60 * 1000)
         ) {
-          const entityId = existing.entityId;
+          const entityId = existing.targetId;
+          if (!entityId) {
+            return { id: "", slug: "" };
+          }
           const rule = await ctx.prisma.rule.findUnique({
             where: { id: entityId },
             select: { id: true, slug: true },
@@ -475,8 +485,7 @@ export const rulesRouter = router({
             contentType,
             primaryModel,
             status: "DRAFT",
-            createdByUserId: ctx.user.id,
-            score: 0,
+            createdByUserId: (ctx.user as any)?.id,
           },
         });
 
@@ -486,9 +495,9 @@ export const rulesRouter = router({
             ruleId: rule.id,
             version: "0.1.0",
             body,
-            testedOn: testedOn || null,
+            testedOn: testedOn || {},
             changelog: "Initial version",
-            createdByUserId: ctx.user.id,
+            createdByUserId: (ctx.user as any)?.id,
           },
         });
 
@@ -568,7 +577,7 @@ export const rulesRouter = router({
       }
 
       // Cannot edit published rules' core properties (only mods/admins can)
-      if (rule.status === "PUBLISHED" && ctx.user.role === "USER") {
+      if (rule.status === "PUBLISHED" && (ctx.user as any)?.role === "USER") {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Published rules can only be edited by moderators or admins",

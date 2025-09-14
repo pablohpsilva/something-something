@@ -25,7 +25,10 @@ function incrementVersion(
   version: string,
   type: "patch" | "minor" | "major" = "minor"
 ): string {
-  const [major, minor, patch] = version.split(".").map(Number);
+  const parts = version.split(".").map(Number);
+  const major = parts[0] || 0;
+  const minor = parts[1] || 0;
+  const patch = parts[2] || 0;
 
   switch (type) {
     case "major":
@@ -129,7 +132,7 @@ export const versionsRouter = router({
             },
           },
           voteVersions: {
-            where: { userId: ctx.user.id },
+            where: { userId: (ctx.user as any)?.id },
             select: { value: true },
           },
           _count: {
@@ -155,7 +158,9 @@ export const versionsRouter = router({
         ruleId: version.ruleId,
         version: version.version,
         body: includeBody ? version.body : "",
-        testedOn: version.testedOn,
+        testedOn:
+          (version.testedOn as { models?: string[]; stacks?: string[] }) ||
+          null,
         changelog: version.changelog,
         parentVersionId: version.parentVersionId,
         createdBy: {
@@ -171,9 +176,9 @@ export const versionsRouter = router({
           voteStats.find((vs) => vs.ruleVersionId === version.id)?._sum.value ||
           0,
         userVote: version.voteVersions[0]
-          ? version.voteVersions[0].value > 0
-            ? "up"
-            : "down"
+          ? ((version.voteVersions[0].value > 0 ? "up" : "down") as
+              | "up"
+              | "down")
           : null,
       }));
 
@@ -266,10 +271,10 @@ export const versionsRouter = router({
             ruleId,
             version: newVersion,
             body,
-            testedOn: testedOn || null,
+            testedOn: testedOn || {},
             changelog: changelog || `Version ${newVersion}`,
             parentVersionId: baseVersionId || null,
-            createdByUserId: ctx.user.id,
+            createdByUserId: (ctx.user as any)?.id,
           },
         });
 
@@ -355,10 +360,10 @@ export const versionsRouter = router({
           ruleId,
           version: newVersionNumber,
           body: newBody || sourceVersion.body,
-          testedOn: testedOn || sourceVersion.testedOn,
+          testedOn: testedOn || sourceVersion.testedOn || {},
           changelog: changelog || `Forked from ${sourceVersion.version}`,
           parentVersionId: fromVersionId,
-          createdByUserId: ctx.user.id,
+          createdByUserId: (ctx.user as any)?.id,
         },
       });
 
@@ -414,7 +419,7 @@ export const versionsRouter = router({
           ? ctx.prisma.voteVersion.findUnique({
               where: {
                 userId_ruleVersionId: {
-                  userId: ctx.user.id,
+                  userId: (ctx.user as any)?.id,
                   ruleVersionId: versionId,
                 },
               },
@@ -434,7 +439,9 @@ export const versionsRouter = router({
         ruleId: version.ruleId,
         version: version.version,
         body: version.body,
-        testedOn: version.testedOn,
+        testedOn:
+          (version.testedOn as { models?: string[]; stacks?: string[] }) ||
+          null,
         changelog: version.changelog,
         parentVersionId: version.parentVersionId,
         createdBy: {
@@ -447,7 +454,7 @@ export const versionsRouter = router({
         },
         createdAt: version.createdAt,
         score,
-        userVote: userVote as any,
+        userVote: userVote as "up" | "down" | null,
       };
     }),
 

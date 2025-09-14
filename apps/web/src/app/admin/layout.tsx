@@ -1,6 +1,4 @@
 import { redirect } from "next/navigation";
-import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@repo/db/client";
 import { Sidebar } from "./components/sidebar";
 
 export default async function AdminLayout({
@@ -8,21 +6,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    redirect("/sign-in");
-  }
-
-  // Check if user is admin
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-    select: { role: true },
-  });
-
-  if (!user || user.role !== "ADMIN") {
-    redirect("/");
-  }
+  // Authentication has been removed - redirect to home
+  redirect("/");
 
   return (
     <div className="flex min-h-screen bg-gray-50">

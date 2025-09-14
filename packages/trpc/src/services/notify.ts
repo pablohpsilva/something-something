@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@repo/db";
-import type { NotificationType } from "@prisma/client";
+import type { NotificationType } from "@repo/db";
 
 // Notification payload types
 export interface NotifyNewVersionParams {

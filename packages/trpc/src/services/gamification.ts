@@ -4,7 +4,7 @@
  */
 
 import { prisma } from "@repo/db";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@repo/db";
 
 export type AwardContext = {
   prisma: PrismaClient;
@@ -164,15 +164,14 @@ export const GamificationService = {
       await ctx.prisma.auditLog.create({
         data: {
           action: "badge.award",
-          entityType: "Badge",
-          entityId: badge.id,
-          userId,
-          ipHash: null, // Server-side award
-          diff: {
+          targetType: "Badge",
+          targetId: badge.id,
+          actorId: userId,
+          metadata: {
             badgeSlug: slug,
             userId,
-            metadata: metadata || {},
-          },
+            badgeMetadata: metadata || {},
+          } as any,
         },
       });
 
@@ -354,7 +353,7 @@ export const GamificationService = {
         ...ruleWhere,
       },
       include: {
-        author: {
+        createdBy: {
           select: {
             id: true,
             handle: true,
@@ -369,7 +368,7 @@ export const GamificationService = {
     });
 
     // Aggregate metrics and compute scores
-    const entries: LeaderboardEntry[] = rules
+    const entries = rules
       .map((rule) => {
         const metrics = rule.metrics;
 
@@ -394,7 +393,7 @@ export const GamificationService = {
           ruleId: rule.id,
           ruleSlug: rule.slug,
           title: rule.title,
-          author: rule.author,
+          author: rule.createdBy,
           score: latestScore,
           copies: totalCopies,
           views: totalViews,
@@ -403,7 +402,7 @@ export const GamificationService = {
           votes: totalVotes,
         };
       })
-      .filter((entry): entry is LeaderboardEntry => entry !== null);
+      .filter((entry) => entry !== null);
 
     // Sort by score, then by tie-breakers
     entries.sort((a, b) => {
@@ -458,7 +457,7 @@ export const GamificationService = {
               windowDays: this.getPeriodDays(period),
               generatedAt: ctx.now.toISOString(),
             },
-          },
+          } as any,
         },
       });
       return existing.id;
@@ -478,7 +477,7 @@ export const GamificationService = {
               windowDays: this.getPeriodDays(period),
               generatedAt: ctx.now.toISOString(),
             },
-          },
+          } as any,
         },
       });
       return snapshot.id;

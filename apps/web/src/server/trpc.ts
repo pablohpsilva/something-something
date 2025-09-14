@@ -9,47 +9,53 @@ import { getCurrentUserServer } from "@/lib/auth";
 import superjson from "superjson";
 
 // Create server-side caller using the router directly
-const createCaller = appRouter.createCaller;
+const createCaller: typeof appRouter.createCaller = appRouter.createCaller;
 
 /**
  * Create a server-side tRPC caller with authentication context
  * Use this in Server Components and Server Actions
  */
-export const createServerCaller = cache(async (contextOverride?: any) => {
-  const user = await getCurrentUserServer();
-  const headersList = await headers();
+export const createServerCaller: (
+  contextOverride?: any
+) => Promise<ReturnType<typeof createCaller>> = cache(
+  async (contextOverride?: any) => {
+    const user = await getCurrentUserServer();
+    const headersList = await headers();
 
-  // Extract IP and User-Agent for rate limiting and audit logs
-  const forwarded = headersList.get("x-forwarded-for");
-  const realIp = headersList.get("x-real-ip");
-  const userAgent = headersList.get("user-agent");
+    // Extract IP and User-Agent for rate limiting and audit logs
+    const forwarded = headersList.get("x-forwarded-for");
+    const realIp = headersList.get("x-real-ip");
+    const userAgent = headersList.get("user-agent");
 
-  const clientIp = forwarded?.split(",")[0] || realIp || "unknown";
+    const clientIp = forwarded?.split(",")[0] || realIp || "unknown";
 
-  // Create a simple hash for IP and User-Agent (for privacy)
-  const ipHash = Buffer.from(clientIp).toString("base64").substring(0, 32);
-  const uaHash = userAgent
-    ? Buffer.from(userAgent).toString("base64").substring(0, 32)
-    : "unknown";
+    // Create a simple hash for IP and User-Agent (for privacy)
+    const ipHash = Buffer.from(clientIp).toString("base64").substring(0, 32);
+    const uaHash = userAgent
+      ? Buffer.from(userAgent).toString("base64").substring(0, 32)
+      : "unknown";
 
-  const ctx = createContext(
-    contextOverride || {
-      user,
-      reqIpHash: ipHash,
-      uaHash: uaHash,
-      reqIpHeader: clientIp,
-      reqUAHeader: userAgent || "",
-    }
-  );
+    const ctx = createContext(
+      contextOverride || {
+        user,
+        reqIpHash: ipHash,
+        uaHash: uaHash,
+        reqIpHeader: clientIp,
+        reqUAHeader: userAgent || "",
+      }
+    );
 
-  return createCaller(ctx);
-});
+    return createCaller(ctx);
+  }
+);
 
 /**
  * Create a client-side tRPC client for use in Client Components
  * This should be wrapped with TRPCReactProvider
  */
-export const createTRPCClient = () => {
+export const createTRPCClient: () => ReturnType<
+  typeof createTRPCClientBase<AppRouter>
+> = () => {
   return createTRPCClientBase<AppRouter>({
     links: [
       httpBatchLink({

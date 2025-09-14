@@ -3,7 +3,7 @@
  */
 
 import { headers } from "next/headers";
-import { createServerCaller } from "./trpc";
+import { createServerCaller, type ServerCaller } from "./trpc";
 import { getOptionalAuth } from "@/lib/auth";
 
 /**
@@ -33,7 +33,7 @@ export async function getRequestIpAndUA(): Promise<{
  * Create a tRPC caller with request context (IP, UA, user)
  * @returns tRPC caller with full context
  */
-export async function getTrpcCallerWithRequestContext() {
+export async function getTrpcCallerWithRequestContext(): Promise<ServerCaller> {
   const { ip, userAgent } = await getRequestIpAndUA();
   const auth = await getOptionalAuth();
 
@@ -64,6 +64,6 @@ export async function getMetricsContext(): Promise<{
   return {
     ip,
     userAgent,
-    userId: auth?.userId || null,
+    userId: null, // Authentication removed
   };
 }

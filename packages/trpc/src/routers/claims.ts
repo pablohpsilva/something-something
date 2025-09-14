@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, createRateLimitedProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  createRateLimitedProcedure,
+} from "../trpc";
 import { prisma } from "@repo/db/client";
 import { AbuseConfig } from "@repo/config";
 
@@ -18,7 +22,10 @@ export const claimsRouter = createTRPCRouter({
     .input(
       z.object({
         ruleId: z.string(),
-        evidence: z.string().min(10).max(2000, "Evidence must be between 10 and 2000 characters"),
+        evidence: z
+          .string()
+          .min(10)
+          .max(2000, "Evidence must be between 10 and 2000 characters"),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -106,7 +113,7 @@ export const claimsRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const claims = await prisma.authorClaim.findMany({
         where: {
-          claimantId: ctx.user.id,
+          claimantId: (ctx.user as any)?.id,
         },
         include: {
           rule: {
@@ -194,7 +201,10 @@ export const claimsRouter = createTRPCRouter({
       }
 
       // Only allow claimant or admins to view claim details
-      if (claim.claimantId !== ctx.user.id && ctx.user.role !== "ADMIN") {
+      if (
+        claim.claimantId !== (ctx.user as any)?.id &&
+        (ctx.user as any)?.role !== "ADMIN"
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to view this claim",
@@ -249,7 +259,7 @@ export const claimsRouter = createTRPCRouter({
         });
       }
 
-      if (claim.claimantId !== ctx.user.id) {
+      if (claim.claimantId !== (ctx.user as any)?.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to cancel this claim",

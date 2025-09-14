@@ -15,8 +15,7 @@ describe("Rules Router Integration", () => {
     testUser = await prisma.user.create({
       data: {
         id: generateId(),
-        clerkId: `test_${generateId()}`,
-        email: "test@example.com",
+        handle: `testuser_${generateId()}`,
         displayName: "Test User",
       },
     });

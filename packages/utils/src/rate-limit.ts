@@ -2,13 +2,22 @@
  * Rate limiting system with sliding window implementation
  */
 
-export type LimitOutcome = 
+export type LimitOutcome =
   | { ok: true; remaining: number; resetMs: number }
   | { ok: false; retryAfterMs: number; resetMs: number };
 
 export interface RateLimitStore {
-  consume(key: string, weight: number, windowMs: number, limit: number): Promise<LimitOutcome>;
-  getWindow(key: string, windowMs: number, limit: number): Promise<{ remaining: number; resetMs: number } | null>;
+  consume(
+    key: string,
+    weight: number,
+    windowMs: number,
+    limit: number
+  ): Promise<LimitOutcome>;
+  getWindow(
+    key: string,
+    windowMs: number,
+    limit: number
+  ): Promise<{ remaining: number; resetMs: number } | null>;
   clear(key: string): Promise<void>;
   clearAll(): Promise<void>;
 }
@@ -28,9 +37,9 @@ export function makeKey(k: BucketKey): string {
   return [
     k.bucket,
     k.userId ?? "-",
-    k.ipHash ?? "-", 
+    k.ipHash ?? "-",
     k.uaHash ?? "-",
-    k.extra ?? "-"
+    k.extra ?? "-",
   ].join(":");
 }
 
@@ -49,20 +58,20 @@ export class MemoryRateLimitStore implements RateLimitStore {
   }
 
   async consume(
-    key: string, 
-    weight: number, 
-    windowMs: number, 
+    key: string,
+    weight: number,
+    windowMs: number,
     limit: number
   ): Promise<LimitOutcome> {
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     // Get or create bucket
     let timestamps = this.buckets.get(key) ?? [];
-    
+
     // Remove expired timestamps
-    timestamps = timestamps.filter(ts => ts > windowStart);
-    
+    timestamps = timestamps.filter((ts) => ts > windowStart);
+
     // Check if we can consume
     const currentUsage = timestamps.length;
     if (currentUsage + weight > limit) {
@@ -70,29 +79,29 @@ export class MemoryRateLimitStore implements RateLimitStore {
       const oldestTimestamp = timestamps[0] ?? now;
       const retryAfterMs = Math.max(1000, oldestTimestamp + windowMs - now);
       const resetMs = windowMs - (now - oldestTimestamp);
-      
+
       // Update bucket without adding new timestamps
       this.buckets.set(key, timestamps);
-      
+
       return {
         ok: false,
         retryAfterMs,
         resetMs: Math.max(0, resetMs),
       };
     }
-    
+
     // Add new timestamps for the weight
     for (let i = 0; i < weight; i++) {
       timestamps.push(now);
     }
-    
+
     // Update bucket
     this.buckets.set(key, timestamps);
-    
+
     const remaining = Math.max(0, limit - timestamps.length);
     const oldestTimestamp = timestamps[0] ?? now;
     const resetMs = windowMs - (now - oldestTimestamp);
-    
+
     return {
       ok: true,
       remaining,
@@ -101,30 +110,30 @@ export class MemoryRateLimitStore implements RateLimitStore {
   }
 
   async getWindow(
-    key: string, 
-    windowMs: number, 
+    key: string,
+    windowMs: number,
     limit: number
   ): Promise<{ remaining: number; resetMs: number } | null> {
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     let timestamps = this.buckets.get(key);
     if (!timestamps || timestamps.length === 0) {
       return { remaining: limit, resetMs: windowMs };
     }
-    
+
     // Remove expired timestamps
-    timestamps = timestamps.filter(ts => ts > windowStart);
+    timestamps = timestamps.filter((ts) => ts > windowStart);
     this.buckets.set(key, timestamps);
-    
+
     if (timestamps.length === 0) {
       return { remaining: limit, resetMs: windowMs };
     }
-    
+
     const remaining = Math.max(0, limit - timestamps.length);
-    const oldestTimestamp = timestamps[0];
+    const oldestTimestamp = timestamps[0] || now;
     const resetMs = windowMs - (now - oldestTimestamp);
-    
+
     return {
       remaining,
       resetMs: Math.max(0, resetMs),
@@ -145,11 +154,11 @@ export class MemoryRateLimitStore implements RateLimitStore {
   private cleanup(): void {
     const now = Date.now();
     const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    
+
     for (const [key, timestamps] of this.buckets.entries()) {
       // Remove timestamps older than maxAge
-      const filtered = timestamps.filter(ts => now - ts < maxAge);
-      
+      const filtered = timestamps.filter((ts) => now - ts < maxAge);
+
       if (filtered.length === 0) {
         this.buckets.delete(key);
       } else if (filtered.length !== timestamps.length) {
@@ -170,12 +179,15 @@ export class MemoryRateLimitStore implements RateLimitStore {
     for (const timestamps of this.buckets.values()) {
       totalTimestamps += timestamps.length;
     }
-    
+
     // Rough memory calculation (key + timestamps array)
-    const memoryUsageBytes = Array.from(this.buckets.entries()).reduce((acc, [key, timestamps]) => {
-      return acc + key.length * 2 + timestamps.length * 8; // Rough estimate
-    }, 0);
-    
+    const memoryUsageBytes = Array.from(this.buckets.entries()).reduce(
+      (acc, [key, timestamps]) => {
+        return acc + key.length * 2 + timestamps.length * 8; // Rough estimate
+      },
+      0
+    );
+
     return {
       totalBuckets: this.buckets.size,
       totalTimestamps,
@@ -209,13 +221,13 @@ export function getGlobalStore(): MemoryRateLimitStore {
  * High-level rate limiting function
  */
 export async function limit(
-  bucket: BucketKey, 
+  bucket: BucketKey,
   config: { limit: number; windowMs: number; weight?: number }
 ): Promise<LimitOutcome> {
   const store = getGlobalStore();
   const key = makeKey(bucket);
   const weight = config.weight ?? 1;
-  
+
   return store.consume(key, weight, config.windowMs, config.limit);
 }
 
@@ -228,7 +240,7 @@ export async function check(
 ): Promise<{ remaining: number; resetMs: number } | null> {
   const store = getGlobalStore();
   const key = makeKey(bucket);
-  
+
   return store.getWindow(key, config.windowMs, config.limit);
 }
 
@@ -238,7 +250,7 @@ export async function check(
 export async function clearLimit(bucket: BucketKey): Promise<void> {
   const store = getGlobalStore();
   const key = makeKey(bucket);
-  
+
   return store.clear(key);
 }
 
@@ -246,12 +258,15 @@ export async function clearLimit(bucket: BucketKey): Promise<void> {
  * Token bucket implementation (alternative to sliding window)
  */
 export class TokenBucketStore implements RateLimitStore {
-  private buckets = new Map<string, {
-    tokens: number;
-    lastRefill: number;
-    capacity: number;
-    refillRate: number; // tokens per second
-  }>();
+  private buckets = new Map<
+    string,
+    {
+      tokens: number;
+      lastRefill: number;
+      capacity: number;
+      refillRate: number; // tokens per second
+    }
+  >();
 
   async consume(
     key: string,
@@ -261,7 +276,7 @@ export class TokenBucketStore implements RateLimitStore {
   ): Promise<LimitOutcome> {
     const now = Date.now();
     const refillRate = limit / (windowMs / 1000); // tokens per second
-    
+
     let bucket = this.buckets.get(key);
     if (!bucket) {
       bucket = {
@@ -271,35 +286,37 @@ export class TokenBucketStore implements RateLimitStore {
         refillRate,
       };
     }
-    
+
     // Refill tokens based on elapsed time
     const elapsed = (now - bucket.lastRefill) / 1000;
     const tokensToAdd = elapsed * bucket.refillRate;
     bucket.tokens = Math.min(bucket.capacity, bucket.tokens + tokensToAdd);
     bucket.lastRefill = now;
-    
+
     // Check if we can consume
     if (bucket.tokens < weight) {
       const tokensNeeded = weight - bucket.tokens;
       const retryAfterMs = (tokensNeeded / bucket.refillRate) * 1000;
-      
+
       this.buckets.set(key, bucket);
-      
+
       return {
         ok: false,
         retryAfterMs: Math.ceil(retryAfterMs),
         resetMs: Math.ceil(retryAfterMs),
       };
     }
-    
+
     // Consume tokens
     bucket.tokens -= weight;
     this.buckets.set(key, bucket);
-    
+
     return {
       ok: true,
       remaining: Math.floor(bucket.tokens),
-      resetMs: Math.ceil((bucket.capacity - bucket.tokens) / bucket.refillRate * 1000),
+      resetMs: Math.ceil(
+        ((bucket.capacity - bucket.tokens) / bucket.refillRate) * 1000
+      ),
     };
   }
 
@@ -312,19 +329,21 @@ export class TokenBucketStore implements RateLimitStore {
     if (!bucket) {
       return { remaining: limit, resetMs: 0 };
     }
-    
+
     // Refill tokens
     const now = Date.now();
     const elapsed = (now - bucket.lastRefill) / 1000;
     const tokensToAdd = elapsed * bucket.refillRate;
     bucket.tokens = Math.min(bucket.capacity, bucket.tokens + tokensToAdd);
     bucket.lastRefill = now;
-    
+
     this.buckets.set(key, bucket);
-    
+
     return {
       remaining: Math.floor(bucket.tokens),
-      resetMs: Math.ceil((bucket.capacity - bucket.tokens) / bucket.refillRate * 1000),
+      resetMs: Math.ceil(
+        ((bucket.capacity - bucket.tokens) / bucket.refillRate) * 1000
+      ),
     };
   }
 

@@ -8,7 +8,8 @@ import superjson from "superjson";
 import type { AppRouter } from "@repo/trpc";
 
 // Create the tRPC React hooks
-export const api = createTRPCReact<AppRouter>();
+export const api: ReturnType<typeof createTRPCReact<AppRouter>> =
+  createTRPCReact<AppRouter>();
 
 function getBaseUrl() {
   if (typeof window !== "undefined") {

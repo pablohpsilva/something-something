@@ -47,7 +47,6 @@ async function main() {
       prisma.user.create({
         data: {
           id: generateUserId(),
-          clerkId: "user_2abc123def456",
           handle: "alice-dev",
           displayName: "Alice Johnson",
           avatarUrl:
@@ -59,7 +58,6 @@ async function main() {
       prisma.user.create({
         data: {
           id: generateUserId(),
-          clerkId: "user_2def456ghi789",
           handle: "bob-prompt-master",
           displayName: "Bob Smith",
           avatarUrl:
@@ -71,7 +69,6 @@ async function main() {
       prisma.user.create({
         data: {
           id: generateUserId(),
-          clerkId: "user_2ghi789jkl012",
           handle: "charlie-ai",
           displayName: "Charlie Brown",
           avatarUrl:
@@ -83,7 +80,6 @@ async function main() {
       prisma.user.create({
         data: {
           id: generateUserId(),
-          clerkId: "user_2jkl012mno345",
           handle: "diana-coder",
           displayName: "Diana Prince",
           avatarUrl:
@@ -95,7 +91,6 @@ async function main() {
       prisma.user.create({
         data: {
           id: generateUserId(),
-          clerkId: "user_2mno345pqr678",
           handle: "evan-ml",
           displayName: "Evan Chen",
           avatarUrl:

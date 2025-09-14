@@ -52,6 +52,8 @@ export function calculateTrendingScore(
 
   for (let d = 0; d < Math.min(dailyMetrics.length, 7); d++) {
     const metrics = dailyMetrics[d];
+    if (!metrics) continue;
+
     const weight = decayWeight(d);
 
     score +=

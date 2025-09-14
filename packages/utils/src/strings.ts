@@ -205,7 +205,7 @@ export function escapeHtml(str: string): string {
     "/": "&#x2F;",
   };
 
-  return str.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+  return str.replace(/[&<>"'/]/g, (match) => htmlEscapes[match] || match);
 }
 
 /**
@@ -223,7 +223,7 @@ export function unescapeHtml(str: string): string {
 
   return str.replace(
     /&(?:amp|lt|gt|quot|#x27|#x2F);/g,
-    (match) => htmlUnescapes[match]
+    (match) => htmlUnescapes[match] || match
   );
 }
 
@@ -232,7 +232,7 @@ export function unescapeHtml(str: string): string {
  */
 export function extractEmailDomain(email: string): string {
   const match = email.match(/@(.+)$/);
-  return match ? match[1] : "";
+  return match ? match[1] || "" : "";
 }
 
 /**

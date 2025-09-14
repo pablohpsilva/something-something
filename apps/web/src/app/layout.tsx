@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { TRPCProvider } from "@/lib/trpc";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Header } from "@/components/shell/header";
@@ -15,26 +14,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider
-      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
-      afterSignInUrl="/"
-      afterSignUpUrl="/onboarding"
-    >
-      <html lang="en" suppressHydrationWarning>
-        <body className="min-h-screen bg-background font-sans antialiased">
-          <ThemeProvider>
-            <TRPCProvider>
-              <div className="relative flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-1">{children}</main>
-                <Footer />
-              </div>
-            </TRPCProvider>
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <ThemeProvider>
+          <TRPCProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </TRPCProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

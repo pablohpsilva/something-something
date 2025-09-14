@@ -109,7 +109,6 @@ export const updateProfile = withAuth(
       // Return updated user data
       const appUser: AppUser = {
         id: updatedUser.id,
-        clerkId: updatedUser.clerkId,
         handle: updatedUser.handle,
         displayName: updatedUser.displayName,
         avatarUrl: updatedUser.avatarUrl,

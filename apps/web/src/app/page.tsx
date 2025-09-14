@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getCurrentUserServer } from "@/lib/auth";
-import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@repo/ui/button";
 import {
   Card,
@@ -30,25 +29,7 @@ export default async function Home() {
             </div>
 
             <div className="flex items-center space-x-4">
-              {user ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-700">
-                    Welcome, {user.displayName}
-                  </span>
-                  <UserButton />
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <SignInButton mode="modal">
-                    <Button variant="outline" size="sm">
-                      Sign In
-                    </Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <Button size="sm">Sign Up</Button>
-                  </SignUpButton>
-                </div>
-              )}
+              {/* Authentication removed */}
             </div>
           </div>
         </div>
@@ -210,18 +191,7 @@ export default async function Home() {
               </Card>
             </div>
 
-            <div className="text-center">
-              <SignUpButton mode="modal">
-                <Button size="lg" className="mr-4">
-                  Get Started
-                </Button>
-              </SignUpButton>
-              <SignInButton mode="modal">
-                <Button variant="outline" size="lg">
-                  Sign In
-                </Button>
-              </SignInButton>
-            </div>
+            <div className="text-center">{/* Authentication removed */}</div>
           </div>
         )}
       </main>

@@ -80,7 +80,7 @@ export function generateTimeBasedId(prefix?: string): string {
 export function extractTimestampFromId(id: string): Date | null {
   try {
     const parts = id.split("_");
-    const timestampPart = parts.length === 3 ? parts[1] : parts[0];
+    const timestampPart = parts.length === 3 ? parts[1] || "" : parts[0] || "";
     const timestamp = parseInt(timestampPart, 36);
     return new Date(timestamp);
   } catch {

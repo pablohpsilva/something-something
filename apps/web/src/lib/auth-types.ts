@@ -2,7 +2,6 @@ import type { UserRole } from "@repo/db";
 
 export type AppUser = {
   id: string;
-  clerkId: string;
   handle: string;
   displayName: string;
   avatarUrl: string | null;

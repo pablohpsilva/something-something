@@ -85,7 +85,7 @@ export const tagsRouter = router({
           id: tag.id,
           slug: tag.slug,
           name: tag.name,
-          count: includeCount ? tag._count?.rules || 0 : undefined,
+          count: includeCount ? (tag as any)._count?.rules || 0 : undefined,
         })),
         nextCursor,
         hasMore,
@@ -148,7 +148,7 @@ export const tagsRouter = router({
         id: tag.id,
         slug: tag.slug,
         name: tag.name,
-        rulesCount: tag._count?.rules || 0,
+        rulesCount: (tag as any)._count?.rules || 0,
         recentRulesCount,
       };
     }),

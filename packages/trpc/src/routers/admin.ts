@@ -4,7 +4,7 @@ import { createTRPCRouter, adminProcedure } from "../trpc";
 import { prisma } from "@repo/db/client";
 import { AuditLogService } from "../services/audit-log";
 
-export const adminRouter = createTRPCRouter({
+export const adminRouter: any = createTRPCRouter({
   // ============================================================================
   // AUTHOR CLAIMS
   // ============================================================================
@@ -160,7 +160,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           status: "APPROVED",
-          reviewerId: ctx.user.id,
+          reviewerId: (ctx.user as any)?.id,
           reviewNote: input.reviewNote,
           reviewedAt: new Date(),
         },
@@ -175,7 +175,7 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Create audit log entry
-      await AuditLogService.logClaimApprove(input.id, ctx.user.id, {
+      await AuditLogService.logClaimApprove(input.id, (ctx.user as any)?.id, {
         ruleId: claim.ruleId,
         claimantId: claim.claimantId,
         originalAuthorId: claim.rule.createdByUserId,
@@ -220,7 +220,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.id },
         data: {
           status: "REJECTED",
-          reviewerId: ctx.user.id,
+          reviewerId: (ctx.user as any)?.id,
           reviewNote: input.reviewNote,
           reviewedAt: new Date(),
         },
@@ -229,7 +229,7 @@ export const adminRouter = createTRPCRouter({
       // Create audit log entry
       await AuditLogService.logClaimReject(
         input.id,
-        ctx.user.id,
+        (ctx.user as any)?.id,
         input.reviewNote,
         {
           ruleId: claim.ruleId,
@@ -347,7 +347,7 @@ export const adminRouter = createTRPCRouter({
       // Create audit log entry
       await AuditLogService.logCommentDelete(
         input.id,
-        ctx.user.id,
+        (ctx.user as any)?.id,
         input.reason,
         {
           authorId: comment.authorUserId,
@@ -398,7 +398,7 @@ export const adminRouter = createTRPCRouter({
       // Create audit log entry
       await AuditLogService.logRuleDeprecate(
         input.id,
-        ctx.user.id,
+        (ctx.user as any)?.id,
         input.reason,
         {
           originalStatus: rule.status,

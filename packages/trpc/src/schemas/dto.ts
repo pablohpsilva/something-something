@@ -118,7 +118,7 @@ export const ruleVersionDetailDTOSchema = z.object({
 export type RuleVersionDetailDTO = z.infer<typeof ruleVersionDetailDTOSchema>;
 
 // Comment DTO
-export const commentDTOSchema = z.object({
+export const commentDTOSchema: z.ZodType<any> = z.object({
   id: commentIdSchema,
   ruleId: ruleIdSchema,
   parentId: commentIdSchema.nullable(),
@@ -171,9 +171,6 @@ export const claimDTOSchema = z.object({
 });
 
 export type ClaimDTO = z.infer<typeof claimDTOSchema>;
-
-
-
 
 // Vote summary DTO
 export const voteSummaryDTOSchema = z.object({

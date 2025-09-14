@@ -169,7 +169,7 @@ export class AuditLogService {
     targetId: string,
     targetType: string,
     limit = 50
-  ) {
+  ): Promise<any> {
     return prisma.auditLog.findMany({
       where: {
         targetId,
@@ -195,7 +195,7 @@ export class AuditLogService {
   /**
    * Get recent audit logs for admin dashboard
    */
-  static async getRecentLogs(limit = 100) {
+  static async getRecentLogs(limit = 100): Promise<any> {
     return prisma.auditLog.findMany({
       include: {
         actor: {
@@ -217,7 +217,7 @@ export class AuditLogService {
   /**
    * Get audit logs by action type
    */
-  static async getLogsByAction(action: string, limit = 50) {
+  static async getLogsByAction(action: string, limit = 50): Promise<any> {
     return prisma.auditLog.findMany({
       where: {
         action,

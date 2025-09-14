@@ -29,10 +29,18 @@ import {
 import { Notifications } from "../services/notify";
 
 // Rate limited procedures
-const followRateLimitedProcedure = protectedProcedure.use(rateLimit("follow", 30, 60 * 1000));
-const watchRateLimitedProcedure = protectedProcedure.use(rateLimit("watch", 60, 60 * 1000));
-const notificationsRateLimitedProcedure = protectedProcedure.use(rateLimit("notifications", 120, 60 * 1000));
-const markAllReadRateLimitedProcedure = protectedProcedure.use(rateLimit("markAllRead", 10, 60 * 1000));
+const followRateLimitedProcedure = protectedProcedure.use(
+  rateLimit("follow", 30, 60 * 1000)
+);
+const watchRateLimitedProcedure = protectedProcedure.use(
+  rateLimit("watch", 60, 60 * 1000)
+);
+const notificationsRateLimitedProcedure = protectedProcedure.use(
+  rateLimit("notifications", 120, 60 * 1000)
+);
+const markAllReadRateLimitedProcedure = protectedProcedure.use(
+  rateLimit("markAllRead", 10, 60 * 1000)
+);
 
 export const socialRouter = router({
   // Follow functionality
@@ -252,22 +260,22 @@ export const socialRouter = router({
       const followers = await ctx.prisma.follow.findMany({
         where: { authorUserId },
         include: {
-            follower: {
-              select: {
-                id: true,
-                handle: true,
-                displayName: true,
-                avatarUrl: true,
-              },
+          follower: {
+            select: {
+              id: true,
+              handle: true,
+              displayName: true,
+              avatarUrl: true,
             },
+          },
         },
         orderBy: [{ followerUserId: "desc" }],
         take: limit + 1,
         ...(cursor && {
           cursor: {
             followerUserId_authorUserId: {
-              followerUserId: cursor.split(":")[0],
-              authorUserId: cursor.split(":")[1],
+              followerUserId: cursor.split(":")[0] || "",
+              authorUserId: cursor.split(":")[1] || "",
             },
           },
           skip: 1,
@@ -276,11 +284,12 @@ export const socialRouter = router({
 
       const hasMore = followers.length > limit;
       const items = hasMore ? followers.slice(0, -1) : followers;
-      const nextCursor = hasMore
-        ? `${items[items.length - 1].followerUserId}:${
-            items[items.length - 1].authorUserId
-          }`
-        : undefined;
+      const nextCursor =
+        hasMore && items.length > 0
+          ? `${items[items.length - 1]?.followerUserId}:${
+              items[items.length - 1]?.authorUserId
+            }`
+          : undefined;
 
       const totalCount = await ctx.prisma.follow.count({
         where: { authorUserId },
@@ -325,8 +334,8 @@ export const socialRouter = router({
         ...(cursor && {
           cursor: {
             followerUserId_authorUserId: {
-              followerUserId: cursor.split(":")[0],
-              authorUserId: cursor.split(":")[1],
+              followerUserId: cursor.split(":")[0] || "",
+              authorUserId: cursor.split(":")[1] || "",
             },
           },
           skip: 1,
@@ -335,11 +344,12 @@ export const socialRouter = router({
 
       const hasMore = following.length > limit;
       const items = hasMore ? following.slice(0, -1) : following;
-      const nextCursor = hasMore
-        ? `${items[items.length - 1].followerUserId}:${
-            items[items.length - 1].authorUserId
-          }`
-        : undefined;
+      const nextCursor =
+        hasMore && items.length > 0
+          ? `${items[items.length - 1]?.followerUserId}:${
+              items[items.length - 1]?.authorUserId
+            }`
+          : undefined;
 
       const totalCount = await ctx.prisma.follow.count({
         where: { followerUserId: userId },

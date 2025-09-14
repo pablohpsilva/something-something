@@ -54,49 +54,21 @@ export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 
 // Middleware to require authentication
-export const requireAuth = t.middleware(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "Authentication required",
-    });
-  }
-
-  return next({
-    ctx: {
-      ...ctx,
-      user: ctx.user, // Now guaranteed to be non-null
-    },
+export const requireAuth: any = t.middleware(({ ctx, next }) => {
+  // Authentication has been removed from this application
+  throw new TRPCError({
+    code: "UNAUTHORIZED",
+    message: "Authentication has been removed from this application",
   });
 });
 
 // Middleware to require specific role
 export const requireRole = (role: "MOD" | "ADMIN") =>
   t.middleware(({ ctx, next }) => {
-    if (!ctx.user) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "Authentication required",
-      });
-    }
-
-    const hasPermission =
-      role === "ADMIN"
-        ? ctx.user.role === "ADMIN"
-        : ctx.user.role === "MOD" || ctx.user.role === "ADMIN";
-
-    if (!hasPermission) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: `${role} role required`,
-      });
-    }
-
-    return next({
-      ctx: {
-        ...ctx,
-        user: ctx.user,
-      },
+    // Authentication has been removed from this application
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Authentication has been removed from this application",
     });
   });
 
@@ -140,13 +112,11 @@ export const audit = (
     ctx.prisma.auditLog
       .create({
         data: {
-          actorUserId: ctx.user?.id || null,
+          actorId: ctx.user?.id || null,
           action,
-          entityType: entity?.type || "unknown",
-          entityId: entity?.id || "unknown",
-          diff: diff ? (diff as any) : null,
-          ipHash: ctx.reqIpHash,
-          createdAt: ctx.now,
+          targetType: entity?.type || "unknown",
+          targetId: entity?.id || "unknown",
+          metadata: diff ? (diff as any) : null,
         },
       })
       .catch((error) => {

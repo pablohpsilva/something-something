@@ -177,7 +177,7 @@ const socialRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { authorUserId } = input;
 
-      if (authorUserId === ctx.user.id) {
+      if (authorUserId === (ctx.user as any)?.id) {
         throw new Error("Cannot follow yourself");
       }
 
@@ -185,7 +185,7 @@ const socialRouter = router({
         const existing = await tx.follow.findUnique({
           where: {
             followerUserId_authorUserId: {
-              followerUserId: ctx.user.id,
+              followerUserId: (ctx.user as any)?.id,
               authorUserId: authorUserId,
             },
           },
@@ -195,7 +195,7 @@ const socialRouter = router({
           await tx.follow.delete({
             where: {
               followerUserId_authorUserId: {
-                followerUserId: ctx.user.id,
+                followerUserId: (ctx.user as any)?.id,
                 authorUserId: authorUserId,
               },
             },
@@ -203,7 +203,7 @@ const socialRouter = router({
         } else {
           await tx.follow.create({
             data: {
-              followerUserId: ctx.user.id,
+              followerUserId: (ctx.user as any)?.id,
               authorUserId: authorUserId,
             },
           });
@@ -235,7 +235,7 @@ const socialRouter = router({
         const existing = await tx.favorite.findUnique({
           where: {
             userId_ruleId: {
-              userId: ctx.user.id,
+              userId: (ctx.user as any)?.id,
               ruleId,
             },
           },
@@ -245,7 +245,7 @@ const socialRouter = router({
           await tx.favorite.delete({
             where: {
               userId_ruleId: {
-                userId: ctx.user.id,
+                userId: (ctx.user as any)?.id,
                 ruleId,
               },
             },
@@ -253,7 +253,7 @@ const socialRouter = router({
         } else {
           await tx.favorite.create({
             data: {
-              userId: ctx.user.id,
+              userId: (ctx.user as any)?.id,
               ruleId,
             },
           });
@@ -262,7 +262,7 @@ const socialRouter = router({
           await tx.event.create({
             data: {
               type: "SAVE",
-              userId: ctx.user.id,
+              userId: (ctx.user as any)?.id,
               ruleId,
               ipHash: ctx.reqIpHash,
               uaHash: ctx.uaHash,
@@ -307,7 +307,7 @@ const socialRouter = router({
       const { cursor, limit, unreadOnly } = input;
 
       const where: any = {
-        userId: ctx.user.id,
+        userId: (ctx.user as any)?.id,
         ...(unreadOnly && { readAt: null }),
       };
 
@@ -326,7 +326,7 @@ const socialRouter = router({
       const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
       return {
-        items: items.map(item => ({
+        items: items.map((item) => ({
           ...item,
           type: item.type as string,
           payload: (item.payload as Record<string, unknown>) || {},
