@@ -31,15 +31,15 @@ class LRUDedupCache {
     // Clean up expired entries
     this.cleanup();
 
-    if (entry && (now - entry.timestamp) < this.windowMs) {
+    if (entry && now - entry.timestamp < this.windowMs) {
       // Update count and timestamp
       entry.count++;
       entry.timestamp = now;
-      
+
       // Move to end (LRU)
       this.cache.delete(key);
       this.cache.set(key, entry);
-      
+
       return true; // Should dedupe
     }
 
@@ -53,7 +53,9 @@ class LRUDedupCache {
     // Ensure cache size limit
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
 
     this.cache.set(key, newEntry);
@@ -68,7 +70,7 @@ class LRUDedupCache {
     if (!entry) return null;
 
     const now = Date.now();
-    if ((now - entry.timestamp) >= this.windowMs) {
+    if (now - entry.timestamp >= this.windowMs) {
       this.cache.delete(key);
       return null;
     }
@@ -84,12 +86,12 @@ class LRUDedupCache {
     const toDelete: string[] = [];
 
     for (const [key, entry] of this.cache.entries()) {
-      if ((now - entry.timestamp) >= this.windowMs) {
+      if (now - entry.timestamp >= this.windowMs) {
         toDelete.push(key);
       }
     }
 
-    toDelete.forEach(key => this.cache.delete(key));
+    toDelete.forEach((key) => this.cache.delete(key));
   }
 
   /**
@@ -135,7 +137,7 @@ export class CookieDedupManager {
   private windowMs: number;
 
   constructor(
-    cookieName = 'm_evt',
+    cookieName = "m_evt",
     maxEntries = 100,
     windowMs = 10 * 60 * 1000
   ) {
@@ -148,15 +150,15 @@ export class CookieDedupManager {
    * Check if VIEW event should be deduplicated
    */
   shouldDedupeView(ruleId: string): boolean {
-    if (typeof document === 'undefined') return false;
+    if (typeof document === "undefined") return false;
 
     const entries = this.getEntries();
     const now = Date.now();
     const key = `view:${ruleId}`;
 
     // Check if already seen recently
-    const existing = entries.find(e => e.key === key);
-    if (existing && (now - existing.timestamp) < this.windowMs) {
+    const existing = entries.find((e) => e.key === key);
+    if (existing && now - existing.timestamp < this.windowMs) {
       return true; // Should dedupe
     }
 
@@ -168,8 +170,10 @@ export class CookieDedupManager {
     };
 
     // Remove expired entries
-    const validEntries = entries.filter(e => (now - e.timestamp) < this.windowMs);
-    
+    const validEntries = entries.filter(
+      (e) => now - e.timestamp < this.windowMs
+    );
+
     // Add new entry and limit size
     validEntries.push(newEntry);
     const limitedEntries = validEntries.slice(-this.maxEntries);
@@ -186,16 +190,17 @@ export class CookieDedupManager {
   private getEntries(): DedupEntry[] {
     try {
       const cookie = document.cookie
-        .split(';')
-        .find(c => c.trim().startsWith(`${this.cookieName}=`));
+        .split(";")
+        .find((c) => c.trim().startsWith(`${this.cookieName}=`));
 
       if (!cookie) return [];
 
-      const value = cookie.split('=')[1];
+      const value = cookie.split("=")[1];
+      if (!value) return [];
       const decoded = decodeURIComponent(value);
       return JSON.parse(decoded);
     } catch (error) {
-      console.warn('Failed to parse dedup cookie:', error);
+      console.warn("Failed to parse dedup cookie:", error);
       return [];
     }
   }
@@ -207,12 +212,12 @@ export class CookieDedupManager {
     try {
       const value = JSON.stringify(entries);
       const encoded = encodeURIComponent(value);
-      
+
       // Set cookie with 1 hour expiry
       const expires = new Date(Date.now() + 60 * 60 * 1000).toUTCString();
       document.cookie = `${this.cookieName}=${encoded}; expires=${expires}; path=/; SameSite=Lax`;
     } catch (error) {
-      console.warn('Failed to set dedup cookie:', error);
+      console.warn("Failed to set dedup cookie:", error);
     }
   }
 
@@ -220,7 +225,7 @@ export class CookieDedupManager {
    * Clear dedup cookie
    */
   clear(): void {
-    if (typeof document !== 'undefined') {
+    if (typeof document !== "undefined") {
       document.cookie = `${this.cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
     }
   }
@@ -234,9 +239,9 @@ export class CookieDedupManager {
   } {
     const entries = this.getEntries();
     const cookieValue = document.cookie
-      .split(';')
-      .find(c => c.trim().startsWith(`${this.cookieName}=`));
-    
+      .split(";")
+      .find((c) => c.trim().startsWith(`${this.cookieName}=`));
+
     return {
       entries: entries.length,
       cookieSize: cookieValue ? cookieValue.length : 0,
@@ -253,7 +258,7 @@ export class LocalStorageDedupManager {
   private windowMs: number;
 
   constructor(
-    storageKey = 'abuse_dedup',
+    storageKey = "abuse_dedup",
     maxEntries = 500,
     windowMs = 10 * 60 * 1000
   ) {
@@ -266,14 +271,14 @@ export class LocalStorageDedupManager {
    * Check if action should be deduplicated
    */
   shouldDedupe(actionKey: string): boolean {
-    if (typeof localStorage === 'undefined') return false;
+    if (typeof localStorage === "undefined") return false;
 
     const entries = this.getEntries();
     const now = Date.now();
 
     // Check if already seen recently
-    const existing = entries.find(e => e.key === actionKey);
-    if (existing && (now - existing.timestamp) < this.windowMs) {
+    const existing = entries.find((e) => e.key === actionKey);
+    if (existing && now - existing.timestamp < this.windowMs) {
       existing.count++;
       existing.timestamp = now;
       this.setEntries(entries);
@@ -288,8 +293,10 @@ export class LocalStorageDedupManager {
     };
 
     // Remove expired entries
-    const validEntries = entries.filter(e => (now - e.timestamp) < this.windowMs);
-    
+    const validEntries = entries.filter(
+      (e) => now - e.timestamp < this.windowMs
+    );
+
     // Add new entry and limit size
     validEntries.push(newEntry);
     const limitedEntries = validEntries.slice(-this.maxEntries);
@@ -308,7 +315,7 @@ export class LocalStorageDedupManager {
       const stored = localStorage.getItem(this.storageKey);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.warn('Failed to parse dedup localStorage:', error);
+      console.warn("Failed to parse dedup localStorage:", error);
       return [];
     }
   }
@@ -320,15 +327,18 @@ export class LocalStorageDedupManager {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(entries));
     } catch (error) {
-      console.warn('Failed to set dedup localStorage:', error);
-      
+      console.warn("Failed to set dedup localStorage:", error);
+
       // If storage is full, clear old entries and try again
-      if (error instanceof Error && error.name === 'QuotaExceededError') {
+      if (error instanceof Error && error.name === "QuotaExceededError") {
         const halfEntries = entries.slice(-Math.floor(entries.length / 2));
         try {
           localStorage.setItem(this.storageKey, JSON.stringify(halfEntries));
         } catch (retryError) {
-          console.error('Failed to set dedup localStorage after cleanup:', retryError);
+          console.error(
+            "Failed to set dedup localStorage after cleanup:",
+            retryError
+          );
         }
       }
     }
@@ -338,7 +348,7 @@ export class LocalStorageDedupManager {
    * Clear localStorage
    */
   clear(): void {
-    if (typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== "undefined") {
       localStorage.removeItem(this.storageKey);
     }
   }
@@ -351,10 +361,11 @@ export class LocalStorageDedupManager {
     storageSize: number;
   } {
     const entries = this.getEntries();
-    const stored = typeof localStorage !== 'undefined' 
-      ? localStorage.getItem(this.storageKey) 
-      : null;
-    
+    const stored =
+      typeof localStorage !== "undefined"
+        ? localStorage.getItem(this.storageKey)
+        : null;
+
     return {
       entries: entries.length,
       storageSize: stored ? stored.length : 0,
@@ -409,7 +420,7 @@ export function generateActionKey(
   const parts = [action];
   if (targetId) parts.push(targetId);
   if (userId) parts.push(userId);
-  return parts.join(':');
+  return parts.join(":");
 }
 
 /**
@@ -425,9 +436,9 @@ export function clearAllDedup(): void {
  * Get comprehensive deduplication statistics
  */
 export function getDedupStats(): {
-  memory: ReturnType<LRUDedupCache['getStats']>;
-  cookie: ReturnType<CookieDedupManager['getStats']>;
-  localStorage: ReturnType<LocalStorageDedupManager['getStats']>;
+  memory: ReturnType<LRUDedupCache["getStats"]>;
+  cookie: ReturnType<CookieDedupManager["getStats"]>;
+  localStorage: ReturnType<LocalStorageDedupManager["getStats"]>;
 } {
   return {
     memory: getGlobalCache().getStats(),

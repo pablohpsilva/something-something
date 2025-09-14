@@ -37,8 +37,8 @@ export function isHtmlSafe(html: string): boolean {
   let match;
 
   while ((match = tagRegex.exec(html)) !== null) {
-    const tagName = match[1].toLowerCase();
-    if (!ALLOWED_TAGS.includes(tagName)) {
+    const tagName = match[1]?.toLowerCase();
+    if (!tagName || !ALLOWED_TAGS.includes(tagName)) {
       return false;
     }
   }

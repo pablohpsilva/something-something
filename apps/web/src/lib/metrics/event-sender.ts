@@ -4,12 +4,16 @@
  */
 
 import {
-  EventType,
   EVENT_ENDPOINT,
   generateIdempotencyKey,
   simpleHash,
 } from "@repo/utils/metrics";
-import { shouldDedupeView, shouldDedupeAction, generateActionKey } from "../abuse/dedup";
+import type { EventType } from "@repo/utils/metrics";
+import {
+  shouldDedupeView,
+  shouldDedupeAction,
+  generateActionKey,
+} from "../abuse/dedup";
 import { withRetry, handleRateLimit, formatWaitTime } from "../abuse/backoff";
 
 interface EventData {
@@ -36,9 +40,9 @@ interface SendEventsOptions {
 export async function sendEventsToIngest(
   events: EventData[],
   options: SendEventsOptions
-): Promise<{ 
-  success: boolean; 
-  accepted?: number; 
+): Promise<{
+  success: boolean;
+  accepted?: number;
   deduped?: number;
   blocked?: number;
   error?: string;
@@ -74,7 +78,7 @@ export async function sendEventsToIngest(
         event.ruleId || event.ruleVersionId,
         options.userId || undefined
       );
-      
+
       if (shouldDedupeAction(actionKey)) {
         dedupedCount++;
         shouldSkip = true;
@@ -88,16 +92,16 @@ export async function sendEventsToIngest(
 
   // If all events were deduped, return early
   if (filteredEvents.length === 0) {
-    return { 
-      success: true, 
-      accepted: 0, 
-      deduped: dedupedCount 
+    return {
+      success: true,
+      accepted: 0,
+      deduped: dedupedCount,
     };
   }
 
   // Send events with retry logic
-  const operationKey = `ingest:${options.userId || 'anonymous'}`;
-  
+  const operationKey = `ingest:${options.userId || "anonymous"}`;
+
   try {
     const result = await withRetry(
       async () => {
@@ -116,15 +120,17 @@ export async function sendEventsToIngest(
 
         // Handle rate limiting
         if (response.status === 429) {
-          const retryAfter = response.headers.get('retry-after');
+          const retryAfter = response.headers.get("retry-after");
           const errorData = await response.json().catch(() => ({}));
-          
-          const error = new Error('Rate limit exceeded');
-          (error as any).code = 'TOO_MANY_REQUESTS';
+
+          const error = new Error("Rate limit exceeded");
+          (error as any).code = "TOO_MANY_REQUESTS";
           (error as any).status = 429;
-          (error as any).retryAfter = retryAfter ? parseInt(retryAfter) : undefined;
+          (error as any).retryAfter = retryAfter
+            ? parseInt(retryAfter)
+            : undefined;
           (error as any).cause = errorData;
-          
+
           throw error;
         }
 

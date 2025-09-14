@@ -34,11 +34,16 @@ export async function getTrpcCallerWithRequestContext() {
   const { ip, userAgent } = getRequestIpAndUA();
   const auth = await getOptionalAuth();
 
-  return createServerCaller({
+  // Create context object matching the expected structure
+  const ctx = {
     user: auth?.user || null,
     reqIpHeader: ip,
     reqUAHeader: userAgent,
-  });
+    reqIpHash: Buffer.from(ip).toString("base64").substring(0, 32),
+    uaHash: Buffer.from(userAgent).toString("base64").substring(0, 32),
+  };
+
+  return createServerCaller(ctx);
 }
 
 /**

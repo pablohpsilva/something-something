@@ -12,7 +12,7 @@ const createCaller = appRouter.createCaller;
  * Create a server-side tRPC caller with authentication context
  * Use this in Server Components and Server Actions
  */
-export const createServerCaller = cache(async () => {
+export const createServerCaller = cache(async (contextOverride?: any) => {
   const user = await getCurrentUserServer();
   const headersList = await headers();
 
@@ -29,7 +29,7 @@ export const createServerCaller = cache(async () => {
     ? Buffer.from(userAgent).toString("base64").substring(0, 32)
     : "unknown";
 
-  const ctx = createContext({
+  const ctx = createContext(contextOverride || {
     user,
     reqIpHash: ipHash,
     uaHash: uaHash,

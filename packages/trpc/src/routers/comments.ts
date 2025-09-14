@@ -61,7 +61,7 @@ export const commentsRouter = router({
                 displayName: true,
                 avatarUrl: true,
                 role: true,
-                isVerified: true,
+                // isVerified: true, // Field doesn't exist in schema
               },
             },
           },
@@ -158,7 +158,7 @@ export const commentsRouter = router({
                 displayName: true,
                 avatarUrl: true,
                 role: true,
-                isVerified: true,
+                // isVerified: true, // Field doesn't exist in schema
               },
             },
           },
@@ -291,7 +291,7 @@ export const commentsRouter = router({
                 displayName: true,
                 avatarUrl: true,
                 role: true,
-                isVerified: true,
+                // isVerified: true, // Field doesn't exist in schema
               },
             },
           },
@@ -482,7 +482,7 @@ export const commentsRouter = router({
                 displayName: true,
                 avatarUrl: true,
                 role: true,
-                isVerified: true,
+                // isVerified: true, // Field doesn't exist in schema
               },
             },
           },

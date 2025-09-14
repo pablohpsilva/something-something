@@ -7,11 +7,8 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getMetricsContext } from "@/server/req-context";
 import { sendViewEvent, sendActionEvent } from "./event-sender";
-import {
-  shouldDedupeView,
-  setViewDedupeCookie,
-  EventType,
-} from "@repo/utils/metrics";
+import { shouldDedupeView, setViewDedupeCookie } from "@repo/utils/metrics";
+import type { EventType } from "@repo/utils/metrics";
 
 /**
  * Record a VIEW event for a rule (fire-and-forget)

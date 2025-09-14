@@ -4,10 +4,11 @@ import { createTRPCRouter, protectedProcedure, createRateLimitedProcedure } from
 import { prisma } from "@repo/db/client";
 import { AbuseConfig } from "@repo/config/abuse";
 
-const claimCreateProcedure = createRateLimitedProcedure({
-  windowMs: AbuseConfig.windows.claimsPerUserPerHour * 60 * 60 * 1000,
-  maxRequests: AbuseConfig.limits.claimsPerUserPerHour,
-});
+const claimCreateProcedure = createRateLimitedProcedure(
+  protectedProcedure,
+  "claims",
+  { requireAuth: true, weight: 1 }
+);
 
 export const claimsRouter = createTRPCRouter({
   /**
@@ -51,7 +52,7 @@ export const claimsRouter = createTRPCRouter({
       }
 
       // Check if user is already the author
-      if (rule.createdByUserId === ctx.user.id) {
+      if (rule.createdByUserId === ctx.user?.id) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "You are already the author of this rule",
@@ -63,7 +64,7 @@ export const claimsRouter = createTRPCRouter({
         where: {
           ruleId_claimantId: {
             ruleId,
-            claimantId: ctx.user.id,
+            claimantId: ctx.user?.id || "",
           },
         },
       });
@@ -79,7 +80,7 @@ export const claimsRouter = createTRPCRouter({
       const claim = await prisma.authorClaim.create({
         data: {
           ruleId,
-          claimantId: ctx.user.id,
+          claimantId: ctx.user?.id || "",
           evidence,
           status: "PENDING",
         },

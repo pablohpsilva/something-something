@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma, type User, type UserRole } from "@repo/db";
 import { generateUniqueHandle, slugifyHandle } from "./handle";
+import type { AppUser } from "./auth-types";
 
 export type { AppUser } from "./auth-types";
 

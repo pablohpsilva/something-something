@@ -81,8 +81,8 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
 marked.setOptions({
   gfm: true, // GitHub Flavored Markdown
   breaks: true, // Convert \n to <br>
-  sanitize: false, // We handle sanitization separately
-  smartypants: false, // Disable smart quotes to avoid XSS
+  // Note: sanitize option removed in newer marked versions - we handle sanitization separately
+  // smartypants: false, // Disable smart quotes to avoid XSS (removed in newer marked versions)
 });
 
 /**
@@ -136,9 +136,13 @@ function postProcessHtml(html: string): string {
  * @returns HTML-escaped text
  */
 function escapeHtml(text: string): string {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+  // Server-safe HTML escaping without DOM APIs
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
 }
 
 /**
