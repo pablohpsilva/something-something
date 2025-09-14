@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { createServerCaller } from "@/server/trpc";
-import { getCurrentUserServer } from "@/lib/auth";
 import {
   RulesListExample,
   CreateRuleExample,
@@ -22,7 +21,7 @@ export const runtime = "nodejs";
  */
 async function ServerSideExample() {
   const trpc = await createServerCaller();
-  const user = await getCurrentUserServer();
+  const user = null; // Authentication removed
 
   // Example: Get rules list on server
   const rulesData = await trpc.rules.list({
@@ -49,23 +48,7 @@ async function ServerSideExample() {
           <div className="space-y-4">
             <div>
               <h4 className="font-semibold mb-2">Authentication Status:</h4>
-              {user ? (
-                <div className="flex items-center gap-2">
-                  <Badge variant="default">Authenticated</Badge>
-                  <span className="text-sm">
-                    {user.displayName} (@{user.handle})
-                  </span>
-                  <Badge
-                    variant={
-                      user.role === "ADMIN" ? "destructive" : "secondary"
-                    }
-                  >
-                    {user.role}
-                  </Badge>
-                </div>
-              ) : (
-                <Badge variant="secondary">Not authenticated</Badge>
-              )}
+              <Badge variant="outline">Authentication Removed</Badge>
             </div>
 
             <div>
