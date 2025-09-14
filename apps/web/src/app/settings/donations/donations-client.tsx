@@ -6,21 +6,21 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/ui/card";
-import { Button } from "@repo/ui/components/ui/button";
-import { Badge } from "@repo/ui/components/ui/badge";
+} from "@repo/ui";
+import { Button } from "@repo/ui";
+import { Badge } from "@repo/ui";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@repo/ui/components/ui/avatar";
+} from "@repo/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@repo/ui/components/ui/select";
+} from "@repo/ui";
 import {
   DollarSign,
   TrendingUp,

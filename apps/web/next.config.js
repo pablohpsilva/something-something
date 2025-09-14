@@ -10,7 +10,7 @@ const nextConfig = {
       },
     },
   },
-  transpilePackages: ["@repo/ui", "@repo/utils", "@repo/config"],
+  transpilePackages: ["@repo/ui", "@repo/utils", "@repo/config", "@repo/db", "@repo/trpc"],
   typescript: {
     ignoreBuildErrors: false,
   },

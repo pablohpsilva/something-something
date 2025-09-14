@@ -1,15 +1,15 @@
 "use client";
 
-import { api } from "@/lib/trpc/react";
+import { api } from "@/lib/trpc";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import { Skeleton } from "@repo/ui/components/skeleton";
+} from "@repo/ui";
+import { Badge } from "@repo/ui";
+import { Button } from "@repo/ui";
+import { Skeleton } from "@repo/ui";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { FileText, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react";

@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, Users, FileText } from "lucide-react";
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@repo/ui";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/ui/card";
+} from "@repo/ui";
 import { SearchBar } from "@/components/shell/search-bar";
 import { RuleList } from "@/components/rules/rule-list";
 import { RuleListSkeleton } from "@/components/rules/skeletons";

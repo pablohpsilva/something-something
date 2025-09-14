@@ -1,23 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/trpc/react";
+import { api } from "@/lib/trpc";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
-import { Badge } from "@repo/ui/components/badge";
-import { Skeleton } from "@repo/ui/components/skeleton";
-import {
+  Badge,
+  Skeleton,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@repo/ui/components/select";
-import { Label } from "@repo/ui/components/label";
+  Label,
+} from "@repo/ui";
 import { formatDistanceToNow } from "date-fns";
 import {
   Activity,
@@ -57,6 +55,7 @@ function formatActionName(action: string): string {
   if (parts.length !== 2) return action;
 
   const [resource, verb] = parts;
+  if (!verb || !resource) return action;
   return `${verb.charAt(0).toUpperCase() + verb.slice(1)} ${resource}`;
 }
 
@@ -95,10 +94,10 @@ export default function AdminAuditPage() {
   }
 
   const logs = data?.items || [];
-  const uniqueActions = [...new Set(logs.map((log) => log.action))];
+  const uniqueActions = [...new Set(logs.map((log: any) => log.action as string))] as string[];
   const uniqueTargetTypes = [
-    ...new Set(logs.map((log) => log.targetType).filter(Boolean)),
-  ];
+    ...new Set(logs.map((log: any) => log.targetType as string).filter(Boolean)),
+  ] as string[];
 
   return (
     <div className="space-y-8">
@@ -173,7 +172,7 @@ export default function AdminAuditPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {logs.map((log) => {
+          {logs.map((log: any) => {
             const ActionIcon = actionIcons[log.action] || Activity;
             const actionColor =
               actionColors[log.action] || "bg-gray-100 text-gray-800";

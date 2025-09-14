@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@repo/ui";
 import { RuleCard } from "./rule-card";
 import { RuleListSkeleton } from "./skeletons";
 import { EmptyState } from "./empty-state";

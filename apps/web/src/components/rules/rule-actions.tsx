@@ -10,7 +10,7 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from "lucide-react";
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@repo/ui";
 import {
   recordCopyAction,
   recordSaveAction,

@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@repo/ui";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/ui/card";
+} from "@repo/ui";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import Link from "next/link";
 

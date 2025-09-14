@@ -5,8 +5,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/ui/card";
-import { Skeleton } from "@repo/ui/components/ui/skeleton";
+} from "@repo/ui";
+import { Skeleton } from "@repo/ui";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 import { createServerCaller } from "@/server/trpc";
 import { DonationsClient } from "./donations-client";

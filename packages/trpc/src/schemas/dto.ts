@@ -172,49 +172,8 @@ export const claimDTOSchema = z.object({
 
 export type ClaimDTO = z.infer<typeof claimDTOSchema>;
 
-// Leaderboard entry DTO
-export const leaderboardEntryDTOSchema = z.object({
-  rank: z.number().int(),
-  author: authorDTOSchema,
-  score: z.number(),
-  rulesCount: z.number().int(),
-  totalViews: z.number().int(),
-  totalCopies: z.number().int(),
-  period: leaderboardPeriodSchema,
-  scope: leaderboardScopeSchema,
-  scopeRef: z.string().nullable(),
-});
 
-export type LeaderboardEntryDTO = z.infer<typeof leaderboardEntryDTOSchema>;
 
-// Donation DTO
-export const donationDTOSchema = z.object({
-  id: z.string(),
-  from: authorDTOSchema.nullable(),
-  to: authorDTOSchema,
-  rule: z
-    .object({
-      id: ruleIdSchema,
-      slug: slugSchema,
-      title: titleSchema,
-    })
-    .nullable(),
-  amountCents: z.number().int(),
-  currency: z.string(),
-  status: z.enum(["INIT", "SUCCEEDED", "FAILED"]),
-  createdAt: z.date(),
-});
-
-export type DonationDTO = z.infer<typeof donationDTOSchema>;
-
-// Search result DTO
-export const searchResultDTOSchema = ruleCardDTOSchema.extend({
-  rank: z.number(),
-  snippet: z.string().optional(),
-  highlights: z.array(z.string()).optional(),
-});
-
-export type SearchResultDTO = z.infer<typeof searchResultDTOSchema>;
 
 // Vote summary DTO
 export const voteSummaryDTOSchema = z.object({

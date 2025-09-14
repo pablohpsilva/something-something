@@ -1,31 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/trpc/react";
+import { api } from "@/lib/trpc";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import { Skeleton } from "@repo/ui/components/skeleton";
+} from "@repo/ui";
+import { Badge } from "@repo/ui";
+import { Button } from "@repo/ui";
+import { Skeleton } from "@repo/ui";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@repo/ui/components/dialog";
-import { Textarea } from "@repo/ui/components/textarea";
-import { Label } from "@repo/ui/components/label";
+} from "@repo/ui";
+import { Textarea } from "@repo/ui";
+import { Label } from "@repo/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@repo/ui/components/select";
+} from "@repo/ui";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Trash2, ExternalLink, AlertTriangle } from "lucide-react";

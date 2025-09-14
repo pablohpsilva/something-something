@@ -4,10 +4,10 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
-import { Badge } from "@repo/ui/components/badge";
-import { Skeleton } from "@repo/ui/components/skeleton";
-import { api } from "@/lib/trpc/server";
+} from "@repo/ui";
+import { Badge } from "@repo/ui";
+import { Skeleton } from "@repo/ui";
+import { createServerCaller } from "@/server/trpc";
 import {
   Users,
   FileText,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 async function DashboardStats() {
+  const api = await createServerCaller();
   const stats = await api.admin.getDashboardStats();
 
   const statCards = [

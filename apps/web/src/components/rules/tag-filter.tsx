@@ -2,20 +2,20 @@
 
 import { useState } from "react";
 import { Check, X } from "lucide-react";
-import { Button } from "@repo/ui/components/ui/button";
-import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui";
+import { Badge } from "@repo/ui";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@repo/ui/components/ui/popover";
+} from "@repo/ui";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "@repo/ui/components/ui/command";
+} from "@repo/ui";
 import { api } from "@/lib/trpc";
 import { FILTER_TESTIDS } from "@/lib/testids";
 

@@ -13,7 +13,7 @@
       "@repo/trpc": ["../../packages/trpc/src"],
       "@repo/utils": ["../../packages/utils/src"]
     },
-    "types": ["@cloudflare/workers-types"]
+    "types": ["node"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]

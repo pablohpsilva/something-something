@@ -3,18 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma, type User, type UserRole } from "@repo/db";
 import { generateUniqueHandle, slugifyHandle } from "./handle";
 
-export type AppUser = {
-  id: string;
-  clerkId: string;
-  handle: string;
-  displayName: string;
-  avatarUrl: string | null;
-  bio: string | null;
-  role: UserRole;
-  emailPrimary?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type { AppUser } from "./auth-types";
 
 /**
  * Get authentication info or redirect to sign-in

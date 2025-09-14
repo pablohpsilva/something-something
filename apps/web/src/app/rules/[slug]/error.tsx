@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@repo/ui";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/ui/card";
+} from "@repo/ui";
 import Link from "next/link";
 
 export default function RuleDetailError({

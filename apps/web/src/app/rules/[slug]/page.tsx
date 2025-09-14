@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { Badge } from "@repo/ui/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui";
+import { Card, CardContent, CardHeader } from "@repo/ui";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@repo/ui/components/ui/avatar";
+} from "@repo/ui";
 import { createServerCaller } from "@/server/trpc";
 import { ViewTracker } from "@/components/rules/view-tracker";
 import { MetricsStrip } from "@/components/rules/metrics-strip";
@@ -23,15 +23,16 @@ import Link from "next/link";
 export const runtime = "nodejs";
 
 interface RuleDetailPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: RuleDetailPageProps) {
   try {
+    const { slug } = await params;
     const trpc = await createServerCaller();
-    const rule = await trpc.rules.getBySlug({ slug: params.slug });
+    const rule = await trpc.rules.getBySlug({ slug });
 
     if (!rule) {
       return {
@@ -59,26 +60,12 @@ export async function generateMetadata({ params }: RuleDetailPageProps) {
 }
 
 export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
+  const { slug } = await params;
   const trpc = await createServerCaller();
 
   try {
-    // Fetch rule details, metrics, and vote data in parallel
-    const [rule, metrics] = await Promise.all([
-      trpc.rules.getBySlug({ slug: params.slug }),
-      trpc.metrics.getOpenMetrics({ ruleId: "" }).catch(() => ({
-        views7: 0,
-        copies7: 0,
-        saves7: 0,
-        forks7: 0,
-        votes7: 0,
-        views30: 0,
-        copies30: 0,
-        saves30: 0,
-        forks30: 0,
-        votes30: 0,
-        score: 0,
-      })),
-    ]);
+    // Fetch rule details first
+    const rule = await trpc.rules.getBySlug({ slug });
 
     if (!rule) {
       notFound();
@@ -354,13 +341,3 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
   }
 }
 
-// Loading component
-export function Loading() {
-  return (
-    <div className="container py-8">
-      <div className="max-w-4xl mx-auto">
-        <RuleDetailSkeleton />
-      </div>
-    </div>
-  );
-}

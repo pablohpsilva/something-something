@@ -1,7 +1,7 @@
 "use client";
 
 import { RequireRole } from "@/components/auth/RequireRole";
-import type { AppUser } from "@/lib/auth";
+import type { AppUser } from "@/lib/auth-types";
 import {
   Card,
   CardContent,

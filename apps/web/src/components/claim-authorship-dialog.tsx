@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/trpc/react";
-import { Button } from "@repo/ui/components/button";
+import { api } from "@/lib/trpc";
+import { Button } from "@repo/ui";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@repo/ui/components/dialog";
-import { Textarea } from "@repo/ui/components/textarea";
-import { Label } from "@repo/ui/components/label";
+} from "@repo/ui";
+import { Textarea } from "@repo/ui";
+import { Label } from "@repo/ui";
 import { toast } from "sonner";
 import { FileText, AlertCircle } from "lucide-react";
 

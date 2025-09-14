@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Badge } from "@repo/ui/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@repo/ui/components/ui/card";
+import { Badge } from "@repo/ui";
+import { Card, CardContent, CardHeader } from "@repo/ui";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@repo/ui/components/ui/avatar";
+} from "@repo/ui";
 import { MetricsStrip } from "./metrics-strip";
 import { formatRelativeTime, truncateText } from "@/lib/format";
 import { RULE_TESTIDS, AUTHOR_TESTIDS } from "@/lib/testids";

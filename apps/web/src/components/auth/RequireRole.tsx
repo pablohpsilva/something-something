@@ -3,7 +3,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { hasRole } from "@/lib/rbac";
-import type { AppUser } from "@/lib/auth";
+import type { AppUser } from "@/lib/auth-types";
 
 interface RequireRoleProps {
   role: "MOD" | "ADMIN";

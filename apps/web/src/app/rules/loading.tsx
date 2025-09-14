@@ -1,6 +1,6 @@
 import { RuleListSkeleton } from "@/components/rules/skeletons";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
-import { Skeleton } from "@repo/ui/components/ui/skeleton";
+import { Card, CardContent } from "@repo/ui";
+import { Skeleton } from "@repo/ui";
 
 export default function RulesLoading() {
   return (

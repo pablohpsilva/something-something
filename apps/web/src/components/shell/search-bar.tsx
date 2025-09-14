@@ -3,21 +3,21 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Clock, TrendingUp, Loader2 } from "lucide-react";
-import { Input } from "@repo/ui/components/ui/input";
-import { Button } from "@repo/ui/components/ui/button";
+import { Input } from "@repo/ui";
+import { Button } from "@repo/ui";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandItem,
   CommandList,
-} from "@repo/ui/components/ui/command";
+} from "@repo/ui";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@repo/ui/components/ui/popover";
-import { Badge } from "@repo/ui/components/ui/badge";
+} from "@repo/ui";
+import { Badge } from "@repo/ui";
 import { api } from "@/lib/trpc";
 import { debounce } from "@/lib/utils";
 import { createButtonProps } from "@/lib/a11y";

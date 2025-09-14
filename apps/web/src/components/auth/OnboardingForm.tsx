@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { completeOnboarding } from "@/lib/actions";
-import type { AppUser } from "@/lib/auth";
+import { completeOnboarding } from "@/lib/server-actions";
+import type { AppUser } from "@/lib/auth-types";
 import { Button } from "@repo/ui/button";
 import { Input } from "@repo/ui/input";
 import { Label } from "@repo/ui/label";

@@ -1,27 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { api } from "@/lib/trpc/react";
+import { api } from "@/lib/trpc";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/card";
-import { Badge } from "@repo/ui/components/badge";
-import { Button } from "@repo/ui/components/button";
-import { Skeleton } from "@repo/ui/components/skeleton";
+} from "@repo/ui";
+import { Badge } from "@repo/ui";
+import { Button } from "@repo/ui";
+import { Skeleton } from "@repo/ui";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@repo/ui/components/dialog";
-import { Textarea } from "@repo/ui/components/textarea";
-import { Label } from "@repo/ui/components/label";
+} from "@repo/ui";
+import { Textarea } from "@repo/ui";
+import { Label } from "@repo/ui";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { ExternalLink, Eye, Check, X } from "lucide-react";
+import { ExternalLink, Eye, Check, X, FileText } from "lucide-react";
 
 interface ClaimReviewDialogProps {
   claimId: string | null;
@@ -52,7 +52,7 @@ function ClaimReviewDialog({
       onClose();
       setReviewNote("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -64,7 +64,7 @@ function ClaimReviewDialog({
       onClose();
       setReviewNote("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -342,7 +342,7 @@ export default function AdminClaimsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {claims.map((claim) => (
+          {claims.map((claim: any) => (
             <Card key={claim.id}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">

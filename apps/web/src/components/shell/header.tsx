@@ -5,13 +5,13 @@ import { useAuth } from "@clerk/nextjs";
 import { SignInButton, UserButton } from "@clerk/nextjs";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "@repo/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenuItem,
-} from "@repo/ui/components/ui/dropdown-menu";
+} from "@repo/ui";
 import { Nav } from "./nav";
 import { SearchBar } from "./search-bar";
 import { NotificationsBell } from "../social/notifications-bell";

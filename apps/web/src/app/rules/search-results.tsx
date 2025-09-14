@@ -11,28 +11,28 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "@repo/ui/components/ui/button";
-import { Input } from "@repo/ui/components/ui/input";
-import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui";
+import { Input } from "@repo/ui";
+import { Badge } from "@repo/ui";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@repo/ui/components/ui/card";
+} from "@repo/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@repo/ui/components/ui/select";
-import { Separator } from "@repo/ui/components/ui/separator";
+} from "@repo/ui";
+import { Separator } from "@repo/ui";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@repo/ui/components/ui/avatar";
+} from "@repo/ui";
 import { api } from "@/lib/trpc";
 import { formatRelativeTime, debounce } from "@/lib/utils";
 import { createButtonProps } from "@/lib/a11y";

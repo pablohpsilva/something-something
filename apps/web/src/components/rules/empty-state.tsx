@@ -1,6 +1,6 @@
 import { Search, Plus, FileText, Users } from "lucide-react";
-import { Button } from "@repo/ui/components/ui/button";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
+import { Button } from "@repo/ui";
+import { Card, CardContent } from "@repo/ui";
 import Link from "next/link";
 import { LIST_TESTIDS } from "@/lib/testids";
 

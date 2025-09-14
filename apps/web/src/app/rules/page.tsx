@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
 import { SearchResults } from "./search-results";
-import { Skeleton } from "@repo/ui/components/ui/skeleton";
+import { Skeleton } from "@repo/ui";
 
 export const metadata: Metadata = {
   title: "Search Rules",

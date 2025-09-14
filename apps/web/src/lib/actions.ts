@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUserServer, requireAuth, requireRole } from "./auth";
-import type { AppUser } from "./auth";
+import type { AppUser } from "./auth-types";
 import { prisma } from "@repo/db";
 import { validateHandle, isHandleAvailable } from "./handle";
 import { z } from "zod";
