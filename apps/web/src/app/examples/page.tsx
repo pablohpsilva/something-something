@@ -10,8 +10,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@repo/ui/card";
-import { Badge } from "@repo/ui/badge";
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 // Force Node.js runtime for Prisma compatibility
 export const runtime = "nodejs";

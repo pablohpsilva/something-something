@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
-import { Badge } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui";
+} from "@/components/ui/dropdown-menu";
 import { Bell, Check } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { formatRelativeTime } from "@/lib/format";

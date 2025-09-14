@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui";
-import { Card, CardContent, CardHeader } from "@/components/ui";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MetricsStrip } from "./metrics-strip";
 import { formatRelativeTime, truncateText } from "@/lib/format";
 import { RULE_TESTIDS, AUTHOR_TESTIDS } from "@/lib/testids";

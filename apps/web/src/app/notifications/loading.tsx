@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui";
-import { Skeleton } from "@/components/ui";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function NotificationsPageSkeleton() {
   return (

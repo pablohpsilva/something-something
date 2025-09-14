@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 // import { api } from "@/lib/trpc";
-import { Button } from "@repo/ui/button";
-import { Input } from "@repo/ui/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@repo/ui/card";
+} from "@/components/ui/card";
 
 /**
  * Example client component that demonstrates tRPC usage
@@ -52,9 +52,7 @@ export function RulesListExample() {
   if (error) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-sm text-red-600">
-          Error loading rules
-        </div>
+        <div className="text-sm text-red-600">Error loading rules</div>
       </div>
     );
   }
@@ -223,7 +221,11 @@ export function CreateRuleExample() {
   const [body, setBody] = useState("");
 
   // Temporarily disabled tRPC mutations
-  const createMutation = { mutate: (input: any) => {}, isPending: false, error: null };
+  const createMutation = {
+    mutate: (input: any) => {},
+    isPending: false,
+    error: null,
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,9 +296,7 @@ export function CreateRuleExample() {
           </Button>
 
           {createMutation.error && (
-            <div className="text-sm text-red-600">
-              Error creating rule
-            </div>
+            <div className="text-sm text-red-600">Error creating rule</div>
           )}
         </form>
       </CardContent>

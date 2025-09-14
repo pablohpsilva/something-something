@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Users } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { showToast } from "@/lib/metrics/read";

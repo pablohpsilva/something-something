@@ -1,10 +1,10 @@
 "use client";
 
 import { api } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Button } from "@/components/ui";
-import { Skeleton } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { FileText, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react";

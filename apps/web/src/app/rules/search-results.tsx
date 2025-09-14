@@ -11,19 +11,19 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui";
-import { Input } from "@/components/ui";
-import { Badge } from "@/components/ui";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui";
-import { Separator } from "@/components/ui";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/lib/trpc";
 import { formatRelativeTime, debounce } from "@/lib/utils";
 import { createButtonProps } from "@/lib/a11y";

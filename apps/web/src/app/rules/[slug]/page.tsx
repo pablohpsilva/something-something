@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { Badge } from "@/components/ui";
-import { Card, CardContent, CardHeader } from "@/components/ui";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createServerCaller } from "@/server/trpc";
 import { ViewTracker } from "@/components/rules/view-tracker";
 import { MetricsStrip } from "@/components/rules/metrics-strip";

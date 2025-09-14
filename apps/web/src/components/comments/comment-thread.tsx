@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
-import { Card, CardContent } from "@/components/ui";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
-import { Badge } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   MessageSquare,
   Reply,
@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui";
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/trpc";
 import { CommentForm } from "./comment-form";
 import { renderCommentMarkdownToSafeHtml } from "@/lib/sanitize/markdown";
