@@ -252,3 +252,6 @@ export const auditLog = {
   userBan: AuditLogService.logUserBan,
   userUnban: AuditLogService.logUserUnban,
 };
+
+// Export AuditLog as an alias for AuditLogService for backward compatibility
+export const AuditLog = AuditLogService;

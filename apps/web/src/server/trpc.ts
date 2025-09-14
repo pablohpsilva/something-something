@@ -1,13 +1,12 @@
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import { createCallerFactory } from "@trpc/server";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { appRouter, createContext, type AppRouter } from "@repo/trpc";
 import { getCurrentUserServer } from "@/lib/auth";
 import superjson from "superjson";
 
-// Create server-side caller factory
-const createCaller = createCallerFactory(appRouter);
+// Create server-side caller using the router directly
+const createCaller = appRouter.createCaller;
 
 /**
  * Create a server-side tRPC caller with authentication context

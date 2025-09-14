@@ -8,6 +8,13 @@ export const commentIdSchema = z.string().cuid();
 export const claimIdSchema = z.string().cuid();
 export const tagIdSchema = z.string().cuid();
 
+// Generic ID schema that accepts CUID or UUID
+export const cuidOrUuidSchema = z.string().min(1);
+
+// Pagination schemas
+export const cursorSchema = z.string().optional();
+export const limitSchema = z.number().int().min(1).max(100).default(20);
+
 // Handle and slug schemas
 export const handleSchema = z
   .string()

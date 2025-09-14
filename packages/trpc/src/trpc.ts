@@ -49,6 +49,8 @@ const t = initTRPC.context<Context>().create({
 });
 
 export const router = t.router;
+export const createTRPCRouter = t.router;
+export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 
 // Middleware to require authentication
@@ -203,6 +205,17 @@ export const voteRateLimitedProcedure = protectedProcedure.use(
 export const eventRateLimitedProcedure = publicProcedure.use(
   rateLimit("event", 60, 60 * 1000) // 60 events per minute (includes unauth)
 );
+
+// Factory function for creating rate-limited procedures
+export const createRateLimitedProcedure = (
+  baseProcedure: typeof publicProcedure | typeof protectedProcedure,
+  bucket: string,
+  options: { requireAuth?: boolean; weight?: number } = {}
+) => {
+  const { requireAuth: requireAuthOption = true, weight = 1 } = options;
+  const procedure = requireAuthOption ? protectedProcedure : publicProcedure;
+  return procedure.use(rateLimit(bucket, 10 * weight, 60 * 1000));
+};
 
 // Helper to check if user can edit a resource
 export async function canUserEdit(

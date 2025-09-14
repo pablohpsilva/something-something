@@ -1,12 +1,7 @@
 "use client";
 
 import { api } from "@/lib/trpc";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui";
 import { Badge } from "@repo/ui";
 import { Button } from "@repo/ui";
 import { Skeleton } from "@repo/ui";
@@ -99,8 +94,10 @@ export default function ClaimsPage() {
       ) : (
         <div className="space-y-4">
           {claims.map((claim: any) => {
-            const StatusIcon = statusIcons[claim.status];
-            const statusColor = statusColors[claim.status];
+            const StatusIcon =
+              statusIcons[claim.status as keyof typeof statusIcons];
+            const statusColor =
+              statusColors[claim.status as keyof typeof statusColors];
 
             return (
               <Card key={claim.id}>

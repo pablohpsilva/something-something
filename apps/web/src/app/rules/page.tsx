@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { SearchResults } from "./search-results";
 import { Skeleton } from "@repo/ui";
 

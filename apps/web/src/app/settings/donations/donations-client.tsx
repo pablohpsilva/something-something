@@ -36,7 +36,7 @@ import { formatCurrency, formatRelativeTime } from "@/lib/utils";
 import type {
   AuthorDonationStatsResponse,
   DonationListResponse,
-} from "@repo/trpc/schemas/donations";
+} from "@repo/trpc";
 
 interface DonationsClientProps {
   initialStats: AuthorDonationStatsResponse;

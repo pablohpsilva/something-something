@@ -5,6 +5,8 @@ export { createContext, type Context } from "./trpc";
 // Export commonly used schemas
 export * from "./schemas/dto";
 export * from "./schemas/base";
+export * from "./schemas/social";
+export * from "./schemas/donations";
 
 // Export router types for client usage
 export type {

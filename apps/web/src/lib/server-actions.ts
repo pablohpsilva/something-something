@@ -59,7 +59,7 @@ export async function completeOnboarding(formData: FormData) {
     },
   });
 
-  redirect("/dashboard");
+  return { success: true, redirectTo: "/dashboard" };
 }
 
 /**

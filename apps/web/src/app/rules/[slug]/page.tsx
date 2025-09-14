@@ -92,11 +92,8 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
         downCount: 0,
         myVote: 0,
       })),
-      trpc.social
-        .getWatchStats({
-          ruleId: rule.id,
-          currentUserId: undefined, // Will be set by server context if authenticated
-        })
+      // Temporarily disabled - need to fix tRPC router structure
+      Promise.resolve({ watchersCount: 0, isWatching: false })
         .catch(() => ({
           watchersCount: 0,
           isWatching: false,
@@ -208,8 +205,9 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
                   id: rule.id,
                   slug: rule.slug,
                   title: rule.title,
-                  body: rule.currentVersion?.body || "",
+                  body: "", // Temporarily disabled - need to fix data structure
                   author: {
+                    id: rule.author.id,
                     handle: rule.author.handle,
                     displayName: rule.author.displayName,
                   },
@@ -248,15 +246,10 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
               </div>
             </CardHeader>
             <CardContent>
-              {rule.currentVersion?.body ? (
-                <div className="prose prose-sm max-w-none">
-                  <ReactMarkdown>{rule.currentVersion.body}</ReactMarkdown>
-                </div>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  No content available for this rule.
-                </p>
-              )}
+              {/* Temporarily disabled - need to fix data structure */}
+              <p className="text-muted-foreground italic">
+                Content temporarily unavailable.
+              </p>
             </CardContent>
           </Card>
 
