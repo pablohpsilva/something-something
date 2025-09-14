@@ -51,8 +51,8 @@ export function NotificationsClient({ initialData }: NotificationsClientProps) {
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
-    api.social.listNotifications.useInfiniteQuery(
-      { limit: 30, unreadOnly: filter === "unread" },
+    api.social.notifications.list.useInfiniteQuery(
+      { limit: 30, filter },
       {
         initialData: {
           pages: [initialData],

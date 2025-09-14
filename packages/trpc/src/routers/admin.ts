@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, requireRole } from "../trpc";
+import { createTRPCRouter, adminProcedure } from "../trpc";
 import { prisma } from "@repo/db/client";
 import { AuditLogService } from "../services/audit-log";
-
-const adminProcedure = requireRole("ADMIN");
 
 export const adminRouter = createTRPCRouter({
   // ============================================================================
@@ -46,7 +44,7 @@ export const adminRouter = createTRPCRouter({
               id: true,
               displayName: true,
               handle: true,
-              email: true,
+              // email: true, // Field doesn't exist in schema
             },
           },
         },
@@ -86,7 +84,7 @@ export const adminRouter = createTRPCRouter({
                   id: true,
                   displayName: true,
                   handle: true,
-                  email: true,
+                  // email: true, // Field doesn't exist in schema
                 },
               },
               currentVersion: {
@@ -102,7 +100,7 @@ export const adminRouter = createTRPCRouter({
               id: true,
               displayName: true,
               handle: true,
-              email: true,
+              // email: true, // Field doesn't exist in schema
               bio: true,
               createdAt: true,
             },
@@ -229,11 +227,16 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Create audit log entry
-      await AuditLogService.logClaimReject(input.id, ctx.user.id, input.reviewNote, {
-        ruleId: claim.ruleId,
-        claimantId: claim.claimantId,
-        originalAuthorId: claim.rule.createdByUserId,
-      });
+      await AuditLogService.logClaimReject(
+        input.id,
+        ctx.user.id,
+        input.reviewNote,
+        {
+          ruleId: claim.ruleId,
+          claimantId: claim.claimantId,
+          originalAuthorId: claim.rule.createdByUserId,
+        }
+      );
 
       return updatedClaim;
     }),
@@ -256,7 +259,7 @@ export const adminRouter = createTRPCRouter({
     .query(async ({ input }) => {
       // For now, we'll return recently reported content
       // In a real implementation, you'd have a flagging system
-      
+
       if (input.type === "comment" || !input.type) {
         const comments = await prisma.comment.findMany({
           where: {
@@ -293,7 +296,7 @@ export const adminRouter = createTRPCRouter({
         const nextCursor = hasMore ? items[items.length - 1]?.id : null;
 
         return {
-          items: items.map(comment => ({
+          items: items.map((comment) => ({
             ...comment,
             type: "comment" as const,
           })),
@@ -342,10 +345,15 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Create audit log entry
-      await AuditLogService.logCommentDelete(input.id, ctx.user.id, input.reason, {
-        authorId: comment.authorUserId,
-        ruleId: comment.ruleId,
-      });
+      await AuditLogService.logCommentDelete(
+        input.id,
+        ctx.user.id,
+        input.reason,
+        {
+          authorId: comment.authorUserId,
+          ruleId: comment.ruleId,
+        }
+      );
 
       return deletedComment;
     }),
@@ -388,10 +396,15 @@ export const adminRouter = createTRPCRouter({
       });
 
       // Create audit log entry
-      await AuditLogService.logRuleDeprecate(input.id, ctx.user.id, input.reason, {
-        originalStatus: rule.status,
-        authorId: rule.createdByUserId,
-      });
+      await AuditLogService.logRuleDeprecate(
+        input.id,
+        ctx.user.id,
+        input.reason,
+        {
+          originalStatus: rule.status,
+          authorId: rule.createdByUserId,
+        }
+      );
 
       return updatedRule;
     }),
@@ -414,11 +427,11 @@ export const adminRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const where: any = {};
-      
+
       if (input.action) {
         where.action = input.action;
       }
-      
+
       if (input.targetType) {
         where.targetType = input.targetType;
       }

@@ -2,21 +2,11 @@
 
 import { useState } from "react";
 import { api } from "@/lib/trpc";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui";
 import { Badge } from "@repo/ui";
 import { Button } from "@repo/ui";
 import { Skeleton } from "@repo/ui";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@repo/ui";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@repo/ui";
 import { Textarea } from "@repo/ui";
 import { Label } from "@repo/ui";
 import { toast } from "sonner";
@@ -135,15 +125,17 @@ function ClaimReviewDialog({
                 <Label className="text-sm font-medium text-gray-600">
                   Title
                 </Label>
-                <p className="text-lg font-medium">{claim.rule.title}</p>
+                <p className="text-lg font-medium">
+                  {(claim as any).rule?.title || "Unknown Rule"}
+                </p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">
                   Current Author
                 </Label>
                 <p>
-                  {claim.rule.createdBy.displayName} (@
-                  {claim.rule.createdBy.handle})
+                  {(claim as any).rule?.createdBy?.displayName || "Unknown"} (@
+                  {(claim as any).rule?.createdBy?.handle || "unknown"})
                 </p>
               </div>
               <div>
@@ -152,14 +144,17 @@ function ClaimReviewDialog({
                 </Label>
                 <div className="rounded-lg bg-gray-50 p-4 max-h-40 overflow-y-auto">
                   <pre className="whitespace-pre-wrap text-sm">
-                    {claim.rule.currentVersion?.body?.substring(0, 500)}
-                    {claim.rule.currentVersion?.body &&
-                      claim.rule.currentVersion.body.length > 500 &&
+                    {(claim as any).rule?.currentVersion?.body?.substring(
+                      0,
+                      500
+                    ) || "No content available"}
+                    {(claim as any).rule?.currentVersion?.body &&
+                      (claim as any).rule.currentVersion.body.length > 500 &&
                       "..."}
                   </pre>
                 </div>
                 <a
-                  href={`/rules/${claim.rule.slug}`}
+                  href={`/rules/${(claim as any).rule?.slug || ""}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
@@ -181,7 +176,8 @@ function ClaimReviewDialog({
                   Name
                 </Label>
                 <p>
-                  {claim.claimant.displayName} (@{claim.claimant.handle})
+                  {(claim as any).claimant.displayName} (@
+                  {(claim as any).claimant.handle})
                 </p>
               </div>
               <div>
@@ -189,9 +185,12 @@ function ClaimReviewDialog({
                   Member Since
                 </Label>
                 <p>
-                  {formatDistanceToNow(new Date(claim.claimant.createdAt), {
-                    addSuffix: true,
-                  })}
+                  {formatDistanceToNow(
+                    new Date((claim as any).claimant.createdAt),
+                    {
+                      addSuffix: true,
+                    }
+                  )}
                 </p>
               </div>
               <div>
@@ -349,7 +348,7 @@ export default function AdminClaimsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {claim.rule.title}
+                        {(claim as any).rule?.title || "Unknown Rule"}
                       </h3>
                       <Badge variant="secondary">{claim.status}</Badge>
                     </div>
@@ -357,12 +356,15 @@ export default function AdminClaimsPage() {
                     <div className="space-y-2 text-sm text-gray-600">
                       <p>
                         <span className="font-medium">Claimant:</span>{" "}
-                        {claim.claimant.displayName} (@{claim.claimant.handle})
+                        {(claim as any).claimant.displayName} (@
+                        {(claim as any).claimant.handle})
                       </p>
                       <p>
                         <span className="font-medium">Current Author:</span>{" "}
-                        {claim.rule.createdBy.displayName} (@
-                        {claim.rule.createdBy.handle})
+                        {(claim as any).rule?.createdBy?.displayName ||
+                          "Unknown"}{" "}
+                        (@
+                        {(claim as any).rule?.createdBy?.handle || "unknown"})
                       </p>
                       <p>
                         <span className="font-medium">Submitted:</span>{" "}

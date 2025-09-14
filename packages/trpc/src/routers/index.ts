@@ -5,7 +5,7 @@ import { tagsRouter } from "./tags";
 import { commentsRouter } from "./comments";
 import { votesRouter } from "./votes";
 import { searchRouter } from "./search";
-import { socialRouter } from "./social";
+import { socialRouter as socialRouterFull } from "./social";
 import { badgesRouter } from "./badges";
 import { leaderboardRouter } from "./leaderboard";
 import { donationsRouter } from "./donations";
@@ -38,7 +38,7 @@ const metricsRouter = router({
     )
     .output(z.object({ success: z.boolean(), error: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
-      const { type, ruleId, ruleVersionId, idempotencyKey } = input;
+      const { type, ruleId, ruleVersionId } = input;
 
       // For tRPC calls, we'll send directly to ingest service
       const ingestBaseUrl = process.env.INGEST_BASE_URL;
@@ -54,7 +54,6 @@ const metricsRouter = router({
             ruleVersionId: ruleVersionId || null,
             ipHash: ctx.reqIpHash || "unknown",
             uaHash: ctx.reqUAHeader || "unknown",
-            idempotencyKey,
           },
         });
         return { success: true };
@@ -77,7 +76,6 @@ const metricsRouter = router({
                 ruleVersionId,
                 userId: ctx.user?.id || null,
                 ts: new Date().toISOString(),
-                idempotencyKey,
               },
             ],
           }),
@@ -186,9 +184,9 @@ const socialRouter = router({
       const result = await ctx.prisma.$transaction(async (tx) => {
         const existing = await tx.follow.findUnique({
           where: {
-            followerUserId_followingUserId: {
+            followerUserId_authorUserId: {
               followerUserId: ctx.user.id,
-              followingUserId: authorUserId,
+              authorUserId: authorUserId,
             },
           },
         });
@@ -196,9 +194,9 @@ const socialRouter = router({
         if (existing) {
           await tx.follow.delete({
             where: {
-              followerUserId_followingUserId: {
+              followerUserId_authorUserId: {
                 followerUserId: ctx.user.id,
-                followingUserId: authorUserId,
+                authorUserId: authorUserId,
               },
             },
           });
@@ -206,13 +204,13 @@ const socialRouter = router({
           await tx.follow.create({
             data: {
               followerUserId: ctx.user.id,
-              followingUserId: authorUserId,
+              authorUserId: authorUserId,
             },
           });
         }
 
         const followersCount = await tx.follow.count({
-          where: { followingUserId: authorUserId },
+          where: { authorUserId: authorUserId },
         });
 
         return { following: !existing, followersCount };
@@ -328,7 +326,11 @@ const socialRouter = router({
       const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
       return {
-        items,
+        items: items.map(item => ({
+          ...item,
+          type: item.type as string,
+          payload: (item.payload as Record<string, unknown>) || {},
+        })),
         nextCursor,
         hasMore,
       };
@@ -350,7 +352,7 @@ export const appRouter = router({
   votes: votesRouter,
   search: searchRouter,
   metrics: metricsRouter,
-  social: socialRouter,
+  social: socialRouterFull,
   badges: badgesRouter,
   claims: claimsRouter,
   donations: donationsRouter,

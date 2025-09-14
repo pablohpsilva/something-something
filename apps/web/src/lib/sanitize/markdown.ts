@@ -90,14 +90,16 @@ marked.setOptions({
  * @param markdown Raw markdown string
  * @returns Sanitized HTML string
  */
-export function renderCommentMarkdownToSafeHtml(markdown: string): string {
+export async function renderCommentMarkdownToSafeHtml(
+  markdown: string
+): Promise<string> {
   if (!markdown || typeof markdown !== "string") {
     return "";
   }
 
   try {
     // Step 1: Convert markdown to HTML
-    const rawHtml = marked(markdown.trim());
+    const rawHtml = await marked(markdown.trim());
 
     // Step 2: Sanitize the HTML
     const sanitizedHtml = sanitizeHtml(rawHtml, SANITIZE_OPTIONS);
@@ -163,14 +165,14 @@ export function stripHtml(html: string): string {
  * @param maxLength Maximum length of preview
  * @returns Plain text preview
  */
-export function getMarkdownPreview(
+export async function getMarkdownPreview(
   markdown: string,
   maxLength: number = 200
-): string {
+): Promise<string> {
   if (!markdown) return "";
 
   // Convert to HTML then strip tags
-  const html = renderCommentMarkdownToSafeHtml(markdown);
+  const html = await renderCommentMarkdownToSafeHtml(markdown);
   const plainText = stripHtml(html);
 
   if (plainText.length <= maxLength) {
@@ -233,14 +235,16 @@ export function validateMarkdownContent(markdown: string): {
  * Server-side safe HTML rendering (for Node.js environments)
  * This version doesn't rely on DOM APIs
  */
-export function renderMarkdownToSafeHtmlServer(markdown: string): string {
+export async function renderMarkdownToSafeHtmlServer(
+  markdown: string
+): Promise<string> {
   if (!markdown || typeof markdown !== "string") {
     return "";
   }
 
   try {
     // Convert markdown to HTML
-    const rawHtml = marked(markdown.trim());
+    const rawHtml = await marked(markdown.trim());
 
     // Sanitize with server-safe options
     const sanitizedHtml = sanitizeHtml(rawHtml, {

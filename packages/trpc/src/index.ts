@@ -22,13 +22,10 @@ export type {
   ListVersionsByRuleInput,
 } from "./schemas/version";
 
-export type { CreateCommentInput, ListCommentsInput } from "./schemas/comment";
+export type { CommentCreateInput, CommentListInput } from "./schemas/comment";
 
-export type {
-  UpsertRuleVoteInput,
-  UpsertVersionVoteInput,
-} from "./schemas/vote";
+export type { VoteRuleInput, VoteVersionInput } from "./schemas/vote";
 
-export type { SearchQueryInput, SearchFilters } from "./schemas/search";
+export type { SearchInput, AdvancedFilters } from "./schemas/search";
 
 export type { ListTagsInput, AttachTagsInput } from "./schemas/tags";

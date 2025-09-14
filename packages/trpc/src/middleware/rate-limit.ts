@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { middleware } from "../trpc";
 import { limit, type BucketKey } from "@repo/utils/rate-limit";
-import { AbuseConfig, type RateLimitBucket, getRateLimit } from "@repo/config/abuse";
+import { AbuseConfig, type RateLimitBucket, getRateLimit } from "@repo/config";
 import { hashIp, hashUA, extractIp, extractUA } from "@repo/utils/crypto";
 import { AuditLog } from "../services/audit-log";
 
@@ -15,7 +15,7 @@ export function withRateLimit(bucketName: RateLimitBucket) {
       const headers = getRequestHeaders(ctx);
       const ip = extractIp(headers);
       const ua = extractUA(headers);
-      
+
       // Create privacy-preserving hashes
       const ipHash = hashIp(ip, AbuseConfig.salts.ip);
       const uaHash = hashUA(ua, AbuseConfig.salts.ua);
@@ -51,7 +51,9 @@ export function withRateLimit(bucketName: RateLimitBucket) {
         // Throw rate limit error
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
-          message: `Rate limit exceeded for ${bucketName}. Try again in ${Math.ceil(result.retryAfterMs / 1000)} seconds.`,
+          message: `Rate limit exceeded for ${bucketName}. Try again in ${Math.ceil(
+            result.retryAfterMs / 1000
+          )} seconds.`,
           cause: {
             bucket: bucketName,
             retryAfterMs: result.retryAfterMs,
@@ -79,7 +81,7 @@ export function withRateLimit(bucketName: RateLimitBucket) {
 
       // Log unexpected errors
       console.error("Rate limit middleware error:", error);
-      
+
       // Allow request to proceed on middleware errors (fail-open)
       return next();
     }
@@ -89,10 +91,13 @@ export function withRateLimit(bucketName: RateLimitBucket) {
 /**
  * Enhanced rate limiting with IP-only fallback for unauthenticated users
  */
-export function withIPRateLimit(bucketName: RateLimitBucket, options: {
-  requireAuth?: boolean;
-  weight?: number;
-} = {}) {
+export function withIPRateLimit(
+  bucketName: RateLimitBucket,
+  options: {
+    requireAuth?: boolean;
+    weight?: number;
+  } = {}
+) {
   return middleware(async ({ ctx, next, path, type }) => {
     try {
       const { requireAuth = false, weight = 1 } = options;
@@ -109,7 +114,7 @@ export function withIPRateLimit(bucketName: RateLimitBucket, options: {
       const headers = getRequestHeaders(ctx);
       const ip = extractIp(headers);
       const ua = extractUA(headers);
-      
+
       const ipHash = hashIp(ip, AbuseConfig.salts.ip);
       const uaHash = hashUA(ua, AbuseConfig.salts.ua);
 
@@ -140,7 +145,9 @@ export function withIPRateLimit(bucketName: RateLimitBucket, options: {
 
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
-          message: `Rate limit exceeded. Try again in ${Math.ceil(result.retryAfterMs / 1000)} seconds.`,
+          message: `Rate limit exceeded. Try again in ${Math.ceil(
+            result.retryAfterMs / 1000
+          )} seconds.`,
           cause: {
             bucket: bucketName,
             retryAfterMs: result.retryAfterMs,
@@ -173,23 +180,26 @@ export function withIPRateLimit(bucketName: RateLimitBucket, options: {
 /**
  * Burst protection middleware for high-frequency operations
  */
-export function withBurstProtection(bucketName: RateLimitBucket, options: {
-  burstLimit: number;
-  burstWindowMs: number;
-  sustainedLimit: number;
-  sustainedWindowMs: number;
-} = {
-  burstLimit: 10,
-  burstWindowMs: 10_000, // 10 seconds
-  sustainedLimit: 100,
-  sustainedWindowMs: 60_000, // 1 minute
-}) {
+export function withBurstProtection(
+  bucketName: RateLimitBucket,
+  options: {
+    burstLimit: number;
+    burstWindowMs: number;
+    sustainedLimit: number;
+    sustainedWindowMs: number;
+  } = {
+    burstLimit: 10,
+    burstWindowMs: 10_000, // 10 seconds
+    sustainedLimit: 100,
+    sustainedWindowMs: 60_000, // 1 minute
+  }
+) {
   return middleware(async ({ ctx, next, path, type }) => {
     try {
       const headers = getRequestHeaders(ctx);
       const ip = extractIp(headers);
       const ua = extractUA(headers);
-      
+
       const ipHash = hashIp(ip, AbuseConfig.salts.ip);
       const uaHash = hashUA(ua, AbuseConfig.salts.ua);
 
@@ -209,7 +219,9 @@ export function withBurstProtection(bucketName: RateLimitBucket, options: {
       if (!burstResult.ok) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
-          message: `Burst limit exceeded. Slow down and try again in ${Math.ceil(burstResult.retryAfterMs / 1000)} seconds.`,
+          message: `Burst limit exceeded. Slow down and try again in ${Math.ceil(
+            burstResult.retryAfterMs / 1000
+          )} seconds.`,
           cause: {
             bucket: `${bucketName}:burst`,
             retryAfterMs: burstResult.retryAfterMs,
@@ -233,7 +245,9 @@ export function withBurstProtection(bucketName: RateLimitBucket, options: {
       if (!sustainedResult.ok) {
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
-          message: `Sustained rate limit exceeded. Try again in ${Math.ceil(sustainedResult.retryAfterMs / 1000)} seconds.`,
+          message: `Sustained rate limit exceeded. Try again in ${Math.ceil(
+            sustainedResult.retryAfterMs / 1000
+          )} seconds.`,
           cause: {
             bucket: `${bucketName}:sustained`,
             retryAfterMs: sustainedResult.retryAfterMs,
@@ -263,16 +277,17 @@ export function withShadowBanCheck() {
     }
 
     // Check if user is shadow banned
-    if (AbuseConfig.shadowBan.enabled && 
-        AbuseConfig.shadowBan.userIds.includes(ctx.user.id)) {
-      
+    if (
+      AbuseConfig.shadowBan.enabled &&
+      AbuseConfig.shadowBan.userIds.includes(ctx.user.id)
+    ) {
       // Log shadow ban attempt
-      await AuditLog.log(ctx.prisma, {
+      await AuditLog.log({
         action: "abuse.shadowban_attempt",
-        entityType: "User",
-        entityId: ctx.user.id,
-        userId: ctx.user.id,
-        diff: { shadowBanned: true },
+        actorId: ctx.user.id,
+        targetId: ctx.user.id,
+        targetType: "User",
+        metadata: { shadowBanned: true },
       });
 
       // For shadow banned users, we don't throw an error
@@ -292,7 +307,9 @@ export function withShadowBanCheck() {
 /**
  * Extract request headers from various tRPC contexts
  */
-function getRequestHeaders(ctx: any): Record<string, string | string[] | undefined> {
+function getRequestHeaders(
+  ctx: any
+): Record<string, string | string[] | undefined> {
   // Next.js App Router
   if (ctx.req?.headers) {
     return ctx.req.headers;
@@ -310,11 +327,13 @@ function getRequestHeaders(ctx: any): Record<string, string | string[] | undefin
 
   // Fallback - try to extract from various possible locations
   const headers: Record<string, string | undefined> = {};
-  
+
   // Common header extraction patterns
   if (ctx.req) {
-    headers["x-forwarded-for"] = ctx.req.ip || ctx.req.connection?.remoteAddress;
-    headers["user-agent"] = ctx.req.get?.("user-agent") || ctx.req.headers?.["user-agent"];
+    headers["x-forwarded-for"] =
+      ctx.req.ip || ctx.req.connection?.remoteAddress;
+    headers["user-agent"] =
+      ctx.req.get?.("user-agent") || ctx.req.headers?.["user-agent"];
   }
 
   return headers;
@@ -337,18 +356,18 @@ async function logRateLimitViolation(
   }
 ): Promise<void> {
   try {
-    await AuditLog.log(ctx.prisma, {
+    await AuditLog.log({
       action: "abuse.ratelimit",
-      entityType: "RateLimit",
-      entityId: details.bucket,
-      userId: details.userId,
-      ipHash: details.ipHash,
-      diff: {
+      targetType: "RateLimit",
+      actorId: details.userId,
+      targetId: details.bucket,
+      metadata: {
         bucket: details.bucket,
         path: details.path,
         type: details.type,
         retryAfterMs: details.retryAfterMs,
         weight: details.weight,
+        ipHash: details.ipHash,
         uaHash: details.uaHash,
       },
     });
@@ -385,10 +404,12 @@ export function createRateLimitedProcedure(
   if (options.requireAuth) {
     procedure = procedure.use(withRateLimit(bucketName));
   } else {
-    procedure = procedure.use(withIPRateLimit(bucketName, {
-      requireAuth: options.requireAuth,
-      weight: options.weight,
-    }));
+    procedure = procedure.use(
+      withIPRateLimit(bucketName, {
+        requireAuth: options.requireAuth,
+        weight: options.weight,
+      })
+    );
   }
 
   return procedure;

@@ -1,4 +1,7 @@
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import {
+  createTRPCClient as createTRPCClientBase,
+  httpBatchLink,
+} from "@trpc/client";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { appRouter, createContext, type AppRouter } from "@repo/trpc";
@@ -29,13 +32,15 @@ export const createServerCaller = cache(async (contextOverride?: any) => {
     ? Buffer.from(userAgent).toString("base64").substring(0, 32)
     : "unknown";
 
-  const ctx = createContext(contextOverride || {
-    user,
-    reqIpHash: ipHash,
-    uaHash: uaHash,
-    reqIpHeader: clientIp,
-    reqUAHeader: userAgent || "",
-  });
+  const ctx = createContext(
+    contextOverride || {
+      user,
+      reqIpHash: ipHash,
+      uaHash: uaHash,
+      reqIpHeader: clientIp,
+      reqUAHeader: userAgent || "",
+    }
+  );
 
   return createCaller(ctx);
 });
@@ -45,11 +50,11 @@ export const createServerCaller = cache(async (contextOverride?: any) => {
  * This should be wrapped with TRPCReactProvider
  */
 export const createTRPCClient = () => {
-  return createTRPCClient<AppRouter>({
-    transformer: superjson,
+  return createTRPCClientBase<AppRouter>({
     links: [
       httpBatchLink({
         url: getBaseUrl() + "/api/trpc",
+        transformer: superjson,
         headers: async () => {
           const headersList = await headers();
           return {

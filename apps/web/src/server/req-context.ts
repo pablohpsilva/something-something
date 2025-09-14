@@ -10,8 +10,11 @@ import { getOptionalAuth } from "@/lib/auth";
  * Extract IP and User-Agent from request headers
  * @returns Object with ip and userAgent strings
  */
-export function getRequestIpAndUA(): { ip: string; userAgent: string } {
-  const headersList = headers();
+export async function getRequestIpAndUA(): Promise<{
+  ip: string;
+  userAgent: string;
+}> {
+  const headersList = await headers();
 
   // Try multiple headers for IP (in order of preference)
   const ip =
@@ -31,12 +34,12 @@ export function getRequestIpAndUA(): { ip: string; userAgent: string } {
  * @returns tRPC caller with full context
  */
 export async function getTrpcCallerWithRequestContext() {
-  const { ip, userAgent } = getRequestIpAndUA();
+  const { ip, userAgent } = await getRequestIpAndUA();
   const auth = await getOptionalAuth();
 
   // Create context object matching the expected structure
   const ctx = {
-    user: auth?.user || null,
+    user: auth || null,
     reqIpHeader: ip,
     reqUAHeader: userAgent,
     reqIpHash: Buffer.from(ip).toString("base64").substring(0, 32),
@@ -55,12 +58,12 @@ export async function getMetricsContext(): Promise<{
   userAgent: string;
   userId: string | null;
 }> {
-  const { ip, userAgent } = getRequestIpAndUA();
+  const { ip, userAgent } = await getRequestIpAndUA();
   const auth = await getOptionalAuth();
 
   return {
     ip,
     userAgent,
-    userId: auth?.user?.id || null,
+    userId: auth?.userId || null,
   };
 }

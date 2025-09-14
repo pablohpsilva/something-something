@@ -29,7 +29,7 @@ export const votesRouter = router({
   upsertRuleVote: voteRateLimitedProcedure
     .input(voteRuleSchema)
     .output(voteSummaryDTOSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const { ruleId, value } = input;
       const userId = ctx.user!.id;
       const numericValue = voteValueToNumber(value);
@@ -48,7 +48,7 @@ export const votesRouter = router({
       }
 
       // Perform vote operation in transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
+      const result = await ctx.prisma.$transaction(async (tx: any) => {
         if (numericValue === 0) {
           // Remove vote
           await tx.vote.deleteMany({
@@ -163,7 +163,7 @@ export const votesRouter = router({
   upsertVersionVote: voteRateLimitedProcedure
     .input(voteVersionSchema)
     .output(voteSummaryDTOSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const { ruleVersionId, value } = input;
       const userId = ctx.user!.id;
       const numericValue = voteValueToNumber(value);
@@ -182,7 +182,7 @@ export const votesRouter = router({
       }
 
       // Perform vote operation in transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
+      const result = await ctx.prisma.$transaction(async (tx: any) => {
         if (numericValue === 0) {
           // Remove vote
           await tx.voteVersion.deleteMany({

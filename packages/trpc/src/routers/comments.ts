@@ -19,7 +19,7 @@ import { commentDTOSchema } from "../schemas/dto";
 import { Notifications } from "../services/notify";
 import { AuditLogService } from "../services/audit-log";
 import { createRateLimitedProcedure } from "../middleware/rate-limit";
-import { isShadowBanned } from "@repo/config/abuse";
+import { isShadowBanned } from "@repo/config";
 
 // Enhanced rate limited procedures with anti-abuse protection
 const commentCreateProcedure = createRateLimitedProcedure(
@@ -53,17 +53,15 @@ export const commentsRouter = router({
           where: {
             ruleId,
           },
-          include: {
-            author: {
-              select: {
-                id: true,
-                handle: true,
-                displayName: true,
-                avatarUrl: true,
-                role: true,
-                // isVerified: true, // Field doesn't exist in schema
-              },
-            },
+          select: {
+            id: true,
+            ruleId: true,
+            createdAt: true,
+            updatedAt: true,
+            deletedAt: true,
+            authorUserId: true,
+            body: true,
+            parentId: true,
           },
           orderBy: {
             createdAt: "asc",
@@ -90,7 +88,7 @@ export const commentsRouter = router({
             id: comment.id,
             ruleId: comment.ruleId,
             parentId: comment.parentId,
-            author: comment.author,
+            author: null, // Will need to be fetched separately
             bodyHtml: comment.deletedAt ? null : comment.body, // TODO: Convert markdown to HTML
             isDeleted: !!comment.deletedAt,
             createdAt: comment.createdAt,
@@ -197,7 +195,7 @@ export const commentsRouter = router({
               id: comment.id,
               ruleId: comment.ruleId,
               parentId: comment.parentId,
-              author: comment.author,
+              author: null, // Will need to be fetched separately
               bodyHtml: comment.deletedAt ? null : comment.body, // TODO: Convert markdown to HTML
               isDeleted: !!comment.deletedAt,
               createdAt: comment.createdAt,
@@ -218,7 +216,7 @@ export const commentsRouter = router({
   create: commentCreateProcedure
     .input(commentCreateSchema)
     .output(commentDTOSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const { ruleId, parentId, body } = input;
       const userId = ctx.user!.id;
 
@@ -274,7 +272,7 @@ export const commentsRouter = router({
       }
 
       // Create comment in transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
+      const result = await ctx.prisma.$transaction(async (tx: any) => {
         // Create the comment
         const comment = await tx.comment.create({
           data: {
@@ -415,7 +413,7 @@ export const commentsRouter = router({
   edit: commentEditProcedure
     .input(commentEditSchema)
     .output(commentDTOSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const { commentId, body } = input;
       const userId = ctx.user!.id;
 
@@ -467,7 +465,7 @@ export const commentsRouter = router({
       }
 
       // Update comment in transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
+      const result = await ctx.prisma.$transaction(async (tx: any) => {
         const updatedComment = await tx.comment.update({
           where: { id: commentId },
           data: {
@@ -536,7 +534,7 @@ export const commentsRouter = router({
   softDelete: commentDeleteProcedure
     .input(commentDeleteSchema)
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
       const { commentId, reason } = input;
       const userId = ctx.user!.id;
 

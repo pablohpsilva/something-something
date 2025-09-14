@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { cuidOrUuidSchema, cursorSchema, limitSchema } from "./base";
+import {
+  cuidOrUuidSchema,
+  cursorSchema,
+  limitSchema,
+  donationStatusSchema,
+} from "./base";
 
 /**
  * Create checkout session input schema
@@ -29,10 +34,7 @@ export const authorStatsInputSchema = z.object({
   windowDays: z.number().int().min(7).max(365).default(30),
 });
 
-/**
- * Donation status enum
- */
-export const donationStatusSchema = z.enum(["INIT", "SUCCEEDED", "FAILED"]);
+// donationStatusSchema is imported from base.ts to avoid conflicts
 
 /**
  * Donation provider enum

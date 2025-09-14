@@ -14,9 +14,9 @@ export default async function NotificationsPage() {
 
   try {
     // Fetch initial notifications on server
-    const initialData = await trpc.social.listNotifications({
+    const initialData = await trpc.social.notifications.list({
       limit: 30,
-      unreadOnly: false,
+      filter: "all",
     });
 
     // Add missing properties to match expected type

@@ -56,10 +56,10 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
 
   const [trpcClient] = useState(() =>
     api.createClient({
-      transformer: superjson,
       links: [
         httpBatchLink({
           url: getBaseUrl() + "/api/trpc",
+          transformer: superjson,
           // You can pass any HTTP headers you wish here
           async headers() {
             return {

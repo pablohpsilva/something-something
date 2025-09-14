@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, createRateLimitedProcedure } from "../trpc";
 import { prisma } from "@repo/db/client";
-import { AbuseConfig } from "@repo/config/abuse";
+import { AbuseConfig } from "@repo/config";
 
 const claimCreateProcedure = createRateLimitedProcedure(
   protectedProcedure,

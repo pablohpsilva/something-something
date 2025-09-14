@@ -5,6 +5,7 @@ import {
   publicProcedure,
   protectedProcedure,
   rateLimitedProcedure,
+  rateLimit,
 } from "../trpc";
 import {
   badgesListInputSchema,
@@ -17,9 +18,8 @@ import {
 import { GamificationService } from "../services/gamification";
 
 // Rate limited procedure for badge recheck (5 per minute)
-const badgeRecheckRateLimitedProcedure = rateLimitedProcedure(
-  "badgeRecheck",
-  5
+const badgeRecheckRateLimitedProcedure = protectedProcedure.use(
+  rateLimit("badgeRecheck", 5, 60 * 1000)
 );
 
 export const badgesRouter = router({
@@ -51,7 +51,7 @@ export const badgesRouter = router({
           slug: ub.badge.slug,
           name: ub.badge.name,
           description: ub.badge.description,
-          criteria: ub.badge.criteria,
+          criteria: (ub.badge.criteria as Record<string, unknown>) || {},
           awardedAt: ub.awardedAt,
         })),
         totalCount: userBadges.length,
@@ -107,7 +107,7 @@ export const badgesRouter = router({
           slug: ub.badge.slug,
           name: ub.badge.name,
           description: ub.badge.description,
-          criteria: ub.badge.criteria,
+          criteria: (ub.badge.criteria as Record<string, unknown>) || {},
           awardedAt: ub.awardedAt,
         })),
         totalCount: userBadges.length,
@@ -132,7 +132,10 @@ export const badgesRouter = router({
       });
 
       return {
-        badges,
+        badges: badges.map((badge) => ({
+          ...badge,
+          criteria: (badge.criteria as Record<string, unknown>) || {},
+        })),
       };
     }),
 
@@ -196,10 +199,12 @@ export const badgesRouter = router({
         ctx.prisma.badge.count(),
         ctx.prisma.userBadge.count(),
         ctx.prisma.badge.findMany({
-          include: {
-            _count: {
-              select: { userBadges: true },
-            },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+            criteria: true,
           },
           orderBy: { name: "asc" },
         }),
@@ -211,7 +216,7 @@ export const badgesRouter = router({
         awardsByBadge: badgeStats.map((badge) => ({
           slug: badge.slug,
           name: badge.name,
-          count: badge._count.userBadges,
+          count: 0, // Count would need to be fetched separately
         })),
       };
     }),

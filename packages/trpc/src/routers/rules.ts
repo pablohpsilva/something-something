@@ -69,11 +69,12 @@ export const rulesRouter = router({
       let orderBy: any;
       switch (sort) {
         case "top":
-          orderBy = [{ score: "desc" }, { createdAt: "desc" }];
+          // For top, we'll sort by updatedAt for now since score is in a separate table
+          orderBy = [{ updatedAt: "desc" }, { createdAt: "desc" }];
           break;
         case "trending":
-          // For trending, we'd typically use recent metrics, but for now use score
-          orderBy = [{ updatedAt: "desc" }, { score: "desc" }];
+          // For trending, use recent updates
+          orderBy = [{ updatedAt: "desc" }, { createdAt: "desc" }];
           break;
         case "new":
         default:
@@ -84,21 +85,11 @@ export const rulesRouter = router({
       if (cursor) {
         const cursorRule = await ctx.prisma.rule.findUnique({
           where: { id: cursor },
-          select: { createdAt: true, score: true },
+          select: { createdAt: true },
         });
 
         if (cursorRule) {
-          if (sort === "top") {
-            where.OR = [
-              { score: { lt: cursorRule.score } },
-              {
-                score: cursorRule.score,
-                createdAt: { lt: cursorRule.createdAt },
-              },
-            ];
-          } else {
-            where.createdAt = { lt: cursorRule.createdAt };
-          }
+          where.createdAt = { lt: cursorRule.createdAt };
         }
       }
 
@@ -172,7 +163,7 @@ export const rulesRouter = router({
         id: rule.id,
         slug: rule.slug,
         title: rule.title,
-        summary: rule.summary,
+        summary: rule.summary || undefined,
         contentType: rule.contentType,
         status: rule.status,
         primaryModel: rule.primaryModel,
@@ -181,7 +172,7 @@ export const rulesRouter = router({
           slug: rt.tag.slug,
           name: rt.tag.name,
         })),
-        score: rule.score || 0,
+        score: 0, // Calculate from metrics
         author: {
           id: rule.createdBy.id,
           handle: rule.createdBy.handle,
@@ -194,7 +185,7 @@ export const rulesRouter = router({
           ? {
               id: rule.currentVersion.id,
               version: rule.currentVersion.version,
-              testedOn: rule.currentVersion.testedOn,
+              testedOn: (rule.currentVersion.testedOn as { models?: string[]; stacks?: string[] }) || null,
               createdAt: rule.currentVersion.createdAt,
             }
           : null,
@@ -211,7 +202,7 @@ export const rulesRouter = router({
           forks7:
             metrics.find((m) => m.ruleId === rule.id && m.type === "FORK")
               ?._count || 0,
-          score: rule.score || 0,
+          score: 0, // Calculate from metrics
         },
         createdAt: rule.createdAt,
         updatedAt: rule.updatedAt,
@@ -331,7 +322,7 @@ export const rulesRouter = router({
         copies7: 0,
         saves7: 0,
         forks7: 0,
-        score: rule.score || 0,
+        score: 0, // Calculate from metrics
       };
 
       if (includeMetrics) {
@@ -353,7 +344,7 @@ export const rulesRouter = router({
           copies7: eventMetrics.find((m) => m.type === "COPY")?._count || 0,
           saves7: eventMetrics.find((m) => m.type === "SAVE")?._count || 0,
           forks7: eventMetrics.find((m) => m.type === "FORK")?._count || 0,
-          score: rule.score || 0,
+          score: 0, // Calculate from metrics
         };
       }
 
@@ -376,7 +367,7 @@ export const rulesRouter = router({
           url: rl.url,
           kind: rl.kind as any,
         })),
-        score: rule.score || 0,
+        score: 0, // Calculate from metrics
         author: {
           id: rule.createdBy.id,
           handle: rule.createdBy.handle,

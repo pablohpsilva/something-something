@@ -71,7 +71,7 @@ function normalizeUA(ua: string): string {
 /**
  * Generate a secure random string for idempotency keys
  */
-export function generateIdempotencyKey(): string {
+export function generateSecureIdempotencyKey(): string {
   return createHash("sha256")
     .update(Date.now().toString())
     .update(Math.random().toString())

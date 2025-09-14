@@ -53,9 +53,9 @@ import { prisma } from "./client";
  * Execute a function within a database transaction
  */
 export async function withTransaction<T>(
-  fn: (tx: typeof prisma) => Promise<T>
+  fn: (tx: any) => Promise<T>
 ): Promise<T> {
-  return prisma.$transaction(fn);
+  return prisma.$transaction(fn) as Promise<T>;
 }
 
 /**

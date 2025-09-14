@@ -64,7 +64,7 @@ export async function completeOnboarding(formData: FormData) {
         handle,
         displayName,
         bio,
-        onboardedAt: new Date(),
+        // onboardedAt: new Date(), // Field doesn't exist in schema
       },
     });
 
