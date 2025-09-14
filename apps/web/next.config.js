@@ -1,15 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
-      },
-    },
-  },
   transpilePackages: ["@repo/ui", "@repo/utils", "@repo/config", "@repo/db", "@repo/trpc"],
   typescript: {
     ignoreBuildErrors: false,
@@ -18,6 +8,14 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   output: "standalone",
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
+      },
+    }
+  },
 };
 
 module.exports = nextConfig;
