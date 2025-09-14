@@ -53,7 +53,7 @@ function ModerationDialog({
       onClose();
       setReason("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -65,7 +65,7 @@ function ModerationDialog({
       onClose();
       setReason("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -337,7 +337,7 @@ export default function AdminModerationPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {content.map((item) => (
+          {content.map((item: any) => (
             <Card key={item.id}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">

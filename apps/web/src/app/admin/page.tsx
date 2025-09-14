@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Activity,
   AlertTriangle,
+  Shield,
 } from "lucide-react";
 
 async function DashboardStats() {

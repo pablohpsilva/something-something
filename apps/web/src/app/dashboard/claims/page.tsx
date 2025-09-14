@@ -36,7 +36,7 @@ export default function ClaimsPage() {
       toast.success("Claim cancelled successfully");
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -98,7 +98,7 @@ export default function ClaimsPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {claims.map((claim) => {
+          {claims.map((claim: any) => {
             const StatusIcon = statusIcons[claim.status];
             const statusColor = statusColors[claim.status];
 
