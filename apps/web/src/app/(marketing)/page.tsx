@@ -1,14 +1,7 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, TrendingUp, Users, FileText } from "lucide-react";
 import { Button } from "@repo/ui";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui";
-// Removed tRPC-dependent components during authentication removal
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui";
 
 export default function HomePage() {
   return (
@@ -34,8 +27,8 @@ export default function HomePage() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search rules, patterns, and guides..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Search functionality temporarily disabled"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
                   disabled
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -109,16 +102,17 @@ export default function HomePage() {
               </Button>
             </div>
 
-            <div className="text-center p-8 bg-muted/10 rounded-lg">
-              <p className="text-muted-foreground">
-                Rule listing temporarily disabled during authentication removal.
+            <div className="text-center p-12 bg-muted/10 rounded-lg border-2 border-dashed border-muted">
+              <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                Rule Listing Temporarily Disabled
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Dynamic content loading has been disabled during authentication
+                system removal.
               </p>
-            </div>
-
-            <div className="text-center">
-              <Button asChild size="lg">
-                <Link href="/rules?sort=trending">
-                  View All Trending Rules
+              <Button asChild>
+                <Link href="/rules">
+                  Browse All Rules
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -197,23 +191,23 @@ export default function HomePage() {
           <div className="max-w-2xl mx-auto text-center space-y-8">
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight">
-                Ready to contribute?
+                Authentication Removed
               </h2>
               <p className="text-xl text-muted-foreground">
-                Share your knowledge and help other developers build better
-                software.
+                This application no longer requires user authentication. Browse
+                and explore the content freely.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg">
-                <Link href="/submit">
-                  Submit Your First Rule
+                <Link href="/rules">
+                  Browse Rules
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/authors">Meet the Community</Link>
+                <Link href="/examples">View Examples</Link>
               </Button>
             </div>
           </div>
