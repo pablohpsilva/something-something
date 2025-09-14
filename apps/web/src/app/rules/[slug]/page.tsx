@@ -1,13 +1,9 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { Badge } from "@repo/ui";
-import { Card, CardContent, CardHeader } from "@repo/ui";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@repo/ui";
+import { Badge } from "@/components/ui";
+import { Card, CardContent, CardHeader } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
 import { createServerCaller } from "@/server/trpc";
 import { ViewTracker } from "@/components/rules/view-tracker";
 import { MetricsStrip } from "@/components/rules/metrics-strip";
@@ -93,11 +89,10 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
         myVote: 0,
       })),
       // Temporarily disabled - need to fix tRPC router structure
-      Promise.resolve({ watchersCount: 0, isWatching: false })
-        .catch(() => ({
-          watchersCount: 0,
-          isWatching: false,
-        })),
+      Promise.resolve({ watchersCount: 0, isWatching: false }).catch(() => ({
+        watchersCount: 0,
+        isWatching: false,
+      })),
     ]);
 
     return (
@@ -333,4 +328,3 @@ export default async function RuleDetailPage({ params }: RuleDetailPageProps) {
     notFound();
   }
 }
-

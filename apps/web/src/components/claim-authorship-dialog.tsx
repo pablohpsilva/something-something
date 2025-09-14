@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { api } from "@/lib/trpc";
-import { Button } from "@repo/ui";
+import { Button } from "@/components/ui";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@repo/ui";
-import { Textarea } from "@repo/ui";
-import { Label } from "@repo/ui";
+} from "@/components/ui";
+import { Textarea } from "@/components/ui";
+import { Label } from "@/components/ui";
 import { toast } from "sonner";
 import { FileText, AlertCircle } from "lucide-react";
 

@@ -7,7 +7,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./services/notify": "./src/services/notify.ts",
+    "./services/gamification": "./src/services/gamification.ts"
   },
   "scripts": {
     "lint": "biome lint .",

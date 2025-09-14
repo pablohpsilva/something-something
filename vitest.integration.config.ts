@@ -31,7 +31,7 @@ export default defineConfig({
       "@repo/trpc": path.resolve(__dirname, "./packages/trpc/src"),
       "@repo/utils": path.resolve(__dirname, "./packages/utils/src"),
       "@repo/config": path.resolve(__dirname, "./packages/config/src"),
-      "@repo/ui": path.resolve(__dirname, "./packages/ui/src"),
+      "@/components/ui": path.resolve(__dirname, "./packages/ui/src"),
     },
   },
 });

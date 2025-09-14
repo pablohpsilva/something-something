@@ -11,28 +11,19 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "@repo/ui";
-import { Input } from "@repo/ui";
-import { Badge } from "@repo/ui";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui";
+import { Button } from "@/components/ui";
+import { Input } from "@/components/ui";
+import { Badge } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@repo/ui";
-import { Separator } from "@repo/ui";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@repo/ui";
+} from "@/components/ui";
+import { Separator } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
 import { api } from "@/lib/trpc";
 import { formatRelativeTime, debounce } from "@/lib/utils";
 import { createButtonProps } from "@/lib/a11y";
@@ -112,7 +103,7 @@ export function SearchResults({
   const isLoading = false;
   const error = null;
   const refetch = () => {};
-  
+
   // const {
   //   data: searchResults,
   //   isLoading,
@@ -266,9 +257,7 @@ export function SearchResults({
         {/* Search Stats */}
         {false && (
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div>
-              Search temporarily disabled
-            </div>
+            <div>Search temporarily disabled</div>
             {hasActiveFilters && (
               <Button
                 variant="ghost"

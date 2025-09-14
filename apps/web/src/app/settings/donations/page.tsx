@@ -1,12 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@repo/ui";
-import { Skeleton } from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import { Skeleton } from "@/components/ui";
 import { DollarSign, TrendingUp, Users, Calendar } from "lucide-react";
 import { createServerCaller } from "@/server/trpc";
 import { DonationsClient } from "./donations-client";

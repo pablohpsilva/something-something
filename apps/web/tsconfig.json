@@ -7,7 +7,7 @@
       "@repo/config": ["../../packages/config/src"],
       "@repo/db": ["../../packages/db/src"],
       "@repo/trpc": ["../../packages/trpc/src"],
-      "@repo/ui": ["../../packages/ui/src"],
+      "@/components/ui": ["../../packages/ui/src"],
       "@repo/utils": ["../../packages/utils/src"]
     }
   },

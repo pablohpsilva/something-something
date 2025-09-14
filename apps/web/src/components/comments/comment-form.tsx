@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@repo/ui";
-import { Textarea } from "@repo/ui";
-import { Card, CardContent } from "@repo/ui";
+import { Button } from "@/components/ui";
+import { Textarea } from "@/components/ui";
+import { Card, CardContent } from "@/components/ui";
 import { MessageSquare, Send, X, AlertCircle } from "lucide-react";
 import { api } from "@/lib/trpc";
 import {

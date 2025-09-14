@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@repo/ui";
+import { Button } from "@/components/ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenuItem,
-} from "@repo/ui";
+} from "@/components/ui";
 import { Nav } from "./nav";
 import { SearchBar } from "./search-bar";
 import { THEME_TESTIDS } from "@/lib/testids";

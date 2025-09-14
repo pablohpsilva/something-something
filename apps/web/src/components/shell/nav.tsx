@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@repo/ui/lib/utils";
+import { cn } from "@/lib/utils";
 import { NAV_TESTIDS } from "@/lib/testids";
 import { createLinkProps } from "@/lib/a11y";
 

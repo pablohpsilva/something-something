@@ -2,14 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@repo/ui";
-import { Card, CardContent } from "@repo/ui";
-import { Badge } from "@repo/ui";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@repo/ui";
+import { Button } from "@/components/ui";
+import { Card, CardContent } from "@/components/ui";
+import { Badge } from "@/components/ui";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
 import {
   Bell,
   Check,
@@ -28,7 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@repo/ui";
+} from "@/components/ui";
 import { api } from "@/lib/trpc";
 import { formatRelativeTime } from "@/lib/format";
 import { showToast } from "@/lib/metrics/read";
@@ -65,7 +61,10 @@ export function NotificationsClient({ initialData }: NotificationsClientProps) {
   // Temporarily disabled tRPC mutations - need to fix router structure
   const markReadMutation = { mutate: (input: any) => {}, isPending: false };
   const markAllReadMutation = { mutate: (input: any) => {}, isPending: false };
-  const deleteNotificationMutation = { mutate: (input: any) => {}, isPending: false };
+  const deleteNotificationMutation = {
+    mutate: (input: any) => {},
+    isPending: false,
+  };
 
   const handleMarkRead = (id: string) => {
     markReadMutation.mutate({ id });
@@ -143,7 +142,10 @@ export function NotificationsClient({ initialData }: NotificationsClientProps) {
           </Card>
         ) : (
           allNotifications.map((notification) => {
-            const IconComponent = NOTIFICATION_ICONS[notification.type as keyof typeof NOTIFICATION_ICONS] || Bell;
+            const IconComponent =
+              NOTIFICATION_ICONS[
+                notification.type as keyof typeof NOTIFICATION_ICONS
+              ] || Bell;
 
             return (
               <Card

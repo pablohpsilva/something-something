@@ -1,4 +1,4 @@
-import { Badge } from "@repo/ui";
+import { Badge } from "@/components/ui";
 import { CheckCircle } from "lucide-react";
 
 interface AuthorClaimBadgeProps {

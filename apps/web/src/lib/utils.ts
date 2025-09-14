@@ -1,4 +1,5 @@
-export { cn } from "@repo/ui";
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function formatRelativeTime(date: Date | string): string {
   const now = new Date();
@@ -90,4 +91,8 @@ export function debounce<T extends (...args: any[]) => any>(
  */
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
 }

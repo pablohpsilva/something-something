@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from "@repo/ui";
-import { Skeleton } from "@repo/ui";
+import { Card, CardContent, CardHeader } from "@/components/ui";
+import { Skeleton } from "@/components/ui";
 import { LIST_TESTIDS } from "@/lib/testids";
 
 export function RuleCardSkeleton() {

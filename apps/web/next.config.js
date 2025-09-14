@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@repo/ui", "@repo/utils", "@repo/config", "@repo/db", "@repo/trpc"],
+  transpilePackages: [
+    "@/components/ui",
+    "@repo/utils",
+    "@repo/config",
+    "@repo/db",
+    "@repo/trpc",
+  ],
   typescript: {
     ignoreBuildErrors: false,
   },
@@ -14,7 +20,7 @@ const nextConfig = {
         loaders: ["@svgr/webpack"],
         as: "*.js",
       },
-    }
+    },
   },
 };
 

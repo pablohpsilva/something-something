@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { AlertTriangle, Eye, EyeOff } from "lucide-react";
-import { Badge } from "@repo/ui";
-import { Card, CardContent } from "@repo/ui";
-import { cn } from "@repo/ui/lib/utils";
+import { Badge } from "@/components/ui";
+import { Card, CardContent } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 interface ModerationNoticeProps {
   type: "comment" | "rule";
