@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { prisma, type User } from "@repo/db";
+import { prisma, type User, auth, type Session, type AuthUser } from "@repo/db";
 import superjson from "superjson";
 import { z } from "zod";
 
@@ -9,6 +9,8 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 export interface Context {
   prisma: typeof prisma;
   user: User | null;
+  session: Session | null;
+  authUser: AuthUser | null;
   reqIpHash: string;
   uaHash: string;
   reqIpHeader: string;
@@ -18,6 +20,8 @@ export interface Context {
 
 export function createContext(opts: {
   user?: User | null;
+  session?: Session | null;
+  authUser?: AuthUser | null;
   reqIpHash?: string;
   uaHash?: string;
   reqIpHeader?: string;
@@ -26,6 +30,8 @@ export function createContext(opts: {
   return {
     prisma,
     user: opts.user || null,
+    session: opts.session || null,
+    authUser: opts.authUser || null,
     reqIpHash: opts.reqIpHash || "unknown",
     uaHash: opts.uaHash || "unknown",
     reqIpHeader: opts.reqIpHeader || "0.0.0.0",
@@ -54,28 +60,68 @@ export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 
 // Middleware to require authentication
-export const requireAuth = t.middleware(({ next }) => {
-  // Authentication has been removed from this application
-  throw new TRPCError({
-    code: "UNAUTHORIZED",
-    message: "Authentication has been removed from this application",
+export const requireAuth = t.middleware(({ ctx, next }) => {
+  if (!ctx.session || !ctx.authUser) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You must be logged in to access this resource",
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      session: ctx.session,
+      authUser: ctx.authUser,
+    },
   });
 });
 
 // Middleware to require specific role
-export const requireRole = (_role: "MOD" | "ADMIN") =>
-  t.middleware(({ next }) => {
-    // Authentication has been removed from this application
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "Authentication has been removed from this application",
+export const requireRole = (role: "MOD" | "ADMIN") =>
+  t.middleware(({ ctx, next }) => {
+    if (!ctx.session || !ctx.authUser) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "You must be logged in to access this resource",
+      });
+    }
+
+    const userRole = ctx.authUser.role as string;
+
+    // Define role hierarchy: ADMIN > MOD > USER
+    const roleHierarchy = {
+      USER: 0,
+      MOD: 1,
+      ADMIN: 2,
+    };
+
+    const userLevel =
+      roleHierarchy[userRole as keyof typeof roleHierarchy] ?? -1;
+    const requiredLevel = roleHierarchy[role];
+
+    if (userLevel < requiredLevel) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `You need ${role} role or higher to access this resource`,
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        session: ctx.session,
+        authUser: ctx.authUser,
+      },
     });
   });
 
 // Rate limiting middleware
 export const rateLimit = (bucket: string, limit: number, windowMs: number) =>
   t.middleware(({ ctx, next }) => {
-    const key = `${bucket}:${ctx.user?.id || ctx.reqIpHash}`;
+    const key = `${bucket}:${
+      ctx.authUser?.id || ctx.user?.id || ctx.reqIpHash
+    }`;
     const now = Date.now();
     const existing = rateLimitStore.get(key);
 
@@ -112,7 +158,7 @@ export const audit = (
     ctx.prisma.auditLog
       .create({
         data: {
-          actorId: ctx.user?.id || null,
+          actorId: ctx.authUser?.id || ctx.user?.id || null,
           action,
           targetType: entity?.type || "unknown",
           targetId: entity?.id || "unknown",
@@ -131,7 +177,7 @@ export const requireOwnership = (
   getResourceUserId: (input: unknown) => string
 ) =>
   t.middleware(async ({ ctx, input, next }) => {
-    if (!ctx.user) {
+    if (!ctx.authUser) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Authentication required",
@@ -142,9 +188,9 @@ export const requireOwnership = (
 
     // Allow if user owns the resource or is a moderator/admin
     const canAccess =
-      ctx.user.id === resourceUserId ||
-      ctx.user.role === "MOD" ||
-      ctx.user.role === "ADMIN";
+      ctx.authUser.id === resourceUserId ||
+      ctx.authUser.role === "MOD" ||
+      ctx.authUser.role === "ADMIN";
 
     if (!canAccess) {
       throw new TRPCError({
@@ -194,11 +240,11 @@ export async function canUserEdit(
   ctx: Context,
   resourceUserId: string
 ): Promise<boolean> {
-  if (!ctx.user) return false;
+  if (!ctx.authUser) return false;
   return (
-    ctx.user.id === resourceUserId ||
-    ctx.user.role === "MOD" ||
-    ctx.user.role === "ADMIN"
+    ctx.authUser.id === resourceUserId ||
+    ctx.authUser.role === "MOD" ||
+    ctx.authUser.role === "ADMIN"
   );
 }
 

@@ -1,20 +1,21 @@
-import { router } from "../trpc"
-import { rulesRouter } from "./rules"
-import { versionsRouter } from "./versions"
-import { tagsRouter } from "./tags"
-import { commentsRouter } from "./comments"
-import { votesRouter } from "./votes"
-import { searchRouter } from "./search"
-import { socialRouter as socialRouterFull } from "./social"
-import { badgesRouter } from "./badges"
-import { leaderboardRouter } from "./leaderboard"
-import { donationsRouter } from "./donations"
-import { adminRouter } from "./admin"
-import { claimsRouter } from "./claims"
-import { GamificationService } from "../services/gamification"
+import { router } from "../trpc";
+import { rulesRouter } from "./rules";
+import { versionsRouter } from "./versions";
+import { tagsRouter } from "./tags";
+import { commentsRouter } from "./comments";
+import { votesRouter } from "./votes";
+import { searchRouter } from "./search";
+import { socialRouter as socialRouterFull } from "./social";
+import { badgesRouter } from "./badges";
+import { leaderboardRouter } from "./leaderboard";
+import { donationsRouter } from "./donations";
+import { adminRouter } from "./admin";
+import { claimsRouter } from "./claims";
+import { authRouter } from "./auth";
+import { GamificationService } from "../services/gamification";
 
 // Import placeholder routers for remaining functionality
-import { z } from "zod"
+import { z } from "zod";
 import {
   publicProcedure,
   protectedProcedure,
@@ -23,7 +24,7 @@ import {
   adminProcedure,
   eventRateLimitedProcedure,
   audit,
-} from "../trpc"
+} from "../trpc";
 
 // Metrics router with ingest service integration
 const metricsRouter = router({
@@ -38,11 +39,11 @@ const metricsRouter = router({
     )
     .output(z.object({ success: z.boolean(), error: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
-      const { type, ruleId, ruleVersionId } = input
+      const { type, ruleId, ruleVersionId } = input;
 
       // For tRPC calls, we'll send directly to ingest service
-      const ingestBaseUrl = process.env.INGEST_BASE_URL
-      const ingestAppToken = process.env.INGEST_APP_TOKEN
+      const ingestBaseUrl = process.env.INGEST_BASE_URL;
+      const ingestAppToken = process.env.INGEST_APP_TOKEN;
 
       if (!ingestBaseUrl || !ingestAppToken) {
         // Fallback: store directly in database
@@ -55,8 +56,8 @@ const metricsRouter = router({
             ipHash: ctx.reqIpHash || "unknown",
             uaHash: ctx.reqUAHeader || "unknown",
           },
-        })
-        return { success: true }
+        });
+        return { success: true };
       }
 
       try {
@@ -79,34 +80,36 @@ const metricsRouter = router({
               },
             ],
           }),
-        })
+        });
 
         if (!response.ok) {
-          const errorText = await response.text().catch(() => "Unknown error")
-          console.error(`Ingest service error: ${response.status} - ${errorText}`)
+          const errorText = await response.text().catch(() => "Unknown error");
+          console.error(
+            `Ingest service error: ${response.status} - ${errorText}`
+          );
 
           // For non-VIEW events, surface the error
           if (type !== "VIEW") {
             return {
               success: false,
               error: `Ingest service error: ${response.status}`,
-            }
+            };
           }
         }
 
-        return { success: true }
+        return { success: true };
       } catch (error) {
-        console.error("Failed to send event to ingest service:", error)
+        console.error("Failed to send event to ingest service:", error);
 
         // For non-VIEW events, surface the error
         if (type !== "VIEW") {
           return {
             success: false,
             error: error instanceof Error ? error.message : "Unknown error",
-          }
+          };
         }
 
-        return { success: true } // VIEW events are fire-and-forget
+        return { success: true }; // VIEW events are fire-and-forget
       }
     }),
 
@@ -132,16 +135,16 @@ const metricsRouter = router({
       })
     )
     .query(async ({ input, ctx }) => {
-      const { ruleId } = input
+      const { ruleId } = input;
 
       // Use the database helper to get open metrics
-      const { getRuleOpenMetrics } = await import("@repo/db")
+      const { getRuleOpenMetrics } = await import("@repo/db");
 
       try {
-        const metrics = await getRuleOpenMetrics(ruleId)
-        return metrics
+        const metrics = await getRuleOpenMetrics(ruleId);
+        return metrics;
       } catch (error) {
-        console.error("Failed to get open metrics:", error)
+        console.error("Failed to get open metrics:", error);
 
         // Fallback to zero metrics
         return {
@@ -156,10 +159,10 @@ const metricsRouter = router({
           forks30: 0,
           votes30: 0,
           score: 0,
-        }
+        };
       }
     }),
-})
+});
 
 // Simple social router
 const socialRouter = router({
@@ -173,13 +176,13 @@ const socialRouter = router({
     .use(audit("social.follow"))
     .output(z.object({ following: z.boolean(), followersCount: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const { authorUserId } = input
+      const { authorUserId } = input;
 
       if (authorUserId === (ctx.user as any)?.id) {
-        throw new Error("Cannot follow yourself")
+        throw new Error("Cannot follow yourself");
       }
 
-      const result = await ctx.prisma.$transaction(async tx => {
+      const result = await ctx.prisma.$transaction(async (tx) => {
         const existing = await tx.follow.findUnique({
           where: {
             followerUserId_authorUserId: {
@@ -187,7 +190,7 @@ const socialRouter = router({
               authorUserId: authorUserId,
             },
           },
-        })
+        });
 
         if (existing) {
           await tx.follow.delete({
@@ -197,24 +200,24 @@ const socialRouter = router({
                 authorUserId: authorUserId,
               },
             },
-          })
+          });
         } else {
           await tx.follow.create({
             data: {
               followerUserId: (ctx.user as any)?.id,
               authorUserId: authorUserId,
             },
-          })
+          });
         }
 
         const followersCount = await tx.follow.count({
           where: { authorUserId: authorUserId },
-        })
+        });
 
-        return { following: !existing, followersCount }
-      })
+        return { following: !existing, followersCount };
+      });
 
-      return result
+      return result;
     }),
 
   favoriteRule: rateLimitedProcedure
@@ -227,9 +230,9 @@ const socialRouter = router({
     .use(audit("social.favorite"))
     .output(z.object({ favorited: z.boolean(), favoritesCount: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const { ruleId } = input
+      const { ruleId } = input;
 
-      const result = await ctx.prisma.$transaction(async tx => {
+      const result = await ctx.prisma.$transaction(async (tx) => {
         const existing = await tx.favorite.findUnique({
           where: {
             userId_ruleId: {
@@ -237,7 +240,7 @@ const socialRouter = router({
               ruleId,
             },
           },
-        })
+        });
 
         if (existing) {
           await tx.favorite.delete({
@@ -247,14 +250,14 @@ const socialRouter = router({
                 ruleId,
               },
             },
-          })
+          });
         } else {
           await tx.favorite.create({
             data: {
               userId: (ctx.user as any)?.id,
               ruleId,
             },
-          })
+          });
 
           // Record event
           await tx.event.create({
@@ -265,17 +268,17 @@ const socialRouter = router({
               ipHash: ctx.reqIpHash,
               uaHash: ctx.uaHash,
             },
-          })
+          });
         }
 
         const favoritesCount = await tx.favorite.count({
           where: { ruleId },
-        })
+        });
 
-        return { favorited: !existing, favoritesCount }
-      })
+        return { favorited: !existing, favoritesCount };
+      });
 
-      return result
+      return result;
     }),
 
   listNotifications: protectedProcedure
@@ -302,38 +305,38 @@ const socialRouter = router({
       })
     )
     .query(async ({ input, ctx }) => {
-      const { cursor, limit, unreadOnly } = input
+      const { cursor, limit, unreadOnly } = input;
 
       const where: any = {
         userId: (ctx.user as any)?.id,
         ...(unreadOnly && { readAt: null }),
-      }
+      };
 
       if (cursor) {
-        where.id = { lt: cursor }
+        where.id = { lt: cursor };
       }
 
       const notifications = await ctx.prisma.notification.findMany({
         where,
         orderBy: { createdAt: "desc" },
         take: limit + 1,
-      })
+      });
 
-      const hasMore = notifications.length > limit
-      const items = hasMore ? notifications.slice(0, -1) : notifications
-      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined
+      const hasMore = notifications.length > limit;
+      const items = hasMore ? notifications.slice(0, -1) : notifications;
+      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
       return {
-        items: items.map(item => ({
+        items: items.map((item) => ({
           ...item,
           type: item.type as string,
           payload: (item.payload as Record<string, unknown>) || {},
         })),
         nextCursor,
         hasMore,
-      }
+      };
     }),
-})
+});
 
 // Claims router is now imported from ./claims
 
@@ -343,6 +346,7 @@ const socialRouter = router({
 
 // Main app router
 export const appRouter = router({
+  auth: authRouter,
   rules: rulesRouter,
   versions: versionsRouter,
   tags: tagsRouter,
@@ -356,6 +360,6 @@ export const appRouter = router({
   donations: donationsRouter,
   leaderboard: leaderboardRouter,
   admin: adminRouter,
-})
+});
 
-export type AppRouter = typeof appRouter
+export type AppRouter = typeof appRouter;

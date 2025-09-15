@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./search": "./src/search.ts",
+    "./auth": "./src/auth.ts",
     "./schema": "./prisma/schema.prisma"
   },
   "scripts": {
@@ -23,7 +24,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^5.21.1"
+    "@prisma/client": "^5.21.1",
+    "better-auth": "^0.8.0",
+    "@better-auth/prisma": "^0.8.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

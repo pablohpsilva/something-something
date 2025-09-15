@@ -8,8 +8,10 @@
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
     "./client": "./src/client.ts",
+    "./context": "./src/context.ts",
     "./services/notify": "./src/services/notify.ts",
-    "./services/gamification": "./src/services/gamification.ts"
+    "./services/gamification": "./src/services/gamification.ts",
+    "./middleware/auth": "./src/middleware/auth.ts"
   },
   "scripts": {
     "lint": "biome lint .",
@@ -25,7 +27,8 @@
     "@repo/utils": "workspace:*",
     "@trpc/server": "^11.0.0-rc.553",
     "superjson": "^2.2.1",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "better-auth": "^0.8.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

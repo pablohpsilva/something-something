@@ -337,3 +337,7 @@ export type { MetricsSummary, TrendingRule } from "./metrics";
 
 // Search helpers
 export * from "./search";
+
+// Auth helpers
+export { auth } from "./auth";
+export type { Session, User as AuthUser } from "./auth";
