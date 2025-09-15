@@ -17,6 +17,39 @@ export {
   modMiddleware,
 } from "./middleware/auth";
 
+// Export enhanced auth validation
+export {
+  validateAuth,
+  requireSpecificRole,
+  requireOwnershipOrMod,
+  requireVerifiedUser,
+  requireCompleteProfile,
+  canUserEditResource,
+  getCurrentUser,
+  getCurrentUserId,
+} from "./middleware/auth-validation";
+
+// Export enhanced protected procedures
+export {
+  protectedProcedure,
+  verifiedProcedure,
+  completeProcedure,
+  modProcedure,
+  adminProcedure,
+  rateLimitedProcedure,
+  strictRateLimitedProcedure,
+  contentCreationProcedure,
+  votingProcedure,
+  socialProcedure,
+  discussionProcedure,
+  moderationProcedure,
+  adminActionProcedure,
+  createRateLimitedProcedure,
+  profileProcedure,
+  contentManagementProcedure,
+  sensitiveProcedure,
+} from "./procedures/protected";
+
 // Export router types for client usage
 export type {
   CreateRuleInput,

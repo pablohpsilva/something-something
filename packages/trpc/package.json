@@ -9,9 +9,11 @@
     "./server": "./src/server.ts",
     "./client": "./src/client.ts",
     "./context": "./src/context.ts",
+    "./procedures": "./src/procedures/protected.ts",
+    "./middleware/auth": "./src/middleware/auth.ts",
+    "./middleware/auth-validation": "./src/middleware/auth-validation.ts",
     "./services/notify": "./src/services/notify.ts",
-    "./services/gamification": "./src/services/gamification.ts",
-    "./middleware/auth": "./src/middleware/auth.ts"
+    "./services/gamification": "./src/services/gamification.ts"
   },
   "scripts": {
     "lint": "biome lint .",

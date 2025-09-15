@@ -87,7 +87,7 @@ export const requireRole = (role: "MOD" | "ADMIN") =>
       });
     }
 
-    const userRole = ctx.authUser.role as string;
+    const userRole = (ctx.authUser as any)?.role as string;
 
     // Define role hierarchy: ADMIN > MOD > USER
     const roleHierarchy = {
@@ -120,7 +120,7 @@ export const requireRole = (role: "MOD" | "ADMIN") =>
 export const rateLimit = (bucket: string, limit: number, windowMs: number) =>
   t.middleware(({ ctx, next }) => {
     const key = `${bucket}:${
-      ctx.authUser?.id || ctx.user?.id || ctx.reqIpHash
+      (ctx.authUser as any)?.id || ctx.user?.id || ctx.reqIpHash
     }`;
     const now = Date.now();
     const existing = rateLimitStore.get(key);
@@ -158,7 +158,7 @@ export const audit = (
     ctx.prisma.auditLog
       .create({
         data: {
-          actorId: ctx.authUser?.id || ctx.user?.id || null,
+          actorId: (ctx.authUser as any)?.id || ctx.user?.id || null,
           action,
           targetType: entity?.type || "unknown",
           targetId: entity?.id || "unknown",
@@ -185,12 +185,13 @@ export const requireOwnership = (
     }
 
     const resourceUserId = getResourceUserId(input);
+    const user = ctx.authUser; // TypeScript now knows this is not null
 
     // Allow if user owns the resource or is a moderator/admin
     const canAccess =
-      ctx.authUser.id === resourceUserId ||
-      ctx.authUser.role === "MOD" ||
-      ctx.authUser.role === "ADMIN";
+      (user as any).id === resourceUserId ||
+      (user as any).role === "MOD" ||
+      (user as any).role === "ADMIN";
 
     if (!canAccess) {
       throw new TRPCError({
@@ -242,9 +243,9 @@ export async function canUserEdit(
 ): Promise<boolean> {
   if (!ctx.authUser) return false;
   return (
-    ctx.authUser.id === resourceUserId ||
-    ctx.authUser.role === "MOD" ||
-    ctx.authUser.role === "ADMIN"
+    (ctx.authUser as any).id === resourceUserId ||
+    (ctx.authUser as any).role === "MOD" ||
+    (ctx.authUser as any).role === "ADMIN"
   );
 }
 

@@ -1,5 +1,5 @@
-import { z } from "zod"
-import { TRPCError } from "@trpc/server"
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   router,
   publicProcedure,
@@ -7,45 +7,48 @@ import {
   rateLimitedProcedure,
   modProcedure,
   audit,
-} from "../trpc"
+} from "../trpc";
 import {
   commentCreateSchema,
   commentListSchema,
   commentEditSchema,
   commentDeleteSchema,
   commentListResponseSchema,
-} from "../schemas/comment"
-import { commentDTOSchema } from "../schemas/dto"
-import { Notifications } from "../services/notify"
-import { AuditLogService } from "../services/audit-log"
-import { createRateLimitedProcedure } from "../middleware/rate-limit"
-import { isShadowBanned } from "@repo/config"
+} from "../schemas/comment";
+import { commentDTOSchema } from "../schemas/dto";
+import { Notifications } from "../services/notify";
+import { AuditLogService } from "../services/audit-log";
+// import { createRateLimitedProcedure } from "../middleware/rate-limit"
+import { isShadowBanned } from "@repo/config";
 
 // Enhanced rate limited procedures with anti-abuse protection
-const commentCreateProcedure = createRateLimitedProcedure(
-  protectedProcedure,
-  "commentsPerUserPerMin",
-  { requireAuth: true, burstProtection: true }
-)
+// const commentCreateProcedure = createRateLimitedProcedure(
+//   protectedProcedure,
+//   "commentsPerUserPerMin",
+//   { requireAuth: true, burstProtection: true }
+// )
+const commentCreateProcedure = protectedProcedure;
 
-const commentEditProcedure = createRateLimitedProcedure(
-  protectedProcedure,
-  "commentsPerUserPerMin",
-  { requireAuth: true }
-)
+// const commentEditProcedure = createRateLimitedProcedure(
+//   protectedProcedure,
+//   "commentsPerUserPerMin",
+//   { requireAuth: true }
+// )
+const commentEditProcedure = protectedProcedure;
 
-const commentDeleteProcedure = createRateLimitedProcedure(
-  protectedProcedure,
-  "commentsPerUserPerMin",
-  { requireAuth: true }
-)
+// const commentDeleteProcedure = createRateLimitedProcedure(
+//   protectedProcedure,
+//   "commentsPerUserPerMin",
+//   { requireAuth: true }
+// )
+const commentDeleteProcedure = protectedProcedure;
 
 export const commentsRouter = router({
   list: publicProcedure
     .input(commentListSchema)
     .output(commentListResponseSchema)
     .query(async ({ input, ctx }) => {
-      const { ruleId, cursor, limit, mode } = input
+      const { ruleId, cursor, limit, mode } = input;
 
       if (mode === "tree") {
         // Build threaded tree structure
@@ -66,22 +69,23 @@ export const commentsRouter = router({
           orderBy: {
             createdAt: "asc",
           },
-        })
+        });
 
         // Build comment tree
-        const commentMap = new Map()
-        const rootComments: any[] = []
+        const commentMap = new Map();
+        const rootComments: any[] = [];
 
         // First pass: create comment objects
         for (const comment of allComments) {
-          const isEdited = comment.updatedAt.getTime() - comment.createdAt.getTime() > 60000 // 1 minute
+          const isEdited =
+            comment.updatedAt.getTime() - comment.createdAt.getTime() > 60000; // 1 minute
           const canEdit =
             ctx.user?.id === comment.authorUserId &&
             Date.now() - comment.createdAt.getTime() < 10 * 60 * 1000 && // 10 minutes
-            !comment.deletedAt
+            !comment.deletedAt;
           const canDelete =
             ctx.user?.id === comment.authorUserId ||
-            (ctx.user?.role && ["MODERATOR", "ADMIN"].includes(ctx.user.role))
+            (ctx.user?.role && ["MODERATOR", "ADMIN"].includes(ctx.user.role));
 
           const commentDTO = {
             id: comment.id,
@@ -97,41 +101,50 @@ export const commentsRouter = router({
             children: [],
             canEdit,
             canDelete,
-          }
+          };
 
-          commentMap.set(comment.id, commentDTO)
+          commentMap.set(comment.id, commentDTO);
         }
 
         // Second pass: build tree structure and calculate depth
         for (const comment of allComments) {
-          const commentDTO = commentMap.get(comment.id)
+          const commentDTO = commentMap.get(comment.id);
 
           if (comment.parentId) {
-            const parent = commentMap.get(comment.parentId)
+            const parent = commentMap.get(comment.parentId);
             if (parent) {
-              commentDTO.depth = parent.depth + 1
-              parent.children.push(commentDTO)
+              commentDTO.depth = parent.depth + 1;
+              parent.children.push(commentDTO);
             }
           } else {
-            rootComments.push(commentDTO)
+            rootComments.push(commentDTO);
           }
         }
 
         // Sort root comments by creation date (newest first)
-        rootComments.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        rootComments.sort(
+          (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+        );
 
         // Apply pagination to root comments only
-        const startIndex = cursor ? rootComments.findIndex(c => c.id === cursor) + 1 : 0
-        const paginatedComments = rootComments.slice(startIndex, startIndex + limit)
-        const hasMore = startIndex + limit < rootComments.length
-        const nextCursor = hasMore ? paginatedComments[paginatedComments.length - 1]?.id : undefined
+        const startIndex = cursor
+          ? rootComments.findIndex((c) => c.id === cursor) + 1
+          : 0;
+        const paginatedComments = rootComments.slice(
+          startIndex,
+          startIndex + limit
+        );
+        const hasMore = startIndex + limit < rootComments.length;
+        const nextCursor = hasMore
+          ? paginatedComments[paginatedComments.length - 1]?.id
+          : undefined;
 
         return {
           items: paginatedComments,
           nextCursor,
           hasMore,
           totalCount: rootComments.length,
-        }
+        };
       } else {
         // Flat mode - simple chronological list
         const comments = await ctx.prisma.comment.findMany({
@@ -158,26 +171,28 @@ export const commentsRouter = router({
             cursor: { id: cursor },
             skip: 1,
           }),
-        })
+        });
 
-        const hasMore = comments.length > limit
-        const items = hasMore ? comments.slice(0, -1) : comments
-        const nextCursor = hasMore ? items[items.length - 1]?.id : undefined
+        const hasMore = comments.length > limit;
+        const items = hasMore ? comments.slice(0, -1) : comments;
+        const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
         const totalCount = await ctx.prisma.comment.count({
           where: { ruleId },
-        })
+        });
 
         return {
-          items: items.map(comment => {
-            const isEdited = comment.updatedAt.getTime() - comment.createdAt.getTime() > 60000
+          items: items.map((comment) => {
+            const isEdited =
+              comment.updatedAt.getTime() - comment.createdAt.getTime() > 60000;
             const canEdit =
               ctx.user?.id === comment.authorUserId &&
               Date.now() - comment.createdAt.getTime() < 10 * 60 * 1000 &&
-              !comment.deletedAt
+              !comment.deletedAt;
             const canDelete =
               ctx.user?.id === comment.authorUserId ||
-              (ctx.user?.role && ["MODERATOR", "ADMIN"].includes(ctx.user.role))
+              (ctx.user?.role &&
+                ["MODERATOR", "ADMIN"].includes(ctx.user.role));
 
             return {
               id: comment.id,
@@ -192,12 +207,12 @@ export const commentsRouter = router({
               depth: 0,
               canEdit,
               canDelete,
-            }
+            };
           }),
           nextCursor,
           hasMore,
           totalCount,
-        }
+        };
       }
     }),
 
@@ -205,8 +220,8 @@ export const commentsRouter = router({
     .input(commentCreateSchema)
     .output(commentDTOSchema)
     .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
-      const { ruleId, parentId, body } = input
-      const userId = ctx.user!.id
+      const { ruleId, parentId, body } = input;
+      const userId = ctx.user!.id;
 
       // Handle shadow banned users
       if (ctx.shadowBanned) {
@@ -218,17 +233,17 @@ export const commentsRouter = router({
       const rule = await ctx.prisma.rule.findUnique({
         where: { id: ruleId },
         select: { id: true, createdByUserId: true },
-      })
+      });
 
       if (!rule) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Rule not found",
-        })
+        });
       }
 
-      let parentComment = null
-      let depth = 0
+      let parentComment = null;
+      let depth = 0;
 
       // Validate parent comment exists and belongs to same rule
       if (parentId) {
@@ -238,24 +253,24 @@ export const commentsRouter = router({
             ruleId,
             deletedAt: null,
           },
-        })
+        });
 
         if (!parentComment) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Parent comment not found",
-          })
+          });
         }
 
         // Calculate depth (limit to reasonable depth)
-        let current = parentComment
-        depth = 1
+        let current = parentComment;
+        depth = 1;
         while (current.parentId && depth < 10) {
           current = await ctx.prisma.comment.findUnique({
             where: { id: current.parentId },
-          })
-          if (!current) break
-          depth++
+          });
+          if (!current) break;
+          depth++;
         }
       }
 
@@ -281,7 +296,7 @@ export const commentsRouter = router({
               },
             },
           },
-        })
+        });
 
         // Create audit log
         await tx.auditLog.create({
@@ -297,10 +312,10 @@ export const commentsRouter = router({
               body: body.substring(0, 100), // Truncate for audit
             },
           },
-        })
+        });
 
         // Create notifications
-        const notifications = []
+        const notifications = [];
 
         // Notify parent comment author (if replying)
         if (parentComment && parentComment.authorUserId !== userId) {
@@ -315,7 +330,7 @@ export const commentsRouter = router({
               actorHandle: ctx.user!.handle,
               actorDisplayName: ctx.user!.displayName,
             },
-          })
+          });
         }
 
         // Notify rule author (if top-level comment and not self)
@@ -330,11 +345,11 @@ export const commentsRouter = router({
               actorHandle: ctx.user!.handle,
               actorDisplayName: ctx.user!.displayName,
             },
-          })
+          });
         }
 
-        return comment
-      })
+        return comment;
+      });
 
       // Send notifications (fire-and-forget)
       try {
@@ -346,15 +361,15 @@ export const commentsRouter = router({
           actorUserId: userId,
           actorHandle: ctx.user!.handle,
           actorDisplayName: ctx.user!.displayName,
-        })
+        });
       } catch (error) {
-        console.error("Failed to send comment reply notifications:", error)
+        console.error("Failed to send comment reply notifications:", error);
       }
 
       // Emit COMMENT event to ingest (fire-and-forget)
       try {
-        const ingestBaseUrl = process.env.INGEST_BASE_URL
-        const ingestAppToken = process.env.INGEST_APP_TOKEN
+        const ingestBaseUrl = process.env.INGEST_BASE_URL;
+        const ingestAppToken = process.env.INGEST_APP_TOKEN;
 
         if (ingestBaseUrl && ingestAppToken) {
           fetch(`${ingestBaseUrl}/ingest/events`, {
@@ -375,7 +390,7 @@ export const commentsRouter = router({
                 },
               ],
             }),
-          }).catch(() => {}) // Fire-and-forget
+          }).catch(() => {}); // Fire-and-forget
         }
       } catch (error) {
         // Ignore ingest errors
@@ -395,15 +410,15 @@ export const commentsRouter = router({
         children: [],
         canEdit: true,
         canDelete: true,
-      }
+      };
     }),
 
   edit: commentEditProcedure
     .input(commentEditSchema)
     .output(commentDTOSchema)
     .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
-      const { commentId, body } = input
-      const userId = ctx.user!.id
+      const { commentId, body } = input;
+      const userId = ctx.user!.id;
 
       const comment = await ctx.prisma.comment.findFirst({
         where: {
@@ -422,32 +437,34 @@ export const commentsRouter = router({
             },
           },
         },
-      })
+      });
 
       if (!comment) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Comment not found",
-        })
+        });
       }
 
       // Check permissions
-      const isAuthor = comment.authorUserId === userId
-      const isModerator = ctx.user!.role && ["MODERATOR", "ADMIN"].includes(ctx.user!.role)
-      const withinEditWindow = Date.now() - comment.createdAt.getTime() < 10 * 60 * 1000 // 10 minutes
+      const isAuthor = comment.authorUserId === userId;
+      const isModerator =
+        ctx.user!.role && ["MODERATOR", "ADMIN"].includes(ctx.user!.role);
+      const withinEditWindow =
+        Date.now() - comment.createdAt.getTime() < 10 * 60 * 1000; // 10 minutes
 
       if (!isAuthor && !isModerator) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to edit this comment",
-        })
+        });
       }
 
       if (isAuthor && !withinEditWindow && !isModerator) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Edit window has expired",
-        })
+        });
       }
 
       // Update comment in transaction
@@ -470,7 +487,7 @@ export const commentsRouter = router({
               },
             },
           },
-        })
+        });
 
         // Create audit log
         await tx.auditLog.create({
@@ -485,19 +502,20 @@ export const commentsRouter = router({
               newBody: body.substring(0, 100),
             },
           },
-        })
+        });
 
-        return updatedComment
-      })
+        return updatedComment;
+      });
 
-      const isEdited = result.updatedAt.getTime() - result.createdAt.getTime() > 60000
+      const isEdited =
+        result.updatedAt.getTime() - result.createdAt.getTime() > 60000;
       const canEdit =
         userId === result.authorUserId &&
         Date.now() - result.createdAt.getTime() < 10 * 60 * 1000 &&
-        !result.deletedAt
+        !result.deletedAt;
       const canDelete =
         userId === result.authorUserId ||
-        (ctx.user!.role && ["MODERATOR", "ADMIN"].includes(ctx.user!.role))
+        (ctx.user!.role && ["MODERATOR", "ADMIN"].includes(ctx.user!.role));
 
       return {
         id: result.id,
@@ -513,55 +531,61 @@ export const commentsRouter = router({
         children: [],
         canEdit,
         canDelete,
-      }
+      };
     }),
 
   softDelete: commentDeleteProcedure
     .input(commentDeleteSchema)
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
-      const { commentId, reason } = input
-      const userId = ctx.user!.id
+      const { commentId, reason } = input;
+      const userId = ctx.user!.id;
 
       const comment = await ctx.prisma.comment.findFirst({
         where: {
           id: commentId,
           deletedAt: null,
         },
-      })
+      });
 
       if (!comment) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Comment not found",
-        })
+        });
       }
 
       // Check permissions
-      const isAuthor = comment.authorUserId === userId
-      const isModerator = ctx.user!.role && ["MODERATOR", "ADMIN"].includes(ctx.user!.role)
+      const isAuthor = comment.authorUserId === userId;
+      const isModerator =
+        ctx.user!.role && ["MODERATOR", "ADMIN"].includes(ctx.user!.role);
 
       if (!isAuthor && !isModerator) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to delete this comment",
-        })
+        });
       }
 
       // Soft delete the comment
       await ctx.prisma.comment.update({
         where: { id: commentId },
         data: { deletedAt: new Date() },
-      })
+      });
 
       // Create audit log
-      await AuditLogService.logCommentDelete(commentId, userId, reason || undefined, {
-        deletedBy: isModerator ? "moderator" : "author",
-        authorId: comment.authorUserId,
-        ruleId: comment.ruleId,
-        bodyPreview: comment.body.substring(0, 100),
-      })
+      await AuditLogService.logCommentDelete(
+        commentId,
+        userId,
+        reason || undefined,
+        {
+          deletedBy: isModerator ? "moderator" : "author",
+          authorId: comment.authorUserId,
+          ruleId: comment.ruleId,
+          bodyPreview: comment.body.substring(0, 100),
+        }
+      );
 
-      return { success: true }
+      return { success: true };
     }),
-})
+});

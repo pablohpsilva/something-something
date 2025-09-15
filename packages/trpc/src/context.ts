@@ -1,7 +1,16 @@
-import type { Request, Response } from "express";
+// Note: Express types are optional - only needed if using with Express server
+interface Request {
+  headers: Record<string, string | string[]>;
+  socket?: { remoteAddress?: string };
+}
+
+interface Response {
+  // Express Response interface placeholder
+}
 import { auth } from "@repo/db/auth";
 import { createContext } from "./trpc";
 import { prisma } from "@repo/db";
+import type { Context } from "./trpc";
 
 /**
  * Create tRPC context for server-side usage with Better-auth
@@ -22,7 +31,7 @@ export async function createTRPCContext(opts: {
     if (req) {
       // Extract session from request
       const sessionData = await auth.api.getSession({
-        headers: req.headers as Record<string, string>,
+        headers: new Headers(req.headers as Record<string, string>),
       });
 
       if (sessionData) {
@@ -30,25 +39,25 @@ export async function createTRPCContext(opts: {
         authUser = sessionData.user;
 
         // Get the full user from database for backward compatibility
-        if (authUser?.id) {
+        if (authUser && (authUser as any).id) {
           dbUser = await prisma.user.findUnique({
-            where: { id: authUser.id },
+            where: { id: (authUser as any).id },
           });
         }
       }
     } else if (headers) {
       // For serverless or API routes
       const sessionData = await auth.api.getSession({
-        headers,
+        headers: new Headers(headers),
       });
 
       if (sessionData) {
         session = sessionData.session;
         authUser = sessionData.user;
 
-        if (authUser?.id) {
+        if (authUser && (authUser as any).id) {
           dbUser = await prisma.user.findUnique({
-            where: { id: authUser.id },
+            where: { id: (authUser as any).id },
           });
         }
       }
@@ -67,7 +76,13 @@ export async function createTRPCContext(opts: {
     "0.0.0.0";
 
   const reqUAHeader =
-    req?.headers["user-agent"] || headers?.["user-agent"] || "";
+    (Array.isArray(req?.headers["user-agent"])
+      ? req?.headers["user-agent"][0]
+      : req?.headers["user-agent"]) ||
+    (Array.isArray(headers?.["user-agent"])
+      ? headers?.["user-agent"][0]
+      : headers?.["user-agent"]) ||
+    "";
 
   // Create hash for rate limiting (simplified for now)
   const reqIpHash = Buffer.from(reqIpHeader).toString("base64").slice(0, 8);
@@ -75,8 +90,8 @@ export async function createTRPCContext(opts: {
 
   return createContext({
     user: dbUser,
-    session,
-    authUser,
+    session: session as any, // Better-auth session type
+    authUser: authUser as any, // Better-auth user type
     reqIpHash,
     uaHash,
     reqIpHeader,
@@ -112,3 +127,6 @@ export function createMockContext(overrides?: {
     reqUAHeader: "test-agent",
   });
 }
+
+// Re-export Context type for external usage
+export type { Context };

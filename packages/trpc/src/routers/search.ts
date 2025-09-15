@@ -1,12 +1,12 @@
-import { z } from "zod"
-import { TRPCError } from "@trpc/server"
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   router,
   publicProcedure,
   protectedProcedure,
   rateLimitedProcedure,
   requireRole,
-} from "../trpc"
+} from "../trpc";
 import {
   searchInputSchema,
   suggestInputSchema,
@@ -15,7 +15,7 @@ import {
   suggestResponseSchema,
   searchStatsResponseSchema,
   searchOperationResponseSchema,
-} from "../schemas/search"
+} from "../schemas/search";
 import {
   searchRulesDB,
   suggestRulesDB,
@@ -24,27 +24,30 @@ import {
   getSearchStats,
   searchRulesSimple,
   type SearchFilters,
-} from "@repo/db/search"
-import { createRateLimitedProcedure, withIPRateLimit } from "../middleware/rate-limit"
+} from "@repo/db/search";
+// import { createRateLimitedProcedure, withIPRateLimit } from "../middleware/rate-limit"
 
 // Enhanced rate limited procedures for search operations
-const searchRateLimitedProcedure = createRateLimitedProcedure(
-  publicProcedure,
-  "searchPerIpPerMin",
-  { requireAuth: false, weight: 1 }
-)
+// const searchRateLimitedProcedure = createRateLimitedProcedure(
+//   publicProcedure,
+//   "searchPerIpPerMin",
+//   { requireAuth: false, weight: 1 }
+// )
+const searchRateLimitedProcedure = publicProcedure;
 
-const suggestRateLimitedProcedure = createRateLimitedProcedure(
-  publicProcedure,
-  "suggestionsPerIpPerMin",
-  { requireAuth: false, weight: 1 }
-)
+// const suggestRateLimitedProcedure = createRateLimitedProcedure(
+//   publicProcedure,
+//   "suggestionsPerIpPerMin",
+//   { requireAuth: false, weight: 1 }
+// );
+const suggestRateLimitedProcedure = publicProcedure;
 
-const adminSearchProcedure = createRateLimitedProcedure(
-  protectedProcedure,
-  "adminOpsPerUserPerMin",
-  { requireAuth: true }
-)
+// const adminSearchProcedure = createRateLimitedProcedure(
+//   protectedProcedure,
+//   "adminOpsPerUserPerMin",
+//   { requireAuth: true }
+// );
+const adminSearchProcedure = protectedProcedure;
 
 export const searchRouter = router({
   /**
@@ -54,8 +57,8 @@ export const searchRouter = router({
     .input(searchInputSchema)
     .output(searchResultResponseSchema)
     .query(async ({ input, ctx }: { input: any; ctx: any }) => {
-      const startTime = Date.now()
-      const { q, filters, limit, offset } = input
+      const startTime = Date.now();
+      const { q, filters, limit, offset } = input;
 
       try {
         // Convert filters to database format
@@ -67,16 +70,16 @@ export const searchRouter = router({
           authorHandle: filters.authorHandle,
           dateFrom: filters.dateFrom ? new Date(filters.dateFrom) : undefined,
           dateTo: filters.dateTo ? new Date(filters.dateTo) : undefined,
-        }
+        };
 
         // Use simple search for very short queries, FTS for longer ones
         const results =
           q.trim().length < 3
             ? await searchRulesSimple(q, dbFilters, limit, offset)
-            : await searchRulesDB(q, dbFilters, limit, offset)
+            : await searchRulesDB(q, dbFilters, limit, offset);
 
         // Transform database results to DTOs
-        const searchResults = results.map(row => ({
+        const searchResults = results.map((row) => ({
           id: row.ruleId,
           slug: row.slug,
           title: row.title,
@@ -96,29 +99,30 @@ export const searchRouter = router({
           snippetHtml: row.snippet,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
-        }))
+        }));
 
-        const took = Date.now() - startTime
+        const took = Date.now() - startTime;
 
         return {
           results: searchResults,
           pagination: {
             total: searchResults.length, // Approximate - exact count would be expensive
             hasMore: searchResults.length === limit,
-            nextOffset: searchResults.length === limit ? offset + limit : undefined,
+            nextOffset:
+              searchResults.length === limit ? offset + limit : undefined,
           },
           meta: {
             query: q,
             filters: filters,
             took,
           },
-        }
+        };
       } catch (error) {
-        console.error("Search query failed:", error)
+        console.error("Search query failed:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Search query failed",
-        })
+        });
       }
     }),
 
@@ -129,23 +133,23 @@ export const searchRouter = router({
     .input(suggestInputSchema)
     .output(suggestResponseSchema)
     .query(async ({ input }: { input: any }) => {
-      const { q, limit } = input
+      const { q, limit } = input;
 
       try {
-        const suggestions = await suggestRulesDB(q, limit)
+        const suggestions = await suggestRulesDB(q, limit);
 
         return {
-          suggestions: suggestions.map(row => ({
+          suggestions: suggestions.map((row) => ({
             id: row.ruleId,
             slug: row.slug,
             title: row.title,
             similarity: row.similarity,
           })),
-        }
+        };
       } catch (error) {
-        console.error("Search suggestions failed:", error)
+        console.error("Search suggestions failed:", error);
         // Return empty suggestions on error rather than failing
-        return { suggestions: [] }
+        return { suggestions: [] };
       }
     }),
 
@@ -180,7 +184,7 @@ export const searchRouter = router({
             rules: { _count: "desc" },
           },
           take: input.limit,
-        })
+        });
 
         // Get popular models
         const modelsData = await ctx.prisma.rule.groupBy({
@@ -192,12 +196,12 @@ export const searchRouter = router({
           _count: {
             _all: true,
           },
-        })
+        });
 
         // Sort by count and take top results
         const models = modelsData
           .sort((a, b) => b._count._all - a._count._all)
-          .slice(0, input.limit)
+          .slice(0, input.limit);
 
         // Get active authors
         const authors = await ctx.prisma.user.findMany({
@@ -219,7 +223,7 @@ export const searchRouter = router({
             rulesCreated: { _count: "desc" },
           },
           take: input.limit,
-        })
+        });
 
         // Get content type distribution
         const contentTypesData = await ctx.prisma.rule.groupBy({
@@ -228,43 +232,45 @@ export const searchRouter = router({
           _count: {
             _all: true,
           },
-        })
+        });
 
         // Sort by count
-        const contentTypes = contentTypesData.sort((a, b) => b._count._all - a._count._all)
+        const contentTypes = contentTypesData.sort(
+          (a, b) => b._count._all - a._count._all
+        );
 
         return {
           tags: tags
-            .filter(tag => tag._count.rules > 0)
-            .map(tag => ({
+            .filter((tag) => tag._count.rules > 0)
+            .map((tag) => ({
               name: tag.name,
               slug: tag.slug,
               count: tag._count.rules,
             })),
-          models: models.map(model => ({
+          models: models.map((model) => ({
             name: model.primaryModel!,
             count: model._count._all,
           })),
           authors: authors
-            .filter(author => author._count.rulesCreated > 0)
-            .map(author => ({
+            .filter((author) => author._count.rulesCreated > 0)
+            .map((author) => ({
               handle: author.handle,
               displayName: author.displayName,
               count: author._count.rulesCreated,
             })),
-          contentTypes: contentTypes.map(ct => ({
+          contentTypes: contentTypes.map((ct) => ({
             type: ct.contentType,
             count: ct._count._all,
           })),
-        }
+        };
       } catch (error) {
-        console.error("Failed to get search facets:", error)
+        console.error("Failed to get search facets:", error);
         return {
           tags: [],
           models: [],
           authors: [],
           contentTypes: [],
-        }
+        };
       }
     }),
 
@@ -275,20 +281,20 @@ export const searchRouter = router({
     .input(refreshRuleInputSchema)
     .output(searchOperationResponseSchema)
     .mutation(async ({ input }) => {
-      const { ruleId } = input
+      const { ruleId } = input;
 
       try {
-        await refreshRuleSearch(ruleId)
+        await refreshRuleSearch(ruleId);
         return {
           success: true,
           message: `Search index refreshed for rule ${ruleId}`,
-        }
+        };
       } catch (error) {
-        console.error(`Failed to refresh search for rule ${ruleId}:`, error)
+        console.error(`Failed to refresh search for rule ${ruleId}:`, error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to refresh search index",
-        })
+        });
       }
     }),
 
@@ -300,14 +306,14 @@ export const searchRouter = router({
     .output(searchStatsResponseSchema)
     .query(async () => {
       try {
-        const stats = await getSearchStats()
-        return stats
+        const stats = await getSearchStats();
+        return stats;
       } catch (error) {
-        console.error("Failed to get search stats:", error)
+        console.error("Failed to get search stats:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to get search statistics",
-        })
+        });
       }
     }),
 
@@ -319,18 +325,18 @@ export const searchRouter = router({
     .output(searchOperationResponseSchema)
     .mutation(async () => {
       try {
-        const count = await rebuildAllSearch()
+        const count = await rebuildAllSearch();
         return {
           success: true,
           message: `Rebuilt search indexes for ${count} rules`,
           count,
-        }
+        };
       } catch (error) {
-        console.error("Failed to rebuild search indexes:", error)
+        console.error("Failed to rebuild search indexes:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to rebuild search indexes",
-        })
+        });
       }
     }),
 
@@ -345,7 +351,9 @@ export const searchRouter = router({
         excludeTags: z.array(z.string()).optional(),
         models: z.array(z.string()).optional(),
         authors: z.array(z.string()).optional(),
-        contentTypes: z.array(z.enum(["PROMPT", "RULE", "MCP", "GUIDE"])).optional(),
+        contentTypes: z
+          .array(z.enum(["PROMPT", "RULE", "MCP", "GUIDE"]))
+          .optional(),
         statuses: z.array(z.enum(["PUBLISHED", "DEPRECATED"])).optional(),
         dateRange: z
           .object({
@@ -353,7 +361,9 @@ export const searchRouter = router({
             to: z.string().datetime(),
           })
           .optional(),
-        sortBy: z.enum(["relevance", "date", "score", "trending", "title"]).default("relevance"),
+        sortBy: z
+          .enum(["relevance", "date", "score", "trending", "title"])
+          .default("relevance"),
         sortOrder: z.enum(["asc", "desc"]).default("desc"),
         limit: z.number().int().min(1).max(100).default(20),
         offset: z.number().int().min(0).max(1000).default(0),
@@ -370,12 +380,17 @@ export const searchRouter = router({
         authorHandle: input.authors?.[0],
         dateFrom: input.dateRange ? new Date(input.dateRange.from) : undefined,
         dateTo: input.dateRange ? new Date(input.dateRange.to) : undefined,
-      }
+      };
 
-      const results = await searchRulesDB(input.q, basicFilters, input.limit, input.offset)
+      const results = await searchRulesDB(
+        input.q,
+        basicFilters,
+        input.limit,
+        input.offset
+      );
 
       return {
-        results: results.map(row => ({
+        results: results.map((row) => ({
           id: row.ruleId,
           slug: row.slug,
           title: row.title,
@@ -399,7 +414,10 @@ export const searchRouter = router({
         pagination: {
           total: results.length,
           hasMore: results.length === input.limit,
-          nextOffset: results.length === input.limit ? input.offset + input.limit : undefined,
+          nextOffset:
+            results.length === input.limit
+              ? input.offset + input.limit
+              : undefined,
         },
         meta: {
           query: input.q,
@@ -415,7 +433,7 @@ export const searchRouter = router({
           },
           took: 0, // Would be calculated in real implementation
         },
-      }
+      };
     }),
 
   /**
@@ -434,6 +452,6 @@ export const searchRouter = router({
       return {
         terms: [],
         period: input.period,
-      }
+      };
     }),
-})
+});

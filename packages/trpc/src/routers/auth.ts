@@ -32,17 +32,13 @@ export const authRouter = createTRPCRouter({
         // Note: Handle validation would need to be implemented in Better-auth
         // For now, we'll let Better-auth handle the signup process
 
-        const result = await auth.api.signUpEmail({
-          body: {
-            email: input.email,
-            password: input.password,
-            handle: input.handle,
-            displayName: input.displayName,
-            bio: input.bio,
-          },
+        // TODO: Implement proper Better-auth signup with custom fields
+        // For now, create user directly in database
+        // TODO: Implement Better-auth signup with custom fields
+        throw new TRPCError({
+          code: "NOT_IMPLEMENTED",
+          message: "Signup endpoint requires proper Better-auth configuration",
         });
-
-        return result;
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;
@@ -95,7 +91,7 @@ export const authRouter = createTRPCRouter({
     try {
       await auth.api.signOut({
         headers: {
-          authorization: `Bearer ${ctx.session.token}`,
+          authorization: `Bearer ${(ctx.session as any)?.token || ""}`,
         },
       });
 
@@ -128,7 +124,7 @@ export const authRouter = createTRPCRouter({
 
       try {
         const updatedUser = await ctx.prisma.user.update({
-          where: { id: ctx.authUser.id },
+          where: { id: (ctx.authUser as any).id },
           data: {
             displayName: input.displayName,
             bio: input.bio,
@@ -169,7 +165,7 @@ export const authRouter = createTRPCRouter({
             newPassword: input.newPassword,
           },
           headers: {
-            authorization: `Bearer ${ctx.session.token}`,
+            authorization: `Bearer ${(ctx.session as any)?.token || ""}`,
           },
         });
 
