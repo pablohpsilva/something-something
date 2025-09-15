@@ -1,61 +1,47 @@
-import { db } from "./client";
+import { prisma } from "./client";
+import { generateId } from "@repo/utils";
 
 async function main() {
   console.log("🌱 Seeding database...");
 
   // Create sample users
-  const user1 = await db.user.upsert({
+  const user1 = await prisma.user.upsert({
     where: { email: "alice@example.com" },
     update: {},
     create: {
+      id: generateId(),
       email: "alice@example.com",
-      name: "Alice Johnson",
+      emailVerified: true,
+      handle: "alice_dev",
+      displayName: "Alice Johnson",
+      bio: "Full-stack developer passionate about AI and automation.",
+      role: "USER",
     },
   });
 
-  const user2 = await db.user.upsert({
+  const user2 = await prisma.user.upsert({
     where: { email: "bob@example.com" },
     update: {},
     create: {
+      id: generateId(),
       email: "bob@example.com",
-      name: "Bob Smith",
+      emailVerified: true,
+      handle: "bob_ai",
+      displayName: "Bob Smith",
+      bio: "AI researcher and prompt engineer.",
+      role: "USER",
     },
   });
 
-  // Create sample posts
-  await db.post.upsert({
-    where: { id: "sample-post-1" },
-    update: {},
-    create: {
-      id: "sample-post-1",
-      title: "Hello World",
-      content: "This is my first post!",
-      published: true,
-      authorId: user1.id,
-    },
-  });
-
-  await db.post.upsert({
-    where: { id: "sample-post-2" },
-    update: {},
-    create: {
-      id: "sample-post-2",
-      title: "Draft Post",
-      content: "This is a draft post.",
-      published: false,
-      authorId: user2.id,
-    },
-  });
-
+  console.log(`✅ Created users: ${user1.handle}, ${user2.handle}`);
   console.log("✅ Database seeded successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding failed:");
-    console.error(e);
+    console.error("❌ Error seeding database:", e);
     process.exit(1);
   })
   .finally(async () => {
-    await db.$disconnect();
+    await prisma.$disconnect();
   });

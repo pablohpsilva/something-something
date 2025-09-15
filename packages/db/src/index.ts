@@ -340,4 +340,4 @@ export * from "./search";
 
 // Auth helpers
 export { auth } from "./auth";
-export type { Session, User as AuthUser } from "./auth";
+export type { Session, AuthUser } from "./auth";
