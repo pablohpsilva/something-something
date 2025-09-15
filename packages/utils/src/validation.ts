@@ -8,7 +8,18 @@ import { z } from "zod";
 export const emailSchema = z.string().email("Invalid email address");
 
 // URL validation
-export const urlSchema = z.string().url("Invalid URL");
+export const urlSchema = z
+  .string()
+  .url("Invalid URL")
+  .refine((url) => {
+    try {
+      const parsed = new URL(url);
+      // Reject dangerous protocols
+      return !["javascript:", "data:", "vbscript:"].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  }, "Invalid or unsafe URL");
 
 // Password validation (at least 8 characters, 1 uppercase, 1 lowercase, 1 number)
 export const passwordSchema = z
@@ -50,7 +61,8 @@ export const slugSchema = z
 // Phone number validation (basic international format)
 export const phoneSchema = z
   .string()
-  .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format");
+  .min(7, "Phone number must be at least 7 digits") // Minimum realistic phone length
+  .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format");
 
 // Color hex validation
 export const hexColorSchema = z
@@ -63,7 +75,20 @@ export const dateStringSchema = z
   .regex(
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/,
     "Invalid date format"
-  );
+  )
+  .refine((dateStr) => {
+    // Validate that it's actually a valid date
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return false;
+
+    // For validation, normalize both to compare date/time portions
+    const normalized = dateStr.endsWith("Z") ? dateStr : dateStr + "Z";
+    const parsed = new Date(normalized);
+    const isoString = parsed.toISOString();
+
+    // Check if the parsed date matches what we expect (validates month/day ranges)
+    return isoString.substring(0, 19) === normalized.substring(0, 19);
+  }, "Invalid date value");
 
 // Pagination schemas
 export const paginationSchema = z.object({

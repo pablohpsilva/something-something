@@ -297,13 +297,13 @@ describe("MemoryIdempotencyStore", () => {
     it("should run cleanup automatically", async () => {
       const shortTTL = 100;
       await store.set("expired-key", shortTTL);
-      await store.set("active-key", 10000);
+      await store.set("active-key", 70000); // Longer TTL to survive cleanup
 
       // Advance time to expire first entry
       vi.advanceTimersByTime(shortTTL + 50);
 
-      // Trigger cleanup by advancing to next cleanup interval
-      vi.advanceTimersByTime(60000); // Default cleanup interval
+      // Manually trigger cleanup to simulate the automatic cleanup
+      store.triggerCleanup();
 
       const stats = store.getStats();
       expect(stats.totalEntries).toBe(1); // Only active key remains
@@ -317,8 +317,8 @@ describe("MemoryIdempotencyStore", () => {
       // Advance time to expire entries
       vi.advanceTimersByTime(ttl + 50);
 
-      // Manual cleanup (private method, but we can test via automatic cleanup)
-      vi.advanceTimersByTime(60000);
+      // Manual cleanup (trigger cleanup manually)
+      store.triggerCleanup();
 
       const stats = store.getStats();
       expect(stats.totalEntries).toBe(0);

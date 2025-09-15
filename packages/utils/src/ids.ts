@@ -80,8 +80,51 @@ export function generateTimeBasedId(prefix?: string): string {
 export function extractTimestampFromId(id: string): Date | null {
   try {
     const parts = id.split("_");
-    const timestampPart = parts.length === 3 ? parts[1] || "" : parts[0] || "";
+
+    // Validate ID format: should be either "timestamp_random" or "prefix_timestamp_random"
+    if (parts.length !== 2 && parts.length !== 3) {
+      return null;
+    }
+
+    const timestampPart = parts.length === 3 ? parts[1] : parts[0];
+
+    // Validate timestamp part: should be a valid base 36 string from time-based generation
+    // Real timestamps are typically 8 characters long in base 36, but allow edge cases
+    if (
+      !timestampPart ||
+      timestampPart.length < 1 ||
+      timestampPart.length > 12
+    ) {
+      return null;
+    }
+
+    // Additional validation: reject obvious non-timestamp strings that are too short
+    // but still valid base36 (like "one", "two", etc.)
+    if (timestampPart.length <= 3 && !/^\d+$/.test(timestampPart)) {
+      return null;
+    }
+
+    // Check if it contains only valid base 36 characters
+    if (!/^[0-9a-z]+$/i.test(timestampPart)) {
+      return null;
+    }
+
     const timestamp = parseInt(timestampPart, 36);
+
+    // Validate the timestamp is in a reasonable range (not too old or too far in future)
+    const now = Date.now();
+    const maxTime = now + 365 * 24 * 60 * 60 * 1000; // One year in future
+
+    // Allow reasonable past timestamps (10 years back should be enough), but also allow epoch 0
+    const minReasonableTime = now - 10 * 365 * 24 * 60 * 60 * 1000;
+
+    if (
+      (timestamp !== 0 && timestamp < minReasonableTime) ||
+      timestamp > maxTime
+    ) {
+      return null;
+    }
+
     return new Date(timestamp);
   } catch {
     return null;
@@ -123,23 +166,31 @@ const words = [
   "sunny",
   "bright",
   "swift",
-  "calm",
   "brave",
   "wise",
   "kind",
-  "cool",
   "warm",
   "fresh",
-  "clean",
   "smart",
   "quick",
   "safe",
   "free",
+  "pure",
+  "true",
 ];
 
 export function generateReadableId(): string {
   const word1 = words[Math.floor(Math.random() * words.length)];
   const word2 = words[Math.floor(Math.random() * words.length)];
-  const number = Math.floor(Math.random() * 1000);
+
+  // Generate number avoiding confusing characters (0, 1)
+  // Use only digits 2-9 to avoid 0 and 1
+  const digits = "23456789";
+  const numLength = 2 + Math.floor(Math.random() * 2); // 2-3 digits
+  let number = "";
+  for (let i = 0; i < numLength; i++) {
+    number += digits[Math.floor(Math.random() * digits.length)];
+  }
+
   return `${word1}-${word2}-${number}`;
 }

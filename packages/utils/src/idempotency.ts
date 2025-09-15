@@ -5,7 +5,9 @@
 export interface IdempotencyStore {
   check(key: string, ttlMs?: number): Promise<boolean>;
   set(key: string, ttlMs?: number, payload?: string): Promise<void>;
-  get(key: string): Promise<{ exists: boolean; payload?: string; expiresAt?: number }>;
+  get(
+    key: string
+  ): Promise<{ exists: boolean; payload?: string; expiresAt?: number }>;
   delete(key: string): Promise<void>;
   clear(): Promise<void>;
 }
@@ -34,7 +36,7 @@ export class MemoryIdempotencyStore implements IdempotencyStore {
   async check(key: string, ttlMs = 10 * 60_000): Promise<boolean> {
     const now = Date.now();
     const entry = this.entries.get(key);
-    
+
     if (!entry) {
       // Key doesn't exist, create it
       this.entries.set(key, {
@@ -44,7 +46,7 @@ export class MemoryIdempotencyStore implements IdempotencyStore {
       });
       return true; // First time seeing this key
     }
-    
+
     if (entry.expiresAt <= now) {
       // Entry expired, remove and allow
       this.entries.delete(key);
@@ -55,7 +57,7 @@ export class MemoryIdempotencyStore implements IdempotencyStore {
       });
       return true;
     }
-    
+
     // Key exists and hasn't expired
     return false;
   }
@@ -70,17 +72,19 @@ export class MemoryIdempotencyStore implements IdempotencyStore {
     });
   }
 
-  async get(key: string): Promise<{ exists: boolean; payload?: string; expiresAt?: number }> {
+  async get(
+    key: string
+  ): Promise<{ exists: boolean; payload?: string; expiresAt?: number }> {
     const now = Date.now();
     const entry = this.entries.get(key);
-    
+
     if (!entry || entry.expiresAt <= now) {
       if (entry) {
         this.entries.delete(key);
       }
       return { exists: false };
     }
-    
+
     return {
       exists: true,
       payload: entry.payload,
@@ -105,6 +109,13 @@ export class MemoryIdempotencyStore implements IdempotencyStore {
     }
   }
 
+  /**
+   * Manually trigger cleanup (exposed for testing)
+   */
+  public triggerCleanup(): void {
+    this.cleanup();
+  }
+
   getStats(): {
     totalEntries: number;
     expiredEntries: number;
@@ -113,18 +124,18 @@ export class MemoryIdempotencyStore implements IdempotencyStore {
     const now = Date.now();
     let expiredEntries = 0;
     let memoryUsageBytes = 0;
-    
+
     for (const [key, entry] of this.entries.entries()) {
       if (entry.expiresAt <= now) {
         expiredEntries++;
       }
-      
+
       // Rough memory calculation
       memoryUsageBytes += key.length * 2; // key
       memoryUsageBytes += (entry.payload?.length ?? 0) * 2; // payload
       memoryUsageBytes += 32; // timestamps and overhead
     }
-    
+
     return {
       totalEntries: this.entries.size,
       expiredEntries,
@@ -163,7 +174,11 @@ export async function once(key: string, ttlMs = 10 * 60_000): Promise<boolean> {
 /**
  * Store idempotency key with optional payload
  */
-export async function store(key: string, ttlMs = 10 * 60_000, payload?: string): Promise<void> {
+export async function store(
+  key: string,
+  ttlMs = 10 * 60_000,
+  payload?: string
+): Promise<void> {
   const store = getGlobalIdempotencyStore();
   return store.set(key, ttlMs, payload);
 }
@@ -171,7 +186,9 @@ export async function store(key: string, ttlMs = 10 * 60_000, payload?: string):
 /**
  * Get idempotency entry
  */
-export async function retrieve(key: string): Promise<{ exists: boolean; payload?: string; expiresAt?: number }> {
+export async function retrieve(
+  key: string
+): Promise<{ exists: boolean; payload?: string; expiresAt?: number }> {
   const store = getGlobalIdempotencyStore();
   return store.get(key);
 }
@@ -179,12 +196,23 @@ export async function retrieve(key: string): Promise<{ exists: boolean; payload?
 /**
  * Generate idempotency key from request parameters
  */
-export function generateKey(userId: string, operation: string, params?: Record<string, any>): string {
-  const paramString = params ? JSON.stringify(params) : "";
+export function generateKey(
+  userId: string,
+  operation: string,
+  params?: Record<string, any>
+): string {
+  // Normalize undefined and empty object to be the same
+  const normalizedParams =
+    params && Object.keys(params).length > 0 ? params : undefined;
+  const paramString = normalizedParams ? JSON.stringify(normalizedParams) : "";
   const input = `${userId}:${operation}:${paramString}`;
-  
+
   // Use a simple hash for the key
-  return require("crypto").createHash("sha256").update(input).digest("hex").substring(0, 32);
+  return require("crypto")
+    .createHash("sha256")
+    .update(input)
+    .digest("hex")
+    .substring(0, 32);
 }
 
 /**
@@ -209,30 +237,38 @@ export class IdempotencyManager {
     } = {}
   ): Promise<T> {
     const { ttlMs = 10 * 60_000, onDuplicate } = options;
-    
+
     const isFirst = await this.store.check(key, ttlMs);
-    
+
     if (!isFirst) {
       if (onDuplicate) {
         return onDuplicate();
       }
       throw new Error(`Duplicate operation detected for key: ${key}`);
     }
-    
+
     try {
       const result = await operation();
-      
+
       // Store the result as payload for potential duplicate requests
-      await this.store.set(key, ttlMs, JSON.stringify({ success: true, result }));
-      
+      await this.store.set(
+        key,
+        ttlMs,
+        JSON.stringify({ success: true, result })
+      );
+
       return result;
     } catch (error) {
       // Store the error for duplicate requests
-      await this.store.set(key, ttlMs, JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : String(error) 
-      }));
-      
+      await this.store.set(
+        key,
+        ttlMs,
+        JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
+
       throw error;
     }
   }
@@ -242,21 +278,32 @@ export class IdempotencyManager {
    */
   async getCachedResult<T>(key: string): Promise<T | null> {
     const entry = await this.store.get(key);
-    
+
     if (!entry.exists || !entry.payload) {
       return null;
     }
-    
+
+    let parsed;
     try {
-      const parsed = JSON.parse(entry.payload);
-      
-      if (parsed.success) {
-        return parsed.result;
-      } else {
-        throw new Error(parsed.error);
-      }
-    } catch (error) {
+      parsed = JSON.parse(entry.payload);
+    } catch {
+      // JSON parse error, return null
       return null;
+    }
+
+    // Check if it's a valid payload structure
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      !("success" in parsed)
+    ) {
+      return null;
+    }
+
+    if (parsed.success) {
+      return parsed.result;
+    } else {
+      throw new Error(parsed.error);
     }
   }
 }

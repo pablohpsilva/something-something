@@ -653,7 +653,8 @@ describe("Validation utilities", () => {
       it("should provide specific feedback", () => {
         const result = validatePasswordStrength("password");
 
-        expect(result.feedback).toContain("Use at least 8 characters");
+        // "password" is 8 chars so no length feedback, but missing upper, numbers, special
+        expect(result.feedback).not.toContain("Use at least 8 characters");
         expect(result.feedback).toContain("Include uppercase letters");
         expect(result.feedback).toContain("Include numbers");
         expect(result.feedback).toContain("Include special characters");
@@ -661,7 +662,7 @@ describe("Validation utilities", () => {
 
       it("should handle edge cases", () => {
         expect(validatePasswordStrength("").isValid).toBe(false);
-        expect(validatePasswordStrength("12345678").score).toBe(1); // Only length
+        expect(validatePasswordStrength("12345678").score).toBe(2); // Length + numbers
       });
     });
 
