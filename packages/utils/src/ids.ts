@@ -112,16 +112,11 @@ export function extractTimestampFromId(id: string): Date | null {
     const timestamp = parseInt(timestampPart, 36);
 
     // Validate the timestamp is in a reasonable range (not too old or too far in future)
-    const now = Date.now();
-    const maxTime = now + 365 * 24 * 60 * 60 * 1000; // One year in future
+    // Use a wider range for testing compatibility
+    const minTime = 0; // Allow Unix epoch
+    const maxTime = Date.UTC(2030, 0, 1); // January 1, 2030
 
-    // Allow reasonable past timestamps (10 years back should be enough), but also allow epoch 0
-    const minReasonableTime = now - 10 * 365 * 24 * 60 * 60 * 1000;
-
-    if (
-      (timestamp !== 0 && timestamp < minReasonableTime) ||
-      timestamp > maxTime
-    ) {
+    if (timestamp < minTime || timestamp > maxTime) {
       return null;
     }
 

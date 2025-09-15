@@ -179,9 +179,9 @@ export function shouldDedupeView(ruleId: string): boolean {
   if (typeof document === "undefined") return false;
 
   const cookieName = getViewDedupeCookieName(ruleId);
-  const lastView = document.cookie
+  const lastView = (document as any).cookie
     .split("; ")
-    .find((row) => row.startsWith(`${cookieName}=`))
+    .find((row: string) => row.startsWith(`${cookieName}=`))
     ?.split("=")[1];
 
   if (!lastView) return false;
@@ -205,5 +205,7 @@ export function setViewDedupeCookie(ruleId: string): void {
   const expireMs = VIEW_DEDUP_WINDOW_MIN * 60 * 1000;
   const expires = new Date(now + expireMs);
 
-  document.cookie = `${cookieName}=${now}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+  (
+    document as any
+  ).cookie = `${cookieName}=${now}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
 }

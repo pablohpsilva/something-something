@@ -233,17 +233,20 @@ export function unescapeHtml(str: string): string {
 export function extractEmailDomain(email: string): string {
   const match = email.match(/@(.+)$/);
   if (!match) return "";
-  
+
   // Handle multiple @ symbols - everything after the last one
   const afterAt = match[1];
+  if (!afterAt) return "";
+
   // For malformed emails like "user@@domain.com", return "@domain.com"
   if (email.includes("@@")) {
-    return "@" + afterAt.match(/([a-zA-Z0-9.-]+)/)?.[1] || afterAt;
+    const cleanMatch = afterAt.match(/([a-zA-Z0-9.-]+)/);
+    return "@" + (cleanMatch?.[1] || afterAt);
   }
-  
+
   // Normal case - extract valid domain characters
   const domainMatch = afterAt.match(/^([a-zA-Z0-9.-]+)/);
-  return domainMatch ? domainMatch[1] : "";
+  return domainMatch?.[1] || "";
 }
 
 /**
@@ -275,7 +278,9 @@ export function formatPhoneNumber(
   if (digits.length === 10) {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
   } else if (digits.length === 11 && digits.startsWith("1")) {
-    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(
+      7
+    )}`;
   }
 
   return phone; // Return original if can't format
@@ -289,11 +294,11 @@ export function generateExcerpt(text: string, maxLength: number = 150): string {
 
   // Special case: Allow a small buffer for sentence completion (5 chars)
   const flexibleLimit = maxLength + 5;
-  
+
   // Try to break at sentence boundary
   const sentences = text.match(/[^.!?]*[.!?]/g) || [];
   let excerpt = "";
-  
+
   for (const sentence of sentences) {
     const potential = excerpt + sentence;
     if (potential.length <= flexibleLimit) {
@@ -302,16 +307,16 @@ export function generateExcerpt(text: string, maxLength: number = 150): string {
       break;
     }
   }
-  
+
   if (excerpt.length > 0 && excerpt.length <= flexibleLimit) {
     return excerpt.trim();
   }
 
   // Fallback to word boundary
-  const wordBoundary = text.lastIndexOf(' ', maxLength - 3);
+  const wordBoundary = text.lastIndexOf(" ", maxLength - 3);
   if (wordBoundary > 0) {
-    return text.slice(0, wordBoundary) + '...';
+    return text.slice(0, wordBoundary) + "...";
   }
-  
-  return text.slice(0, maxLength - 3) + '...';
+
+  return text.slice(0, maxLength - 3) + "...";
 }

@@ -30,16 +30,16 @@ ingestEvents.post("/", requireAppToken, eventsRateLimit(), async (c) => {
     .create({
       data: {
         action: "ingest.events",
-        entityType: "event_batch",
-        entityId: `batch-${Date.now()}`,
-        diff: {
+        targetType: "event_batch",
+        targetId: `batch-${Date.now()}`,
+        metadata: {
           count: input.events.length,
           accepted: result.accepted,
           deduped: result.deduped,
           sampleTypes: [...new Set(input.events.map((e) => e.type))],
+          ipHash:
+            headers["x-forwarded-for"] || headers["x-real-ip"] || "unknown",
         },
-        ipHash: headers["x-forwarded-for"] || headers["x-real-ip"] || "unknown",
-        createdAt: new Date(),
       },
     })
     .catch((error) => {

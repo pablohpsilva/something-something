@@ -35,17 +35,16 @@ ingestCrawl.post("/", requireAppToken, crawlRateLimit(), async (c) => {
       .create({
         data: {
           action: "ingest.crawl",
-          entityType: "crawl_batch",
-          entityId: `${input.sourceId}-${Date.now()}`,
-          diff: {
+          targetType: "crawl_batch",
+          targetId: `${input.sourceId}-${Date.now()}`,
+          metadata: {
             sourceId: input.sourceId,
             itemCount: input.items.length,
             upserted: result.upserted,
             errors: result.errors.length,
+            ipHash:
+              headers["x-forwarded-for"] || headers["x-real-ip"] || "unknown",
           },
-          ipHash:
-            headers["x-forwarded-for"] || headers["x-real-ip"] || "unknown",
-          createdAt: new Date(),
         },
       })
       .catch((error) => {

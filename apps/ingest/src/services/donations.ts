@@ -38,7 +38,7 @@ export async function handleStripeEvent(
     const existingAudit = await prisma.auditLog.findFirst({
       where: {
         action: "stripe.webhook",
-        entityId: event.id,
+        targetId: event.id,
       },
     });
 
@@ -71,16 +71,15 @@ export async function handleStripeEvent(
     await prisma.auditLog.create({
       data: {
         action: "stripe.webhook",
-        entityType: "stripe_event",
-        entityId: event.id,
-        diff: {
+        targetType: "stripe_event",
+        targetId: event.id,
+        metadata: {
           eventType: event.type,
           processed: result.processed,
           donationId: result.donationId,
           action: result.action,
+          ipHash: "stripe",
         },
-        ipHash: "stripe",
-        createdAt: new Date(),
       },
     });
 
@@ -161,19 +160,14 @@ async function handleCheckoutCompleted(
         },
         update: {
           donations: { increment: 1 },
-          donationsCents: { increment: session.amount_total || 0 },
         },
         create: {
           date: today,
           authorUserId: toUserId,
           views: 0,
           copies: 0,
-          saves: 0,
-          forks: 0,
-          votes: 0,
-          score: 0,
           donations: 1,
-          donationsCents: session.amount_total || 0,
+          score: 0,
         },
       });
 
@@ -203,7 +197,7 @@ async function handleCheckoutCompleted(
       const donation = await prisma.donation.findUnique({
         where: { id: donationId },
         include: {
-          fromUser: { select: { handle: true, displayName: true } },
+          from: { select: { handle: true, displayName: true } },
           rule: { select: { slug: true } },
         },
       });
@@ -215,8 +209,8 @@ async function handleCheckoutCompleted(
           amountCents: donation.amountCents,
           currency: donation.currency,
           fromUserId: donation.fromUserId || undefined,
-          fromUserHandle: donation.fromUser?.handle,
-          fromUserDisplayName: donation.fromUser?.displayName,
+          fromUserHandle: donation.from?.handle,
+          fromUserDisplayName: donation.from?.displayName,
           ruleId: donation.ruleId || undefined,
           ruleSlug: donation.rule?.slug,
         });

@@ -51,7 +51,7 @@ export class CircuitBreaker {
   recordRequest(ipHash: string): { allowed: boolean; banDuration?: number } {
     const now = Date.now();
     const windowMs = AbuseConfig.circuitBreaker.windowSeconds * 1000;
-    
+
     let circuit = this.circuits.get(ipHash);
     if (!circuit) {
       circuit = {
@@ -71,11 +71,12 @@ export class CircuitBreaker {
 
     // Remove old requests outside the window
     circuit.requestTimes = circuit.requestTimes.filter(
-      time => now - time <= windowMs
+      (time) => now - time <= windowMs
     );
 
     // Calculate QPS
-    const qps = circuit.requestTimes.length / AbuseConfig.circuitBreaker.windowSeconds;
+    const qps =
+      circuit.requestTimes.length / AbuseConfig.circuitBreaker.windowSeconds;
 
     // Check if QPS exceeds threshold
     if (qps > AbuseConfig.circuitBreaker.ipQpsMax) {
@@ -91,9 +92,9 @@ export class CircuitBreaker {
         failureCount: circuit.failureCount,
       });
 
-      return { 
-        allowed: false, 
-        banDuration: Math.ceil(banDuration / 1000) 
+      return {
+        allowed: false,
+        banDuration: Math.ceil(banDuration / 1000),
       };
     }
 
@@ -184,9 +185,17 @@ export class CircuitBreaker {
   /**
    * Get banned IPs (for monitoring)
    */
-  getBannedIPs(): Array<{ ipHash: string; bannedUntil: number; failureCount: number }> {
+  getBannedIPs(): Array<{
+    ipHash: string;
+    bannedUntil: number;
+    failureCount: number;
+  }> {
     const now = Date.now();
-    const banned: Array<{ ipHash: string; bannedUntil: number; failureCount: number }> = [];
+    const banned: Array<{
+      ipHash: string;
+      bannedUntil: number;
+      failureCount: number;
+    }> = [];
 
     for (const [ipHash, circuit] of this.circuits.entries()) {
       if (circuit.bannedUntil && now < circuit.bannedUntil) {
@@ -222,10 +231,10 @@ function getGlobalCircuitBreaker(): CircuitBreaker {
  */
 export async function circuitBreakerGuard(c: Context, next: Next) {
   try {
-    const headers = Object.fromEntries(c.req.raw.headers.entries());
+    const headers = Object.fromEntries((c.req.raw.headers as any).entries());
     const ip = extractIp(headers);
     const ipHash = hashIp(ip, AbuseConfig.salts.ip);
-    
+
     const circuitBreaker = getGlobalCircuitBreaker();
 
     // Check if circuit is open
@@ -237,25 +246,35 @@ export async function circuitBreakerGuard(c: Context, next: Next) {
       });
 
       c.header("Retry-After", AbuseConfig.circuitBreaker.banSeconds.toString());
-      
-      return c.json({
-        error: "circuit_open",
-        message: "Too many requests. Circuit breaker is open.",
-        retryAfter: AbuseConfig.circuitBreaker.banSeconds,
-      }, 429);
+
+      return c.json(
+        {
+          error: "circuit_open",
+          message: "Too many requests. Circuit breaker is open.",
+          retryAfter: AbuseConfig.circuitBreaker.banSeconds,
+        },
+        429
+      );
     }
 
     // Record the request
     const result = circuitBreaker.recordRequest(ipHash);
-    
+
     if (!result.allowed) {
-      c.header("Retry-After", (result.banDuration || AbuseConfig.circuitBreaker.banSeconds).toString());
-      
-      return c.json({
-        error: "circuit_opened",
-        message: "Request rate too high. Circuit breaker opened.",
-        retryAfter: result.banDuration || AbuseConfig.circuitBreaker.banSeconds,
-      }, 429);
+      c.header(
+        "Retry-After",
+        (result.banDuration || AbuseConfig.circuitBreaker.banSeconds).toString()
+      );
+
+      return c.json(
+        {
+          error: "circuit_opened",
+          message: "Request rate too high. Circuit breaker opened.",
+          retryAfter:
+            result.banDuration || AbuseConfig.circuitBreaker.banSeconds,
+        },
+        429
+      );
     }
 
     // Store circuit breaker in context for response handling
@@ -264,7 +283,7 @@ export async function circuitBreakerGuard(c: Context, next: Next) {
 
     try {
       await next();
-      
+
       // Record success if response is ok
       const status = c.res.status;
       if (status >= 200 && status < 400) {
@@ -319,7 +338,7 @@ export class AdaptiveCircuitBreaker extends CircuitBreaker {
   updateSystemLoad(load: number): void {
     this.systemLoad = load;
     this.loadHistory.push(load);
-    
+
     // Keep only last 10 measurements
     if (this.loadHistory.length > 10) {
       this.loadHistory.shift();
@@ -329,18 +348,18 @@ export class AdaptiveCircuitBreaker extends CircuitBreaker {
   recordRequest(ipHash: string): { allowed: boolean; banDuration?: number } {
     // Adjust threshold based on system load
     const baseThreshold = AbuseConfig.circuitBreaker.ipQpsMax;
-    const loadMultiplier = Math.max(0.1, 1 - (this.systemLoad / 100));
+    const loadMultiplier = Math.max(0.1, 1 - this.systemLoad / 100);
     const adjustedThreshold = baseThreshold * loadMultiplier;
 
     // Temporarily override config for this check
     const originalThreshold = AbuseConfig.circuitBreaker.ipQpsMax;
     (AbuseConfig.circuitBreaker as any).ipQpsMax = adjustedThreshold;
-    
+
     const result = super.recordRequest(ipHash);
-    
+
     // Restore original threshold
     (AbuseConfig.circuitBreaker as any).ipQpsMax = originalThreshold;
-    
+
     return result;
   }
 
@@ -349,7 +368,9 @@ export class AdaptiveCircuitBreaker extends CircuitBreaker {
       ...this.getStats(),
       systemLoad: this.systemLoad,
       loadHistory: [...this.loadHistory],
-      adjustedThreshold: AbuseConfig.circuitBreaker.ipQpsMax * Math.max(0.1, 1 - (this.systemLoad / 100)),
+      adjustedThreshold:
+        AbuseConfig.circuitBreaker.ipQpsMax *
+        Math.max(0.1, 1 - this.systemLoad / 100),
     };
   }
 }

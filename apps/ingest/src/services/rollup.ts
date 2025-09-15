@@ -1,6 +1,6 @@
 import { prisma } from "../prisma";
 import { logger } from "../logger";
-import { env } from "../env";
+import { getEnv } from "../env";
 import {
   decayWeight,
   calculateTrendingScore,
@@ -425,7 +425,7 @@ async function calculateAuthorMetrics(
   });
 
   const metricsByType = Object.fromEntries(
-    ruleMetrics.map((m) => [m.type, m._count])
+    ruleMetrics.map((m: any) => [m.type, m._count])
   );
 
   return {
@@ -483,7 +483,7 @@ async function updateLeaderboardSnapshot(
   });
 
   // Get rule details
-  const ruleIds = topRules.map((r) => r.ruleId);
+  const ruleIds = topRules.map((r: any) => r.ruleId);
   const rules = await tx.rule.findMany({
     where: { id: { in: ruleIds } },
     include: {
@@ -498,12 +498,12 @@ async function updateLeaderboardSnapshot(
     },
   });
 
-  const ruleMap = new Map(rules.map((r) => [r.id, r]));
+  const ruleMap = new Map(rules.map((r: any) => [r.id, r]));
 
   // Build leaderboard data
   const leaderboardData = topRules
-    .map((metric, index) => {
-      const rule = ruleMap.get(metric.ruleId);
+    .map((metric: any, index: number) => {
+      const rule = ruleMap.get(metric.ruleId) as any;
       if (!rule) return null;
 
       return {

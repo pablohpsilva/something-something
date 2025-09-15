@@ -35,18 +35,17 @@ cronRollup.post("/", requireCronSecret, async (c) => {
       .create({
         data: {
           action: "cron.rollup",
-          entityType: "rollup_job",
-          entityId: `rollup-${targetDate.toISOString().split("T")[0]}`,
-          diff: {
+          targetType: "rollup_job",
+          targetId: `rollup-${targetDate.toISOString().split("T")[0]}`,
+          metadata: {
             date: targetDate.toISOString(),
             dryRun: result.dryRun,
             rulesUpdated: result.rulesUpdated,
             authorsUpdated: result.authorsUpdated,
             snapshots: result.snapshots,
             tookMs: result.tookMs,
+            ipHash: "cron",
           },
-          ipHash: "cron",
-          createdAt: new Date(),
         },
       })
       .catch((error) => {

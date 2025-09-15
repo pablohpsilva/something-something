@@ -10,10 +10,10 @@ import { logger } from "../logger";
 export async function rateLimitIngest(c: Context, next: Next) {
   try {
     // Extract IP and User-Agent
-    const headers = Object.fromEntries(c.req.raw.headers.entries());
+    const headers = Object.fromEntries((c.req.raw.headers as any).entries());
     const ip = extractIp(headers);
     const ua = extractUA(headers);
-    
+
     // Create privacy-preserving hashes
     const ipHash = hashIp(ip, AbuseConfig.salts.ip);
     const uaHash = hashUA(ua, AbuseConfig.salts.ua);
@@ -37,7 +37,10 @@ export async function rateLimitIngest(c: Context, next: Next) {
       c.header("Retry-After", retryAfterSeconds.toString());
       c.header("X-RateLimit-Limit", config.limit.toString());
       c.header("X-RateLimit-Remaining", "0");
-      c.header("X-RateLimit-Reset", new Date(Date.now() + result.resetMs).toISOString());
+      c.header(
+        "X-RateLimit-Reset",
+        new Date(Date.now() + result.resetMs).toISOString()
+      );
 
       // Log rate limit violation
       logger.warn("Rate limit exceeded", {
@@ -48,17 +51,23 @@ export async function rateLimitIngest(c: Context, next: Next) {
         method: c.req.method,
       });
 
-      return c.json({
-        error: "too_many_requests",
-        message: `Rate limit exceeded. Try again in ${retryAfterSeconds} seconds.`,
-        retryAfter: retryAfterSeconds,
-      }, 429);
+      return c.json(
+        {
+          error: "too_many_requests",
+          message: `Rate limit exceeded. Try again in ${retryAfterSeconds} seconds.`,
+          retryAfter: retryAfterSeconds,
+        },
+        429
+      );
     }
 
     // Add rate limit headers for successful requests
     c.header("X-RateLimit-Limit", config.limit.toString());
     c.header("X-RateLimit-Remaining", result.remaining.toString());
-    c.header("X-RateLimit-Reset", new Date(Date.now() + result.resetMs).toISOString());
+    c.header(
+      "X-RateLimit-Reset",
+      new Date(Date.now() + result.resetMs).toISOString()
+    );
 
     // Store rate limit info in context for potential use
     c.set("rateLimit", {
@@ -78,13 +87,15 @@ export async function rateLimitIngest(c: Context, next: Next) {
 /**
  * Enhanced rate limiting for specific endpoints
  */
-export function createEndpointRateLimit(bucketName: keyof typeof AbuseConfig.limits) {
+export function createEndpointRateLimit(
+  bucketName: keyof typeof AbuseConfig.limits
+) {
   return async (c: Context, next: Next) => {
     try {
-      const headers = Object.fromEntries(c.req.raw.headers.entries());
+      const headers = Object.fromEntries((c.req.raw.headers as any).entries());
       const ip = extractIp(headers);
       const ua = extractUA(headers);
-      
+
       const ipHash = hashIp(ip, AbuseConfig.salts.ip);
       const uaHash = hashUA(ua, AbuseConfig.salts.ua);
 
@@ -108,11 +119,14 @@ export function createEndpointRateLimit(bucketName: keyof typeof AbuseConfig.lim
           retryAfterMs: result.retryAfterMs,
         });
 
-        return c.json({
-          error: "endpoint_rate_limit_exceeded",
-          message: `Too many requests to ${c.req.path}. Try again in ${retryAfterSeconds} seconds.`,
-          retryAfter: retryAfterSeconds,
-        }, 429);
+        return c.json(
+          {
+            error: "endpoint_rate_limit_exceeded",
+            message: `Too many requests to ${c.req.path}. Try again in ${retryAfterSeconds} seconds.`,
+            retryAfter: retryAfterSeconds,
+          },
+          429
+        );
       }
 
       c.header("X-RateLimit-Limit", config.limit.toString());
@@ -120,7 +134,10 @@ export function createEndpointRateLimit(bucketName: keyof typeof AbuseConfig.lim
 
       await next();
     } catch (error) {
-      logger.error("Endpoint rate limit error", { error, endpoint: c.req.path });
+      logger.error("Endpoint rate limit error", {
+        error,
+        endpoint: c.req.path,
+      });
       await next();
     }
   };
@@ -130,24 +147,24 @@ export function createEndpointRateLimit(bucketName: keyof typeof AbuseConfig.lim
  * Authenticated rate limiting (requires user context)
  */
 export async function rateLimitAuthenticated(
-  c: Context, 
-  next: Next, 
+  c: Context,
+  next: Next,
   bucketName: keyof typeof AbuseConfig.limits
 ) {
   try {
     // Get user from context (set by auth middleware)
     const userId = c.get("userId");
-    
+
     if (!userId) {
       logger.warn("Authenticated rate limit called without user context");
       await next();
       return;
     }
 
-    const headers = Object.fromEntries(c.req.raw.headers.entries());
+    const headers = Object.fromEntries((c.req.raw.headers as any).entries());
     const ip = extractIp(headers);
     const ua = extractUA(headers);
-    
+
     const ipHash = hashIp(ip, AbuseConfig.salts.ip);
     const uaHash = hashUA(ua, AbuseConfig.salts.ua);
 
@@ -172,11 +189,14 @@ export async function rateLimitAuthenticated(
         retryAfterMs: result.retryAfterMs,
       });
 
-      return c.json({
-        error: "authenticated_rate_limit_exceeded",
-        message: `Rate limit exceeded for user operations. Try again in ${retryAfterSeconds} seconds.`,
-        retryAfter: retryAfterSeconds,
-      }, 429);
+      return c.json(
+        {
+          error: "authenticated_rate_limit_exceeded",
+          message: `Rate limit exceeded for user operations. Try again in ${retryAfterSeconds} seconds.`,
+          retryAfter: retryAfterSeconds,
+        },
+        429
+      );
     }
 
     c.header("X-RateLimit-Limit", config.limit.toString());
@@ -194,7 +214,7 @@ export async function rateLimitAuthenticated(
  */
 export async function burstProtection(c: Context, next: Next) {
   try {
-    const headers = Object.fromEntries(c.req.raw.headers.entries());
+    const headers = Object.fromEntries((c.req.raw.headers as any).entries());
     const ip = extractIp(headers);
     const ipHash = hashIp(ip, AbuseConfig.salts.ip);
 
@@ -217,13 +237,19 @@ export async function burstProtection(c: Context, next: Next) {
         retryAfterMs: burstResult.retryAfterMs,
       });
 
-      c.header("Retry-After", Math.ceil(burstResult.retryAfterMs / 1000).toString());
-      
-      return c.json({
-        error: "burst_detected",
-        message: "Too many requests in a short time. Please slow down.",
-        retryAfter: Math.ceil(burstResult.retryAfterMs / 1000),
-      }, 429);
+      c.header(
+        "Retry-After",
+        Math.ceil(burstResult.retryAfterMs / 1000).toString()
+      );
+
+      return c.json(
+        {
+          error: "burst_detected",
+          message: "Too many requests in a short time. Please slow down.",
+          retryAfter: Math.ceil(burstResult.retryAfterMs / 1000),
+        },
+        429
+      );
     }
 
     await next();

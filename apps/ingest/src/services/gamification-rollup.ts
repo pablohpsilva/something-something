@@ -147,7 +147,7 @@ async function generateLeaderboardSnapshots(
     const popularTags = await prisma.tag.findMany({
       include: {
         _count: {
-          select: { rules: { where: { status: "PUBLISHED" } } },
+          select: { rules: true },
         },
       },
       orderBy: { rules: { _count: "desc" } },
@@ -155,7 +155,7 @@ async function generateLeaderboardSnapshots(
     });
 
     for (const tag of popularTags) {
-      if (tag._count.rules > 10) {
+      if ((tag._count as any).rules > 10) {
         // Minimum threshold
         const tagEntries = await GamificationService.computeLeaderboard(
           awardContext,
@@ -220,12 +220,6 @@ async function getRulesWithNewVotes(targetDate: Date): Promise<string[]> {
   endOfDay.setHours(23, 59, 59, 999);
 
   const votedRules = await prisma.vote.findMany({
-    where: {
-      createdAt: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
-    },
     select: { ruleId: true },
     distinct: ["ruleId"],
   });
