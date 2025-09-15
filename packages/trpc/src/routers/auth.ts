@@ -18,27 +18,38 @@ export const authRouter = createTRPCRouter({
       z.object({
         email: z.string().email(),
         password: z.string().min(8),
-        handle: z
-          .string()
-          .min(2)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_-]+$/),
-        displayName: z.string().min(1).max(100),
-        bio: z.string().max(500).optional(),
+        name: z.string().min(1).max(100),
       })
     )
     .mutation(async ({ input }) => {
       try {
-        // Note: Handle validation would need to be implemented in Better-auth
-        // For now, we'll let Better-auth handle the signup process
+        // Generate a handle from the email (username part + random suffix for uniqueness)
+        const emailUsername = input.email.split("@")[0].toLowerCase();
+        const cleanHandle = emailUsername.replace(/[^a-z0-9_-]/g, "");
+        const randomSuffix = Math.random().toString(36).substring(2, 6);
+        const handle = `${cleanHandle}-${randomSuffix}`;
 
-        // TODO: Implement proper Better-auth signup with custom fields
-        // For now, create user directly in database
-        // TODO: Implement Better-auth signup with custom fields
-        throw new TRPCError({
-          code: "NOT_IMPLEMENTED",
-          message: "Signup endpoint requires proper Better-auth configuration",
+        // Use better-auth to create the user
+        const result = await auth.api.signUpEmail({
+          body: {
+            email: input.email,
+            password: input.password,
+            displayName: input.name,
+            handle: handle,
+          },
         });
+
+        if (result.error) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: result.error.message || "Failed to create account",
+          });
+        }
+
+        return {
+          user: result.user,
+          session: result.session,
+        };
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;

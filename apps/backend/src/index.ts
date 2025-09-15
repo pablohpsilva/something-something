@@ -63,7 +63,11 @@ const createContext = async (opts: FetchCreateContextFnOptions, c: Context) => {
 
 // Setup better-auth API endpoints
 app.use("/api/auth/*", async (c) => {
-  return auth.handler(c.req.raw);
+  const response = await auth.handler(c.req.raw);
+  return new Response(response.body, {
+    status: response.status,
+    headers: response.headers,
+  });
 });
 
 // Setup tRPC handler

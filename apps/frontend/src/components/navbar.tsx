@@ -160,7 +160,7 @@ function SignUpModal({ isOpen, onClose, onSuccess }: SignUpModalProps) {
     setIsLoading(true);
 
     try {
-      const result = await signUp.email({
+      const result = await signUp({
         email,
         password,
         name,
@@ -276,7 +276,9 @@ function SignUpModal({ isOpen, onClose, onSuccess }: SignUpModalProps) {
           </div>
 
           {error && (
-            <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
+            <div className="text-red-600 dark:text-red-400 text-sm">
+              {error}
+            </div>
           )}
 
           <div className="flex gap-3 pt-4">
