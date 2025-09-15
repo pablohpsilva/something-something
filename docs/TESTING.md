@@ -152,7 +152,6 @@ Required for CI:
 
 ```bash
 DATABASE_URL=postgres://test:test@localhost:5432/test_db
-CLERK_SECRET_KEY=sk_test_placeholder
 STRIPE_SECRET_KEY=sk_test_placeholder
 # ... other test credentials
 ```

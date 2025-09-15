@@ -168,7 +168,7 @@ const activity = await getUserActivitySummary(userId);
 
 ### Users & Authentication
 
-- `User` - Core user accounts with Clerk integration
+- `User` - Core user accounts
 - `AuthorProfile` - Extended profiles for content creators
 
 ### Content Management
@@ -228,7 +228,7 @@ const activity = await getUserActivitySummary(userId);
 
 ### Unique Constraints
 
-- User handles and Clerk IDs
+- User handles
 - Rule slugs
 - Tag slugs
 - Badge slugs

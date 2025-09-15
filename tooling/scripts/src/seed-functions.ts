@@ -36,7 +36,6 @@ export async function createUsers(userData: any[]) {
     const newUser = await prisma.user.create({
       data: {
         id: generateId(),
-        clerkId: user.clerkId,
         handle: user.handle,
         displayName: user.displayName,
         bio: user.bio,

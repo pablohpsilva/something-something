@@ -34,7 +34,6 @@ This monorepo uses **pnpm workspaces** and **Turbo** for efficient development a
 - **Linting/Formatting**: Biome
 - **Package Manager**: pnpm
 - **Build System**: Turbo
-- **Authentication**: Clerk (configured)
 - **Payments**: Stripe (configured)
 
 ## 📋 Prerequisites
@@ -75,8 +74,6 @@ cp apps/ingest/env.example apps/ingest/.env
 **Required Environment Variables:**
 
 - `DATABASE_URL` - PostgreSQL connection string
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk public key
-- `CLERK_SECRET_KEY` - Clerk secret key
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe public key
 - `STRIPE_SECRET_KEY` - Stripe secret key
 - `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret

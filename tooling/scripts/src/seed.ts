@@ -5,7 +5,6 @@ import { generateId } from "@repo/utils";
 // Sample data
 const SAMPLE_USERS = [
   {
-    clerkId: "user_2abc123def456",
     handle: "alice_dev",
     displayName: "Alice Johnson",
     bio: "Full-stack developer passionate about AI and automation. Building the future one prompt at a time.",
@@ -14,7 +13,6 @@ const SAMPLE_USERS = [
     isVerified: true,
   },
   {
-    clerkId: "user_2def456ghi789",
     handle: "bob_ai",
     displayName: "Bob Smith",
     bio: "AI researcher and prompt engineer. Specializing in LLM optimization and ethical AI development.",
@@ -23,7 +21,6 @@ const SAMPLE_USERS = [
     isVerified: true,
   },
   {
-    clerkId: "user_2ghi789jkl012",
     handle: "charlie_code",
     displayName: "Charlie Brown",
     bio: "Software architect with 10+ years experience. Love clean code and efficient systems.",
@@ -32,7 +29,6 @@ const SAMPLE_USERS = [
     isVerified: false,
   },
   {
-    clerkId: "user_2jkl012mno345",
     handle: "diana_ux",
     displayName: "Diana Prince",
     bio: "UX designer turned prompt engineer. Bridging the gap between human needs and AI capabilities.",
@@ -41,7 +37,6 @@ const SAMPLE_USERS = [
     isVerified: false,
   },
   {
-    clerkId: "user_2mno345pqr678",
     handle: "eve_data",
     displayName: "Eve Wilson",
     bio: "Data scientist exploring the intersection of machine learning and creative writing.",
