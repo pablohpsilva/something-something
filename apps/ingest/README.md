@@ -1,6 +1,35 @@
 # Ingest Service
 
-A high-performance Hono-based ingest service for the Core Directory Engine. Handles event intake, Stripe webhooks, crawl submissions, and CRON-based metric rollups.
+A high-performance Hono-based **data pipeline service** designed for server-to-server communication. This service handles high-throughput data ingestion, payment webhooks, content crawling, and background processing tasks.
+
+## 🎯 What Is This Service?
+
+The Ingest Service is **NOT a user-facing API**. It's a specialized backend service that:
+
+- **Ingests Events**: Processes analytics events (views, votes, saves) from the main application
+- **Handles Webhooks**: Processes external service callbacks (Stripe payments, partner integrations)
+- **Manages Background Jobs**: Runs scheduled tasks for metrics computation and data aggregation
+- **Serves Internal APIs**: Provides endpoints for system administration and monitoring
+
+## 🏛️ Architecture Role
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────────┐
+│  Frontend   │    │   tRPC API  │    │  Ingest Service │
+│  (User UI)  │◄──►│ (Main API)  │◄──►│ (Data Pipeline) │
+└─────────────┘    └─────────────┘    └─────────────────┘
+                          │                     │
+                          ▼                     ▼
+                   ┌─────────────────────────────────┐
+                   │         Database                │
+                   │        PostgreSQL               │
+                   └─────────────────────────────────┘
+```
+
+- **Frontend** calls **tRPC API** for user operations
+- **tRPC API** calls **Ingest Service** for analytics and metrics
+- **External services** (Stripe, crawlers) call **Ingest Service** directly
+- **CRON jobs** trigger **Ingest Service** for background processing
 
 ## 🚀 Features
 
@@ -149,11 +178,14 @@ Headers: x-cron-secret: <CRON_SECRET>
 
 ## 🔒 Security
 
+**⚠️ Important**: This service is designed for **server-to-server communication only**. It should not be called directly from frontend applications.
+
 ### Authentication
 
 - **App Token**: Use `x-app-token` header for event and crawl endpoints
 - **CRON Secret**: Use `x-cron-secret` header for CRON endpoints
 - **Stripe Webhooks**: Verified using Stripe signature validation
+- **CORS Protection**: Denies browser requests (except `/health` endpoint)
 
 ### Rate Limiting
 
@@ -319,9 +351,26 @@ Set `LOG_LEVEL=debug` for verbose logging:
 LOG_LEVEL=debug pnpm dev
 ```
 
+## 🤔 When Should I Use This Service?
+
+### ✅ Use Ingest Service For:
+
+- **Analytics Integration**: Sending events from your main API
+- **Webhook Handling**: Processing Stripe payment notifications
+- **Content Curation**: Bulk importing rules from external sources
+- **Background Processing**: Running scheduled metric calculations
+- **System Administration**: Monitoring service health
+
+### ❌ Don't Use Ingest Service For:
+
+- **User Authentication**: Use tRPC API instead
+- **CRUD Operations**: Use tRPC API for creating/reading/updating content
+- **Frontend Integration**: Connect your frontend to tRPC API, not this service
+- **Real-time Features**: This is for batch processing, not real-time updates
+
 ## 📚 Related Documentation
 
-- [Core Database Schema](../db/README.md)
-- [tRPC API Layer](../trpc/README.md)
-- [Web Application](../web/README.md)
+- [Core Database Schema](../../packages/db/README.md)
+- [tRPC API Layer](../../packages/trpc/README.md) - **Main user-facing API**
+- [Project Overview](../../README.md) - Overall architecture
 - [Docker Setup](../../README.md#docker)
