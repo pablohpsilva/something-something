@@ -109,7 +109,9 @@ describe("Date utilities", () => {
       const timestampMs = getCurrentTimestampMs();
       const timestampS = getCurrentTimestamp();
 
-      expect(timestampMs).toBe(timestampS * 1000);
+      // Allow for small timing differences (should be within 1 second)
+      const expectedMs = timestampS * 1000;
+      expect(Math.abs(timestampMs - expectedMs)).toBeLessThan(1000);
     });
   });
 

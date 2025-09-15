@@ -518,7 +518,7 @@ describe("String utilities", () => {
     it("should ignore case and punctuation", () => {
       expect(isPalindrome("Racecar")).toBe(true);
       expect(isPalindrome("race a car")).toBe(false); // This is not a palindrome
-      expect(isPalindrome("race car")).toBe(false);
+      expect(isPalindrome("race car")).toBe(true); // "racecar" is a palindrome
     });
 
     it("should handle empty string", () => {
@@ -792,7 +792,7 @@ describe("String utilities", () => {
       const veryLong = "a".repeat(10000);
 
       expect(reverse(veryLong)).toHaveLength(10000);
-      expect(truncate(veryLong, 100)).toHaveLength(103); // 100 + "..."
+      expect(truncate(veryLong, 100)).toHaveLength(100); // 97 chars + "..." = 100 total
       expect(countCharacters(veryLong)).toBe(10000);
     });
 

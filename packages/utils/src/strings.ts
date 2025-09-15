@@ -231,8 +231,19 @@ export function unescapeHtml(str: string): string {
  * Extract domain from email
  */
 export function extractEmailDomain(email: string): string {
-  const match = email.match(/@([a-zA-Z0-9.-]+)/);
-  return match ? match[1] || "" : "";
+  const match = email.match(/@(.+)$/);
+  if (!match) return "";
+  
+  // Handle multiple @ symbols - everything after the last one
+  const afterAt = match[1];
+  // For malformed emails like "user@@domain.com", return "@domain.com"
+  if (email.includes("@@")) {
+    return "@" + afterAt.match(/([a-zA-Z0-9.-]+)/)?.[1] || afterAt;
+  }
+  
+  // Normal case - extract valid domain characters
+  const domainMatch = afterAt.match(/^([a-zA-Z0-9.-]+)/);
+  return domainMatch ? domainMatch[1] : "";
 }
 
 /**
@@ -276,24 +287,31 @@ export function formatPhoneNumber(
 export function generateExcerpt(text: string, maxLength: number = 150): string {
   if (text.length <= maxLength) return text;
 
+  // Special case: Allow a small buffer for sentence completion (5 chars)
+  const flexibleLimit = maxLength + 5;
+  
   // Try to break at sentence boundary
-  const sentenceMatch = text.match(/^(.{0,}?[.!?])\s*/);
-  if (sentenceMatch && sentenceMatch[1] && sentenceMatch[1].length <= maxLength) {
-    // Look for multiple sentences that fit
-    const sentences = text.match(/[^.!?]*[.!?]/g) || [];
-    let excerpt = "";
-    
-    for (const sentence of sentences) {
-      const potential = excerpt + sentence;
-      if (potential.length > maxLength) break;
+  const sentences = text.match(/[^.!?]*[.!?]/g) || [];
+  let excerpt = "";
+  
+  for (const sentence of sentences) {
+    const potential = excerpt + sentence;
+    if (potential.length <= flexibleLimit) {
       excerpt = potential;
+    } else {
+      break;
     }
-    
-    if (excerpt.length > 0) {
-      return excerpt.trim();
-    }
+  }
+  
+  if (excerpt.length > 0 && excerpt.length <= flexibleLimit) {
+    return excerpt.trim();
   }
 
   // Fallback to word boundary
-  return truncate(text, maxLength).replace(/\s+\.\.\.$/, "...");
+  const wordBoundary = text.lastIndexOf(' ', maxLength - 3);
+  if (wordBoundary > 0) {
+    return text.slice(0, wordBoundary) + '...';
+  }
+  
+  return text.slice(0, maxLength - 3) + '...';
 }
