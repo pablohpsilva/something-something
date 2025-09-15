@@ -1,3 +1,7 @@
+// Load environment variables first
+import { config } from "dotenv";
+config();
+
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -16,6 +20,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
+      "http://localhost:3030",
       "https://yourdomain.com", // Replace with your actual domain
     ],
     allowHeaders: ["Content-Type", "Authorization"],

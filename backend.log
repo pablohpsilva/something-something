@@ -1,0 +1,8 @@
+
+> something-something@0.1.0 backend:dev /Users/pablohpsilva/Documents/something-something
+> pnpm --filter @repo/backend dev
+
+
+> @repo/backend@0.1.0 dev /Users/pablohpsilva/Documents/something-something/apps/backend
+> tsx watch src/index.ts
+

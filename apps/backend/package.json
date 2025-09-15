@@ -20,7 +20,8 @@
     "@hono/trpc-server": "^0.3.2",
     "@hono/node-server": "^1.13.1",
     "cors": "^2.8.5",
-    "superjson": "^2.2.1"
+    "superjson": "^2.2.1",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

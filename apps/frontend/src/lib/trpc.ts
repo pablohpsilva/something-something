@@ -12,22 +12,21 @@ export const { TRPCProvider, useTRPC, useTRPCClient } =
 
 /**
  * Get the tRPC API base URL
- * This should point to your tRPC API endpoint
+ * Points to our backend server instead of Next.js API routes
  */
 function getBaseUrl() {
   if (typeof window !== "undefined") {
-    // Browser should use relative URL
-    return "";
+    // Browser should use the backend server URL
+    return process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
   }
 
-  // SSR should use absolute URL
-  if (process.env.VERCEL_URL) {
-    // Reference for vercel.com
-    return `https://${process.env.VERCEL_URL}`;
+  // SSR should use absolute URL to backend
+  if (process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL;
   }
 
-  // Assume localhost for development
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  // Default to localhost backend for development
+  return "http://localhost:4000";
 }
 
 /**
@@ -38,7 +37,7 @@ export function createTRPCClientInstance() {
   return createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
-        url: `${getBaseUrl()}/api/trpc`,
+        url: `${getBaseUrl()}/trpc`,
         // Optional: Add headers for authentication
         headers() {
           return {
