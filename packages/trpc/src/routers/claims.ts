@@ -6,7 +6,6 @@ import {
   createRateLimitedProcedure,
 } from "../trpc";
 import { prisma } from "@repo/db/client";
-import { AbuseConfig } from "@repo/config";
 
 const claimCreateProcedure = createRateLimitedProcedure(
   protectedProcedure,

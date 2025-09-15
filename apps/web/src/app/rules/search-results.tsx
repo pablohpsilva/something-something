@@ -97,41 +97,67 @@ export function SearchResults({
     500
   );
 
-  // Search API call
-  // Temporarily disabled - need to fix tRPC typing issue
-  const searchResults = null;
-  const isLoading = false;
-  const error = null;
-  const refetch = () => {};
+  // Rules API call - use list endpoint for basic functionality
+  const {
+    data: rulesData,
+    isLoading,
+    error,
+    refetch,
+  } = api.rules.list.useQuery({
+    limit,
+    cursor: undefined,
+    sort: "new",
+    filters: Object.fromEntries(
+      Object.entries({
+        status:
+          filters.status === "ALL"
+            ? undefined
+            : (filters.status as "PUBLISHED" | "DEPRECATED"),
+        contentType:
+          filters.contentType && filters.contentType.trim()
+            ? (filters.contentType as "PROMPT" | "RULE" | "MCP" | "GUIDE")
+            : undefined,
+        tags: filters.tags.length > 0 ? filters.tags : undefined,
+        model:
+          filters.model && filters.model.trim() ? filters.model : undefined,
+      }).filter(([_, value]) => value !== undefined)
+    ),
+  });
 
-  // const {
-  //   data: searchResults,
-  //   isLoading,
-  //   error,
-  //   refetch,
-  // } = api.search.query.useQuery(
-  //   {
-  //     q: query,
-  //     filters: {
-  //       tags: filters.tags.length > 0 ? filters.tags : undefined,
-  //       model: filters.model || undefined,
-  //       status: filters.status as "PUBLISHED" | "DEPRECATED" | "ALL",
-  //       contentType: filters.contentType as
-  //         | "PROMPT"
-  //         | "RULE"
-  //         | "MCP"
-  //         | "GUIDE"
-  //         | undefined,
-  //       authorHandle: filters.authorHandle || undefined,
-  //     },
-  //     limit,
-  //     offset,
-  //   },
-  //   {
-  //     enabled: !!query.trim(),
-  //     keepPreviousData: true,
-  //   }
-  // );
+  // Transform the data to match search results format
+  const searchResults = rulesData
+    ? {
+        results: rulesData.items
+          .filter(
+            (rule) =>
+              !query.trim() ||
+              rule.title.toLowerCase().includes(query.toLowerCase()) ||
+              rule.summary?.toLowerCase().includes(query.toLowerCase()) ||
+              rule.tags.some((tag) =>
+                tag.name.toLowerCase().includes(query.toLowerCase())
+              )
+          )
+          .map((rule) => ({
+            id: rule.id,
+            slug: rule.slug,
+            title: rule.title,
+            summary: rule.summary,
+            author: rule.author,
+            tags: rule.tags.map((tag) => tag.name),
+            primaryModel: rule.primaryModel,
+            status: rule.status,
+            score: 0.9, // Default score since we don't have search scoring
+            trending: 0,
+            snippetHtml: null,
+            createdAt: rule.createdAt,
+            updatedAt: rule.updatedAt,
+          })),
+        pagination: {
+          total: rulesData.items.length,
+          hasMore: rulesData.hasMore,
+        },
+      }
+    : null;
 
   // Get facets for filters - temporarily disabled
   const facets = null;
@@ -255,9 +281,13 @@ export function SearchResults({
         </div>
 
         {/* Search Stats */}
-        {false && (
+        {searchResults && (
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div>Search temporarily disabled</div>
+            <div>
+              {searchResults.results.length} rule
+              {searchResults.results.length !== 1 ? "s" : ""} found
+              {query.trim() && ` for "${query}"`}
+            </div>
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -290,7 +320,9 @@ export function SearchResults({
                 </label>
                 <Select
                   value={filters.status}
-                  onValueChange={(value) => handleFilterChange("status", value)}
+                  onValueChange={(value: string) =>
+                    handleFilterChange("status", value)
+                  }
                   data-testid="rules-filter-status"
                 >
                   <SelectTrigger className="h-8">
@@ -311,7 +343,7 @@ export function SearchResults({
                 </label>
                 <Select
                   value={filters.contentType}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     handleFilterChange("contentType", value)
                   }
                   data-testid="rules-filter-content-type"
@@ -337,7 +369,7 @@ export function SearchResults({
                   </label>
                   <Select
                     value={filters.model}
-                    onValueChange={(value) =>
+                    onValueChange={(value: string) =>
                       handleFilterChange("model", value)
                     }
                     data-testid="rules-filter-model"
@@ -430,66 +462,70 @@ export function SearchResults({
 
         {/* Results */}
         <div className="lg:col-span-3">
-          {!query.trim() ? (
-            // Empty state - no search query
-            <Card>
-              <CardContent className="text-center py-12">
-                <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Search Rules</h3>
-                <p className="text-muted-foreground mb-4">
-                  Enter a search term to find rules, prompts, and guides
-                </p>
-                <div className="text-sm text-muted-foreground">
-                  <p>Try searching for:</p>
-                  <div className="flex flex-wrap gap-2 justify-center mt-2">
-                    {[].map((tag: any) => (
-                      <Button
-                        key={tag.slug}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setQuery(tag.name);
-                          handleQueryChange(tag.name);
-                        }}
-                        className="text-xs"
-                      >
-                        {tag.name}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {isLoading ? (
+            // Loading state
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-2">
+                          <div className="h-5 bg-muted animate-pulse rounded w-3/4"></div>
+                          <div className="h-4 bg-muted animate-pulse rounded w-1/2"></div>
+                        </div>
+                        <div className="h-6 bg-muted animate-pulse rounded w-12"></div>
+                      </div>
+                      <div className="h-4 bg-muted animate-pulse rounded w-full"></div>
+                      <div className="h-4 bg-muted animate-pulse rounded w-2/3"></div>
+                      <div className="flex gap-2">
+                        <div className="h-5 bg-muted animate-pulse rounded w-16"></div>
+                        <div className="h-5 bg-muted animate-pulse rounded w-20"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : error ? (
             // Error state
             <Card>
               <CardContent className="text-center py-12">
                 <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
-                <h3 className="text-lg font-semibold mb-2">Search Error</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Error Loading Rules
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Something went wrong while searching. Please try again.
+                  Something went wrong while loading rules. Please try again.
                 </p>
                 <Button onClick={() => refetch()}>Try Again</Button>
               </CardContent>
             </Card>
-          ) : false ? (
+          ) : !searchResults || searchResults.results.length === 0 ? (
             // No results
             <Card>
               <CardContent className="text-center py-12">
                 <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  {query.trim() ? "No Results Found" : "Browse Rules"}
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  No rules found for "{query}"
-                  {hasActiveFilters ? " with the selected filters" : ""}
+                  {query.trim()
+                    ? `No rules found${query.trim() ? ` for "${query}"` : ""}${
+                        hasActiveFilters ? " with the selected filters" : ""
+                      }`
+                    : "Enter a search term to find specific rules, or browse all available rules below"}
                 </p>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Try:</p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Using different keywords</li>
-                    <li>• Removing some filters</li>
-                    <li>• Checking for typos</li>
-                  </ul>
-                </div>
+                {query.trim() && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Try:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Using different keywords</li>
+                      <li>• Removing some filters</li>
+                      <li>• Checking for typos</li>
+                    </ul>
+                  </div>
+                )}
                 {hasActiveFilters && (
                   <Button
                     variant="outline"
@@ -504,7 +540,7 @@ export function SearchResults({
           ) : (
             // Results list
             <div className="space-y-4" data-testid="rules-search-results">
-              {[].map((result: any) => (
+              {searchResults.results.map((result: any) => (
                 <SearchResultCard
                   key={result.id}
                   result={result}
@@ -514,7 +550,7 @@ export function SearchResults({
               ))}
 
               {/* Load More */}
-              {false && (
+              {searchResults.pagination.hasMore && (
                 <div className="text-center pt-4">
                   <Button
                     variant="outline"

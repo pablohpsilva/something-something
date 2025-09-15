@@ -310,17 +310,7 @@ export function withShadowBanCheck() {
 function getRequestHeaders(
   ctx: any
 ): Record<string, string | string[] | undefined> {
-  // Next.js App Router
-  if (ctx.req?.headers) {
-    return ctx.req.headers;
-  }
-
-  // Next.js Pages Router
-  if (ctx.req?.headers) {
-    return ctx.req.headers;
-  }
-
-  // Standalone server
+  // Next.js App Router / Pages Router / Standalone server
   if (ctx.req?.headers) {
     return ctx.req.headers;
   }

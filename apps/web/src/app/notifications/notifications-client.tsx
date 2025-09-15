@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Bell,
   Check,
@@ -24,10 +23,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui";
+} from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/trpc";
 import { formatRelativeTime } from "@/lib/format";
-import { showToast } from "@/lib/metrics/read";
 import { NOTIFICATIONS_TESTIDS } from "@/lib/testids";
 import type { NotificationsListResponse } from "@repo/trpc";
 

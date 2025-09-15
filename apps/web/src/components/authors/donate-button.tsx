@@ -13,14 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui";
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui";
+} from "@/components/ui/select";
 import { Heart, DollarSign, Loader2 } from "lucide-react";
 import { api } from "@/lib/trpc";
 import { showToast } from "@/lib/metrics/read";

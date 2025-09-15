@@ -84,7 +84,7 @@ export function DonationsClient({
         <div className="flex items-center gap-2">
           <Select
             value={windowDays.toString()}
-            onValueChange={(value) => setWindowDays(parseInt(value))}
+            onValueChange={(value: string) => setWindowDays(parseInt(value))}
           >
             <SelectTrigger className="w-32">
               <SelectValue />

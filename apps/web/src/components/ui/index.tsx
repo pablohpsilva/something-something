@@ -15,6 +15,3 @@ export * from "./skeleton";
 export * from "./select";
 export * from "./command";
 export * from "./popover";
-
-// Export utilities
-export * from "./lib/utils";
