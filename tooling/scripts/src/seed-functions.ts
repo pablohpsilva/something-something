@@ -38,6 +38,7 @@ export async function createUsers(userData: any[]) {
         id: generateId(),
         handle: user.handle,
         displayName: user.displayName,
+        email: user.email || `${user.handle}@example.com`,
         bio: user.bio,
         avatarUrl: user.avatarUrl,
         role: "USER",

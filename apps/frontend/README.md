@@ -9,6 +9,7 @@ A modern Next.js 15 application with TypeScript, Tailwind CSS v4, Biome.js, and 
 - **Tailwind CSS v4** - Utility-first CSS framework
 - **Biome.js** - Fast linter and formatter
 - **React Query (TanStack Query)** - Powerful data synchronization
+- **tRPC** - End-to-end typesafe APIs
 - **pnpm** - Fast, disk space efficient package manager
 
 ## Getting Started
@@ -65,14 +66,19 @@ src/
 │   ├── globals.css      # Global styles with Tailwind CSS v4
 │   ├── layout.tsx       # Root layout with providers
 │   └── page.tsx         # Home page
+├── components/          # React components
+│   └── trpc-example.tsx # tRPC usage example
+├── lib/                 # Utility libraries
+│   └── trpc.ts          # tRPC client configuration
 └── providers/           # React providers
     ├── index.tsx        # Main providers wrapper
-    └── query-provider.tsx # React Query provider
+    └── trpc-provider.tsx # tRPC + React Query provider
 ```
 
 ## Features
 
 - **App Router**: Using Next.js 15 App Router for modern routing
+- **tRPC Integration**: Type-safe API calls with React Query integration
 - **React Query**: Pre-configured with sensible defaults and devtools
 - **Tailwind CSS v4**: Latest version with new features and syntax
 - **Biome.js**: Fast linting and formatting instead of ESLint + Prettier
@@ -84,4 +90,32 @@ src/
 - **TypeScript**: Extends base config from workspace root
 - **Tailwind**: Configured for v4 with PostCSS
 - **Biome**: Comprehensive linting and formatting rules
+- **tRPC**: SSR-friendly setup with superjson transformer
 - **React Query**: Optimized caching and error handling defaults
+
+## tRPC Usage
+
+The tRPC client is ready to use with your existing `@repo/trpc` backend:
+
+```tsx
+import { useTRPC } from "@/lib/trpc";
+import { useQuery, useMutation } from "@tanstack/react-query";
+
+function MyComponent() {
+  const trpc = useTRPC();
+
+  // Query example
+  const rules = useQuery(trpc.rules.list.queryOptions({ limit: 10 }));
+
+  // Mutation example
+  const createRule = useMutation(trpc.rules.create.mutationOptions());
+
+  return (
+    <div>
+      {rules.data?.map((rule) => (
+        <div key={rule.id}>{rule.title}</div>
+      ))}
+    </div>
+  );
+}
+```

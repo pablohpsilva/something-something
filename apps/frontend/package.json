@@ -12,11 +12,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@repo/db": "workspace:*",
+    "@repo/trpc": "workspace:*",
     "@tanstack/react-query": "^5.87.4",
     "@tanstack/react-query-devtools": "^5.87.4",
+    "@trpc/server": "^11.0.0-rc.553",
+    "@trpc/client": "^11.5.1",
+    "@trpc/tanstack-react-query": "^11.5.1",
     "next": "15.5.3",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "superjson": "^2.2.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
