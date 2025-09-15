@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter, createTRPCContext } from "@repo/trpc";
+import { auth } from "@repo/db/auth";
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { Context } from "hono";
 
@@ -59,6 +60,11 @@ const createContext = async (opts: FetchCreateContextFnOptions, c: Context) => {
   // Return as plain object to match expected type
   return context as unknown as Record<string, unknown>;
 };
+
+// Setup better-auth API endpoints
+app.use("/api/auth/*", async (c) => {
+  return auth.handler(c.req.raw);
+});
 
 // Setup tRPC handler
 app.use(
