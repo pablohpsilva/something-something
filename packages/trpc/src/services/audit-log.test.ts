@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { AuditLogService, AuditLog, auditLog } from "./audit-log";
-import type { AuditLogEntry } from "./audit-log";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
+import { AuditLogService, AuditLog, auditLog } from "./audit-log"
+import type { AuditLogEntry } from "./audit-log"
 
 // Mock the prisma client
 vi.mock("@repo/db/client", () => ({
@@ -10,22 +10,22 @@ vi.mock("@repo/db/client", () => ({
       findMany: vi.fn(),
     },
   },
-}));
+}))
 
 // Get the mocked prisma instance
-const { prisma } = await import("@repo/db/client");
-const mockPrismaAuditLog = prisma.auditLog as any;
+const { prisma } = await import("@repo/db/client")
+const mockPrismaAuditLog = prisma.auditLog as any
 
 describe("AuditLogService", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks()
     // Mock console.error to avoid noise in test output
-    vi.spyOn(console, "error").mockImplementation(() => {});
-  });
+    vi.spyOn(console, "error").mockImplementation(() => {})
+  })
 
   afterEach(() => {
-    vi.restoreAllMocks();
-  });
+    vi.restoreAllMocks()
+  })
 
   describe("log", () => {
     it("should create audit log entry successfully", async () => {
@@ -36,15 +36,15 @@ describe("AuditLogService", () => {
         targetType: "test",
         metadata: { key: "value" },
         reason: "Test reason",
-      };
+      }
 
       mockPrismaAuditLog.create.mockResolvedValue({
         id: "log-123",
         ...entry,
         createdAt: new Date(),
-      });
+      })
 
-      await AuditLogService.log(entry);
+      await AuditLogService.log(entry)
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -55,21 +55,21 @@ describe("AuditLogService", () => {
           metadata: { key: "value" },
           reason: "Test reason",
         },
-      });
-    });
+      })
+    })
 
     it("should handle missing optional fields", async () => {
       const entry: AuditLogEntry = {
         action: "minimal.action",
-      };
+      }
 
       mockPrismaAuditLog.create.mockResolvedValue({
         id: "log-123",
         ...entry,
         createdAt: new Date(),
-      });
+      })
 
-      await AuditLogService.log(entry);
+      await AuditLogService.log(entry)
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -80,35 +80,32 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
+      })
+    })
 
     it("should handle database errors gracefully", async () => {
       const entry: AuditLogEntry = {
         action: "failing.action",
         actorId: "user-123",
-      };
+      }
 
-      const dbError = new Error("Database connection failed");
-      mockPrismaAuditLog.create.mockRejectedValue(dbError);
+      const dbError = new Error("Database connection failed")
+      mockPrismaAuditLog.create.mockRejectedValue(dbError)
 
       // Should not throw
-      await expect(AuditLogService.log(entry)).resolves.toBeUndefined();
+      await expect(AuditLogService.log(entry)).resolves.toBeUndefined()
 
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to create audit log entry:",
-        dbError
-      );
-    });
-  });
+      expect(console.error).toHaveBeenCalledWith("Failed to create audit log entry:", dbError)
+    })
+  })
 
   describe("logRulePublish", () => {
     it("should log rule publication", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       await AuditLogService.logRulePublish("rule-123", "user-456", {
         version: "1.0.0",
-      });
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -119,13 +116,13 @@ describe("AuditLogService", () => {
           metadata: { version: "1.0.0" },
           reason: undefined,
         },
-      });
-    });
+      })
+    })
 
     it("should log rule publication without metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logRulePublish("rule-123", "user-456");
+      await AuditLogService.logRulePublish("rule-123", "user-456")
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -136,20 +133,17 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("logRuleDeprecate", () => {
     it("should log rule deprecation with reason and metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logRuleDeprecate(
-        "rule-123",
-        "user-456",
-        "Outdated approach",
-        { replacedBy: "rule-789" }
-      );
+      await AuditLogService.logRuleDeprecate("rule-123", "user-456", "Outdated approach", {
+        replacedBy: "rule-789",
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -160,13 +154,13 @@ describe("AuditLogService", () => {
           metadata: { replacedBy: "rule-789" },
           reason: "Outdated approach",
         },
-      });
-    });
+      })
+    })
 
     it("should log rule deprecation without optional parameters", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logRuleDeprecate("rule-123", "user-456");
+      await AuditLogService.logRuleDeprecate("rule-123", "user-456")
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -177,20 +171,17 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("logCommentDelete", () => {
     it("should log comment deletion with reason and metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logCommentDelete(
-        "comment-123",
-        "moderator-456",
-        "Spam content",
-        { reportCount: 5 }
-      );
+      await AuditLogService.logCommentDelete("comment-123", "moderator-456", "Spam content", {
+        reportCount: 5,
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -201,13 +192,13 @@ describe("AuditLogService", () => {
           metadata: { reportCount: 5 },
           reason: "Spam content",
         },
-      });
-    });
+      })
+    })
 
     it("should log comment deletion without optional parameters", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logCommentDelete("comment-123", "moderator-456");
+      await AuditLogService.logCommentDelete("comment-123", "moderator-456")
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -218,17 +209,17 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("logClaimApprove", () => {
     it("should log claim approval", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       await AuditLogService.logClaimApprove("claim-123", "admin-456", {
         verificationMethod: "email",
-      });
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -239,13 +230,13 @@ describe("AuditLogService", () => {
           metadata: { verificationMethod: "email" },
           reason: undefined,
         },
-      });
-    });
+      })
+    })
 
     it("should log claim approval without metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logClaimApprove("claim-123", "admin-456");
+      await AuditLogService.logClaimApprove("claim-123", "admin-456")
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -256,20 +247,18 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("logClaimReject", () => {
     it("should log claim rejection with reason and metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logClaimReject(
-        "claim-123",
-        "admin-456",
-        "Insufficient evidence",
-        { documentsProvided: 2, requiredDocuments: 3 }
-      );
+      await AuditLogService.logClaimReject("claim-123", "admin-456", "Insufficient evidence", {
+        documentsProvided: 2,
+        requiredDocuments: 3,
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -280,13 +269,13 @@ describe("AuditLogService", () => {
           metadata: { documentsProvided: 2, requiredDocuments: 3 },
           reason: "Insufficient evidence",
         },
-      });
-    });
+      })
+    })
 
     it("should log claim rejection without optional parameters", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logClaimReject("claim-123", "admin-456");
+      await AuditLogService.logClaimReject("claim-123", "admin-456")
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -297,20 +286,18 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("logUserBan", () => {
     it("should log user ban with reason and metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logUserBan(
-        "user-123",
-        "admin-456",
-        "Repeated violations",
-        { violationCount: 5, banDuration: "30d" }
-      );
+      await AuditLogService.logUserBan("user-123", "admin-456", "Repeated violations", {
+        violationCount: 5,
+        banDuration: "30d",
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -321,13 +308,13 @@ describe("AuditLogService", () => {
           metadata: { violationCount: 5, banDuration: "30d" },
           reason: "Repeated violations",
         },
-      });
-    });
+      })
+    })
 
     it("should log user ban without optional parameters", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logUserBan("user-123", "admin-456");
+      await AuditLogService.logUserBan("user-123", "admin-456")
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -338,17 +325,17 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("logUserUnban", () => {
     it("should log user unban", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       await AuditLogService.logUserUnban("user-123", "admin-456", {
         appealId: "appeal-789",
-      });
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -359,13 +346,13 @@ describe("AuditLogService", () => {
           metadata: { appealId: "appeal-789" },
           reason: undefined,
         },
-      });
-    });
+      })
+    })
 
     it("should log user unban without metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
-      await AuditLogService.logUserUnban("user-123", "admin-456");
+      await AuditLogService.logUserUnban("user-123", "admin-456")
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -376,9 +363,9 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: undefined,
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("getLogsForTarget", () => {
     it("should retrieve logs for a specific target with default limit", async () => {
@@ -409,11 +396,11 @@ describe("AuditLogService", () => {
           },
           createdAt: new Date(),
         },
-      ];
+      ]
 
-      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs);
+      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs)
 
-      const result = await AuditLogService.getLogsForTarget("rule-123", "rule");
+      const result = await AuditLogService.getLogsForTarget("rule-123", "rule")
 
       expect(mockPrismaAuditLog.findMany).toHaveBeenCalledWith({
         where: {
@@ -434,10 +421,10 @@ describe("AuditLogService", () => {
           createdAt: "desc",
         },
         take: 50,
-      });
+      })
 
-      expect(result).toEqual(mockLogs);
-    });
+      expect(result).toEqual(mockLogs)
+    })
 
     it("should retrieve logs for a specific target with custom limit", async () => {
       const mockLogs = [
@@ -454,15 +441,11 @@ describe("AuditLogService", () => {
           },
           createdAt: new Date(),
         },
-      ];
+      ]
 
-      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs);
+      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs)
 
-      const result = await AuditLogService.getLogsForTarget(
-        "comment-123",
-        "comment",
-        10
-      );
+      const result = await AuditLogService.getLogsForTarget("comment-123", "comment", 10)
 
       expect(mockPrismaAuditLog.findMany).toHaveBeenCalledWith({
         where: {
@@ -483,11 +466,11 @@ describe("AuditLogService", () => {
           createdAt: "desc",
         },
         take: 10,
-      });
+      })
 
-      expect(result).toEqual(mockLogs);
-    });
-  });
+      expect(result).toEqual(mockLogs)
+    })
+  })
 
   describe("getRecentLogs", () => {
     it("should retrieve recent logs with default limit", async () => {
@@ -518,11 +501,11 @@ describe("AuditLogService", () => {
           },
           createdAt: new Date(),
         },
-      ];
+      ]
 
-      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs);
+      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs)
 
-      const result = await AuditLogService.getRecentLogs();
+      const result = await AuditLogService.getRecentLogs()
 
       expect(mockPrismaAuditLog.findMany).toHaveBeenCalledWith({
         include: {
@@ -539,10 +522,10 @@ describe("AuditLogService", () => {
           createdAt: "desc",
         },
         take: 100,
-      });
+      })
 
-      expect(result).toEqual(mockLogs);
-    });
+      expect(result).toEqual(mockLogs)
+    })
 
     it("should retrieve recent logs with custom limit", async () => {
       const mockLogs = [
@@ -559,11 +542,11 @@ describe("AuditLogService", () => {
           },
           createdAt: new Date(),
         },
-      ];
+      ]
 
-      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs);
+      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs)
 
-      const result = await AuditLogService.getRecentLogs(25);
+      const result = await AuditLogService.getRecentLogs(25)
 
       expect(mockPrismaAuditLog.findMany).toHaveBeenCalledWith({
         include: {
@@ -580,11 +563,11 @@ describe("AuditLogService", () => {
           createdAt: "desc",
         },
         take: 25,
-      });
+      })
 
-      expect(result).toEqual(mockLogs);
-    });
-  });
+      expect(result).toEqual(mockLogs)
+    })
+  })
 
   describe("getLogsByAction", () => {
     it("should retrieve logs by action type with default limit", async () => {
@@ -615,11 +598,11 @@ describe("AuditLogService", () => {
           },
           createdAt: new Date(),
         },
-      ];
+      ]
 
-      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs);
+      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs)
 
-      const result = await AuditLogService.getLogsByAction("user.ban");
+      const result = await AuditLogService.getLogsByAction("user.ban")
 
       expect(mockPrismaAuditLog.findMany).toHaveBeenCalledWith({
         where: {
@@ -639,10 +622,10 @@ describe("AuditLogService", () => {
           createdAt: "desc",
         },
         take: 50,
-      });
+      })
 
-      expect(result).toEqual(mockLogs);
-    });
+      expect(result).toEqual(mockLogs)
+    })
 
     it("should retrieve logs by action type with custom limit", async () => {
       const mockLogs = [
@@ -659,11 +642,11 @@ describe("AuditLogService", () => {
           },
           createdAt: new Date(),
         },
-      ];
+      ]
 
-      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs);
+      mockPrismaAuditLog.findMany.mockResolvedValue(mockLogs)
 
-      const result = await AuditLogService.getLogsByAction("rule.publish", 10);
+      const result = await AuditLogService.getLogsByAction("rule.publish", 10)
 
       expect(mockPrismaAuditLog.findMany).toHaveBeenCalledWith({
         where: {
@@ -683,83 +666,70 @@ describe("AuditLogService", () => {
           createdAt: "desc",
         },
         take: 10,
-      });
+      })
 
-      expect(result).toEqual(mockLogs);
-    });
-  });
+      expect(result).toEqual(mockLogs)
+    })
+  })
 
   describe("convenience exports", () => {
     it("should export auditLog convenience functions", () => {
-      expect(auditLog.rulePublish).toBe(AuditLogService.logRulePublish);
-      expect(auditLog.ruleDeprecate).toBe(AuditLogService.logRuleDeprecate);
-      expect(auditLog.commentDelete).toBe(AuditLogService.logCommentDelete);
-      expect(auditLog.claimApprove).toBe(AuditLogService.logClaimApprove);
-      expect(auditLog.claimReject).toBe(AuditLogService.logClaimReject);
-      expect(auditLog.userBan).toBe(AuditLogService.logUserBan);
-      expect(auditLog.userUnban).toBe(AuditLogService.logUserUnban);
-    });
+      expect(auditLog.rulePublish).toBe(AuditLogService.logRulePublish)
+      expect(auditLog.ruleDeprecate).toBe(AuditLogService.logRuleDeprecate)
+      expect(auditLog.commentDelete).toBe(AuditLogService.logCommentDelete)
+      expect(auditLog.claimApprove).toBe(AuditLogService.logClaimApprove)
+      expect(auditLog.claimReject).toBe(AuditLogService.logClaimReject)
+      expect(auditLog.userBan).toBe(AuditLogService.logUserBan)
+      expect(auditLog.userUnban).toBe(AuditLogService.logUserUnban)
+    })
 
     it("should export AuditLog as alias for AuditLogService", () => {
-      expect(AuditLog).toBe(AuditLogService);
-    });
-  });
+      expect(AuditLog).toBe(AuditLogService)
+    })
+  })
 
   describe("error handling in specific methods", () => {
     it("should handle errors in logRulePublish", async () => {
-      const dbError = new Error("Database error");
-      mockPrismaAuditLog.create.mockRejectedValue(dbError);
+      const dbError = new Error("Database error")
+      mockPrismaAuditLog.create.mockRejectedValue(dbError)
 
-      await expect(
-        AuditLogService.logRulePublish("rule-123", "user-456")
-      ).resolves.toBeUndefined();
+      await expect(AuditLogService.logRulePublish("rule-123", "user-456")).resolves.toBeUndefined()
 
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to create audit log entry:",
-        dbError
-      );
-    });
+      expect(console.error).toHaveBeenCalledWith("Failed to create audit log entry:", dbError)
+    })
 
     it("should handle errors in logCommentDelete", async () => {
-      const dbError = new Error("Connection timeout");
-      mockPrismaAuditLog.create.mockRejectedValue(dbError);
+      const dbError = new Error("Connection timeout")
+      mockPrismaAuditLog.create.mockRejectedValue(dbError)
 
       await expect(
         AuditLogService.logCommentDelete("comment-123", "moderator-456")
-      ).resolves.toBeUndefined();
+      ).resolves.toBeUndefined()
 
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to create audit log entry:",
-        dbError
-      );
-    });
+      expect(console.error).toHaveBeenCalledWith("Failed to create audit log entry:", dbError)
+    })
 
     it("should handle errors in logUserBan", async () => {
-      const dbError = new Error("Validation error");
-      mockPrismaAuditLog.create.mockRejectedValue(dbError);
+      const dbError = new Error("Validation error")
+      mockPrismaAuditLog.create.mockRejectedValue(dbError)
 
-      await expect(
-        AuditLogService.logUserBan("user-123", "admin-456")
-      ).resolves.toBeUndefined();
+      await expect(AuditLogService.logUserBan("user-123", "admin-456")).resolves.toBeUndefined()
 
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed to create audit log entry:",
-        dbError
-      );
-    });
-  });
+      expect(console.error).toHaveBeenCalledWith("Failed to create audit log entry:", dbError)
+    })
+  })
 
   describe("integration with convenience functions", () => {
     it("should work through auditLog.rulePublish", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       // Test that the convenience function is correctly mapped
-      expect(auditLog.rulePublish).toBe(AuditLogService.logRulePublish);
+      expect(auditLog.rulePublish).toBe(AuditLogService.logRulePublish)
 
       // Test the actual functionality through the class method
       await AuditLogService.logRulePublish("rule-123", "user-456", {
         version: "2.0.0",
-      });
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -770,24 +740,19 @@ describe("AuditLogService", () => {
           metadata: { version: "2.0.0" },
           reason: undefined,
         },
-      });
-    });
+      })
+    })
 
     it("should work through auditLog.userBan", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       // Test that the convenience function is correctly mapped
-      expect(auditLog.userBan).toBe(AuditLogService.logUserBan);
+      expect(auditLog.userBan).toBe(AuditLogService.logUserBan)
 
       // Test the actual functionality through the class method
-      await AuditLogService.logUserBan(
-        "user-123",
-        "admin-456",
-        "Policy violation",
-        {
-          policySection: "3.2",
-        }
-      );
+      await AuditLogService.logUserBan("user-123", "admin-456", "Policy violation", {
+        policySection: "3.2",
+      })
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -798,13 +763,13 @@ describe("AuditLogService", () => {
           metadata: { policySection: "3.2" },
           reason: "Policy violation",
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe("edge cases", () => {
     it("should handle null and undefined values in metadata", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       const entry: AuditLogEntry = {
         action: "test.action",
@@ -816,9 +781,9 @@ describe("AuditLogService", () => {
           zeroValue: 0,
           falseValue: false,
         },
-      };
+      }
 
-      await AuditLogService.log(entry);
+      await AuditLogService.log(entry)
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -835,11 +800,11 @@ describe("AuditLogService", () => {
           },
           reason: undefined,
         },
-      });
-    });
+      })
+    })
 
     it("should handle empty strings as valid values", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       const entry: AuditLogEntry = {
         action: "",
@@ -847,9 +812,9 @@ describe("AuditLogService", () => {
         targetId: "",
         targetType: "",
         reason: "",
-      };
+      }
 
-      await AuditLogService.log(entry);
+      await AuditLogService.log(entry)
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -860,11 +825,11 @@ describe("AuditLogService", () => {
           metadata: undefined,
           reason: "",
         },
-      });
-    });
+      })
+    })
 
     it("should handle complex metadata objects", async () => {
-      mockPrismaAuditLog.create.mockResolvedValue({});
+      mockPrismaAuditLog.create.mockResolvedValue({})
 
       const complexMetadata = {
         nested: {
@@ -883,13 +848,9 @@ describe("AuditLogService", () => {
           null: null,
           undefined: undefined,
         },
-      };
+      }
 
-      await AuditLogService.logRulePublish(
-        "rule-123",
-        "user-456",
-        complexMetadata
-      );
+      await AuditLogService.logRulePublish("rule-123", "user-456", complexMetadata)
 
       expect(mockPrismaAuditLog.create).toHaveBeenCalledWith({
         data: {
@@ -900,7 +861,7 @@ describe("AuditLogService", () => {
           metadata: complexMetadata,
           reason: undefined,
         },
-      });
-    });
-  });
-});
+      })
+    })
+  })
+})

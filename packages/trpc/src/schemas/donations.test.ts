@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest"
 import {
   createCheckoutInputSchema,
   listDonationsInputSchema,
@@ -22,7 +22,7 @@ import {
   type ConnectAccountStatus,
   type ConnectOnboardingResponse,
   type ConnectStatusResponse,
-} from "./donations";
+} from "./donations"
 
 describe("Donations Schemas", () => {
   describe("createCheckoutInputSchema", () => {
@@ -33,101 +33,101 @@ describe("Donations Schemas", () => {
         amountCents: 500, // $5.00
         currency: "USD",
         message: "Great rule, thanks!",
-      };
+      }
 
-      const result = createCheckoutInputSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = createCheckoutInputSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept input without optional fields", () => {
       const minimalInput = {
         toUserId: "user123",
         amountCents: 1000, // $10.00
-      };
+      }
 
-      const result = createCheckoutInputSchema.parse(minimalInput);
+      const result = createCheckoutInputSchema.parse(minimalInput)
       expect(result).toEqual({
         toUserId: "user123",
         amountCents: 1000,
         currency: "USD", // default value
-      });
-    });
+      })
+    })
 
     it("should accept minimum amount", () => {
       const input = {
         toUserId: "user123",
         amountCents: 100, // $1.00 minimum
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(input)).not.toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(input)).not.toThrow()
+    })
 
     it("should accept maximum amount", () => {
       const input = {
         toUserId: "user123",
         amountCents: 20000, // $200.00 maximum
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(input)).not.toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(input)).not.toThrow()
+    })
 
     it("should reject amount below minimum", () => {
       const invalidInput = {
         toUserId: "user123",
         amountCents: 99, // Below $1.00 minimum
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should reject amount above maximum", () => {
       const invalidInput = {
         toUserId: "user123",
         amountCents: 20001, // Above $200.00 maximum
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should reject non-integer amounts", () => {
       const invalidInput = {
         toUserId: "user123",
         amountCents: 500.5, // Non-integer
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should reject invalid currency length", () => {
       const invalidInput = {
         toUserId: "user123",
         amountCents: 500,
         currency: "US", // Too short
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should reject message too long", () => {
       const invalidInput = {
         toUserId: "user123",
         amountCents: 500,
         message: "a".repeat(241), // Over 240 character limit
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept maximum length message", () => {
       const input = {
         toUserId: "user123",
         amountCents: 500,
         message: "a".repeat(240), // Exactly 240 characters
-      };
+      }
 
-      expect(() => createCheckoutInputSchema.parse(input)).not.toThrow();
-    });
-  });
+      expect(() => createCheckoutInputSchema.parse(input)).not.toThrow()
+    })
+  })
 
   describe("listDonationsInputSchema", () => {
     it("should accept valid list input", () => {
@@ -135,178 +135,174 @@ describe("Donations Schemas", () => {
         cursor: "cursor123",
         limit: 50,
         type: "received" as const,
-      };
+      }
 
-      const result = listDonationsInputSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = listDonationsInputSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default values", () => {
-      const emptyInput = {};
+      const emptyInput = {}
 
-      const result = listDonationsInputSchema.parse(emptyInput);
+      const result = listDonationsInputSchema.parse(emptyInput)
       expect(result).toEqual({
         limit: 20,
         type: "received",
-      });
-    });
+      })
+    })
 
     it("should accept 'sent' type", () => {
       const input = {
         type: "sent" as const,
-      };
+      }
 
-      const result = listDonationsInputSchema.parse(input);
-      expect(result.type).toBe("sent");
-    });
+      const result = listDonationsInputSchema.parse(input)
+      expect(result.type).toBe("sent")
+    })
 
     it("should accept 'received' type", () => {
       const input = {
         type: "received" as const,
-      };
+      }
 
-      const result = listDonationsInputSchema.parse(input);
-      expect(result.type).toBe("received");
-    });
+      const result = listDonationsInputSchema.parse(input)
+      expect(result.type).toBe("received")
+    })
 
     it("should reject invalid type", () => {
       const invalidInput = {
         type: "invalid",
-      };
+      }
 
-      expect(() => listDonationsInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => listDonationsInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept input without cursor", () => {
       const input = {
         limit: 10,
         type: "sent" as const,
-      };
+      }
 
-      expect(() => listDonationsInputSchema.parse(input)).not.toThrow();
-    });
-  });
+      expect(() => listDonationsInputSchema.parse(input)).not.toThrow()
+    })
+  })
 
   describe("authorStatsInputSchema", () => {
     it("should accept valid author stats input", () => {
       const validInput = {
         authorUserId: "user123",
         windowDays: 90,
-      };
+      }
 
-      const result = authorStatsInputSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = authorStatsInputSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default windowDays", () => {
       const input = {
         authorUserId: "user123",
-      };
+      }
 
-      const result = authorStatsInputSchema.parse(input);
+      const result = authorStatsInputSchema.parse(input)
       expect(result).toEqual({
         authorUserId: "user123",
         windowDays: 30,
-      });
-    });
+      })
+    })
 
     it("should accept input without authorUserId", () => {
       const input = {
         windowDays: 60,
-      };
+      }
 
-      const result = authorStatsInputSchema.parse(input);
-      expect(result.windowDays).toBe(60);
-    });
+      const result = authorStatsInputSchema.parse(input)
+      expect(result.windowDays).toBe(60)
+    })
 
     it("should accept minimum windowDays", () => {
       const input = {
         windowDays: 7,
-      };
+      }
 
-      expect(() => authorStatsInputSchema.parse(input)).not.toThrow();
-    });
+      expect(() => authorStatsInputSchema.parse(input)).not.toThrow()
+    })
 
     it("should accept maximum windowDays", () => {
       const input = {
         windowDays: 365,
-      };
+      }
 
-      expect(() => authorStatsInputSchema.parse(input)).not.toThrow();
-    });
+      expect(() => authorStatsInputSchema.parse(input)).not.toThrow()
+    })
 
     it("should reject windowDays below minimum", () => {
       const invalidInput = {
         windowDays: 6,
-      };
+      }
 
-      expect(() => authorStatsInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => authorStatsInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should reject windowDays above maximum", () => {
       const invalidInput = {
         windowDays: 366,
-      };
+      }
 
-      expect(() => authorStatsInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => authorStatsInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should reject non-integer windowDays", () => {
       const invalidInput = {
         windowDays: 30.5,
-      };
+      }
 
-      expect(() => authorStatsInputSchema.parse(invalidInput)).toThrow();
-    });
-  });
+      expect(() => authorStatsInputSchema.parse(invalidInput)).toThrow()
+    })
+  })
 
   describe("donationProviderSchema", () => {
     it("should accept STRIPE provider", () => {
-      const provider = "STRIPE";
+      const provider = "STRIPE"
 
-      const result = donationProviderSchema.parse(provider);
-      expect(result).toBe("STRIPE");
-    });
+      const result = donationProviderSchema.parse(provider)
+      expect(result).toBe("STRIPE")
+    })
 
     it("should reject invalid provider", () => {
-      const invalidProvider = "PAYPAL";
+      const invalidProvider = "PAYPAL"
 
-      expect(() => donationProviderSchema.parse(invalidProvider)).toThrow();
-    });
-  });
+      expect(() => donationProviderSchema.parse(invalidProvider)).toThrow()
+    })
+  })
 
   describe("createCheckoutResponseSchema", () => {
     it("should accept valid checkout response", () => {
       const validResponse = {
         url: "https://checkout.stripe.com/session123",
         donationId: "donation456",
-      };
+      }
 
-      const result = createCheckoutResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = createCheckoutResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should reject invalid URL", () => {
       const invalidResponse = {
         url: "not-a-url",
         donationId: "donation456",
-      };
+      }
 
-      expect(() =>
-        createCheckoutResponseSchema.parse(invalidResponse)
-      ).toThrow();
-    });
+      expect(() => createCheckoutResponseSchema.parse(invalidResponse)).toThrow()
+    })
 
     it("should require both fields", () => {
       const incompleteResponse = {
         url: "https://checkout.stripe.com/session123",
-      };
+      }
 
-      expect(() =>
-        createCheckoutResponseSchema.parse(incompleteResponse)
-      ).toThrow();
-    });
-  });
+      expect(() => createCheckoutResponseSchema.parse(incompleteResponse)).toThrow()
+    })
+  })
 
   describe("donationListResponseSchema", () => {
     it("should accept valid donation list response", () => {
@@ -343,11 +339,11 @@ describe("Donations Schemas", () => {
           hasMore: true,
           totalCount: 100,
         },
-      };
+      }
 
-      const result = donationListResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = donationListResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept empty donations array", () => {
       const response = {
@@ -356,11 +352,11 @@ describe("Donations Schemas", () => {
           hasMore: false,
           totalCount: 0,
         },
-      };
+      }
 
-      const result = donationListResponseSchema.parse(response);
-      expect(result.donations).toEqual([]);
-    });
+      const result = donationListResponseSchema.parse(response)
+      expect(result.donations).toEqual([])
+    })
 
     it("should accept null from field (anonymous donation)", () => {
       const response = {
@@ -386,10 +382,10 @@ describe("Donations Schemas", () => {
           hasMore: false,
           totalCount: 1,
         },
-      };
+      }
 
-      expect(() => donationListResponseSchema.parse(response)).not.toThrow();
-    });
+      expect(() => donationListResponseSchema.parse(response)).not.toThrow()
+    })
 
     it("should accept null rule field", () => {
       const response = {
@@ -420,15 +416,15 @@ describe("Donations Schemas", () => {
           hasMore: false,
           totalCount: 1,
         },
-      };
+      }
 
-      expect(() => donationListResponseSchema.parse(response)).not.toThrow();
-    });
+      expect(() => donationListResponseSchema.parse(response)).not.toThrow()
+    })
 
     it("should accept all donation status values", () => {
-      const statuses = ["INIT", "SUCCEEDED", "FAILED"] as const;
+      const statuses = ["INIT", "SUCCEEDED", "FAILED"] as const
 
-      statuses.forEach((status) => {
+      statuses.forEach(status => {
         const response = {
           donations: [
             {
@@ -452,10 +448,10 @@ describe("Donations Schemas", () => {
             hasMore: false,
             totalCount: 1,
           },
-        };
-        expect(() => donationListResponseSchema.parse(response)).not.toThrow();
-      });
-    });
+        }
+        expect(() => donationListResponseSchema.parse(response)).not.toThrow()
+      })
+    })
 
     it("should accept pagination without nextCursor", () => {
       const response = {
@@ -464,11 +460,11 @@ describe("Donations Schemas", () => {
           hasMore: false,
           totalCount: 0,
         },
-      };
+      }
 
-      expect(() => donationListResponseSchema.parse(response)).not.toThrow();
-    });
-  });
+      expect(() => donationListResponseSchema.parse(response)).not.toThrow()
+    })
+  })
 
   describe("authorDonationStatsResponseSchema", () => {
     it("should accept valid author donation stats", () => {
@@ -507,11 +503,11 @@ describe("Donations Schemas", () => {
             lastDonationAt: new Date("2024-01-15T10:00:00Z"),
           },
         ],
-      };
+      }
 
-      const result = authorDonationStatsResponseSchema.parse(validStats);
-      expect(result).toEqual(validStats);
-    });
+      const result = authorDonationStatsResponseSchema.parse(validStats)
+      expect(result).toEqual(validStats)
+    })
 
     it("should accept empty arrays", () => {
       const statsWithEmptyArrays = {
@@ -521,12 +517,11 @@ describe("Donations Schemas", () => {
         topRules: [],
         byDay: [],
         recentDonors: [],
-      };
+      }
 
-      const result =
-        authorDonationStatsResponseSchema.parse(statsWithEmptyArrays);
-      expect(result).toEqual(statsWithEmptyArrays);
-    });
+      const result = authorDonationStatsResponseSchema.parse(statsWithEmptyArrays)
+      expect(result).toEqual(statsWithEmptyArrays)
+    })
 
     it("should accept null avatarUrl in recentDonors", () => {
       const stats = {
@@ -545,12 +540,10 @@ describe("Donations Schemas", () => {
             lastDonationAt: new Date("2024-01-15T10:00:00Z"),
           },
         ],
-      };
+      }
 
-      expect(() =>
-        authorDonationStatsResponseSchema.parse(stats)
-      ).not.toThrow();
-    });
+      expect(() => authorDonationStatsResponseSchema.parse(stats)).not.toThrow()
+    })
 
     it("should accept negative values", () => {
       const statsWithNegatives = {
@@ -583,12 +576,10 @@ describe("Donations Schemas", () => {
             lastDonationAt: new Date("2024-01-15T10:00:00Z"),
           },
         ],
-      };
+      }
 
-      expect(() =>
-        authorDonationStatsResponseSchema.parse(statsWithNegatives)
-      ).not.toThrow();
-    });
+      expect(() => authorDonationStatsResponseSchema.parse(statsWithNegatives)).not.toThrow()
+    })
 
     it("should validate date format in byDay", () => {
       const stats = {
@@ -604,13 +595,11 @@ describe("Donations Schemas", () => {
           },
         ],
         recentDonors: [],
-      };
+      }
 
-      expect(() =>
-        authorDonationStatsResponseSchema.parse(stats)
-      ).not.toThrow();
-    });
-  });
+      expect(() => authorDonationStatsResponseSchema.parse(stats)).not.toThrow()
+    })
+  })
 
   describe("supportedCurrenciesSchema", () => {
     it("should accept all supported currencies", () => {
@@ -625,72 +614,66 @@ describe("Donations Schemas", () => {
         "SEK",
         "NOK",
         "DKK",
-      ] as const;
+      ] as const
 
-      currencies.forEach((currency) => {
-        const result = supportedCurrenciesSchema.parse(currency);
-        expect(result).toBe(currency);
-      });
-    });
+      currencies.forEach(currency => {
+        const result = supportedCurrenciesSchema.parse(currency)
+        expect(result).toBe(currency)
+      })
+    })
 
     it("should reject unsupported currency", () => {
-      const unsupportedCurrency = "BTC";
+      const unsupportedCurrency = "BTC"
 
-      expect(() =>
-        supportedCurrenciesSchema.parse(unsupportedCurrency)
-      ).toThrow();
-    });
-  });
+      expect(() => supportedCurrenciesSchema.parse(unsupportedCurrency)).toThrow()
+    })
+  })
 
   describe("connectAccountStatusSchema", () => {
     it("should accept all connect account statuses", () => {
-      const statuses = ["NONE", "PENDING", "VERIFIED", "REJECTED"] as const;
+      const statuses = ["NONE", "PENDING", "VERIFIED", "REJECTED"] as const
 
-      statuses.forEach((status) => {
-        const result = connectAccountStatusSchema.parse(status);
-        expect(result).toBe(status);
-      });
-    });
+      statuses.forEach(status => {
+        const result = connectAccountStatusSchema.parse(status)
+        expect(result).toBe(status)
+      })
+    })
 
     it("should reject invalid status", () => {
-      const invalidStatus = "UNKNOWN";
+      const invalidStatus = "UNKNOWN"
 
-      expect(() => connectAccountStatusSchema.parse(invalidStatus)).toThrow();
-    });
-  });
+      expect(() => connectAccountStatusSchema.parse(invalidStatus)).toThrow()
+    })
+  })
 
   describe("connectOnboardingResponseSchema", () => {
     it("should accept valid onboarding response", () => {
       const validResponse = {
         url: "https://connect.stripe.com/onboarding/123",
         accountId: "acct_123456789",
-      };
+      }
 
-      const result = connectOnboardingResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = connectOnboardingResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should reject invalid URL", () => {
       const invalidResponse = {
         url: "not-a-url",
         accountId: "acct_123456789",
-      };
+      }
 
-      expect(() =>
-        connectOnboardingResponseSchema.parse(invalidResponse)
-      ).toThrow();
-    });
+      expect(() => connectOnboardingResponseSchema.parse(invalidResponse)).toThrow()
+    })
 
     it("should require both fields", () => {
       const incompleteResponse = {
         url: "https://connect.stripe.com/onboarding/123",
-      };
+      }
 
-      expect(() =>
-        connectOnboardingResponseSchema.parse(incompleteResponse)
-      ).toThrow();
-    });
-  });
+      expect(() => connectOnboardingResponseSchema.parse(incompleteResponse)).toThrow()
+    })
+  })
 
   describe("connectStatusResponseSchema", () => {
     it("should accept valid status response", () => {
@@ -699,32 +682,32 @@ describe("Donations Schemas", () => {
         accountId: "acct_123456789",
         canReceivePayouts: true,
         requirements: ["tax_id", "bank_account"],
-      };
+      }
 
-      const result = connectStatusResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = connectStatusResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept null accountId", () => {
       const response = {
         status: "NONE" as const,
         accountId: null,
         canReceivePayouts: false,
-      };
+      }
 
-      const result = connectStatusResponseSchema.parse(response);
-      expect(result.accountId).toBeNull();
-    });
+      const result = connectStatusResponseSchema.parse(response)
+      expect(result.accountId).toBeNull()
+    })
 
     it("should accept response without requirements", () => {
       const response = {
         status: "VERIFIED" as const,
         accountId: "acct_123456789",
         canReceivePayouts: true,
-      };
+      }
 
-      expect(() => connectStatusResponseSchema.parse(response)).not.toThrow();
-    });
+      expect(() => connectStatusResponseSchema.parse(response)).not.toThrow()
+    })
 
     it("should accept empty requirements array", () => {
       const response = {
@@ -732,24 +715,24 @@ describe("Donations Schemas", () => {
         accountId: "acct_123456789",
         canReceivePayouts: true,
         requirements: [],
-      };
+      }
 
-      expect(() => connectStatusResponseSchema.parse(response)).not.toThrow();
-    });
+      expect(() => connectStatusResponseSchema.parse(response)).not.toThrow()
+    })
 
     it("should accept all status values", () => {
-      const statuses = ["NONE", "PENDING", "VERIFIED", "REJECTED"] as const;
+      const statuses = ["NONE", "PENDING", "VERIFIED", "REJECTED"] as const
 
-      statuses.forEach((status) => {
+      statuses.forEach(status => {
         const response = {
           status,
           accountId: status === "NONE" ? null : "acct_123456789",
           canReceivePayouts: status === "VERIFIED",
-        };
-        expect(() => connectStatusResponseSchema.parse(response)).not.toThrow();
-      });
-    });
-  });
+        }
+        expect(() => connectStatusResponseSchema.parse(response)).not.toThrow()
+      })
+    })
+  })
 
   describe("Type Exports", () => {
     it("should export all input types", () => {
@@ -757,30 +740,30 @@ describe("Donations Schemas", () => {
       const createCheckoutInput: CreateCheckoutInput = {
         toUserId: "user123",
         amountCents: 1000,
-      };
+      }
 
       const listDonationsInput: ListDonationsInput = {
         type: "received",
-      };
+      }
 
       const authorStatsInput: AuthorStatsInput = {
         windowDays: 30,
-      };
+      }
 
-      const donationProvider: DonationProvider = "STRIPE";
+      const donationProvider: DonationProvider = "STRIPE"
 
-      expect(createCheckoutInput).toBeDefined();
-      expect(listDonationsInput).toBeDefined();
-      expect(authorStatsInput).toBeDefined();
-      expect(donationProvider).toBeDefined();
-    });
+      expect(createCheckoutInput).toBeDefined()
+      expect(listDonationsInput).toBeDefined()
+      expect(authorStatsInput).toBeDefined()
+      expect(donationProvider).toBeDefined()
+    })
 
     it("should export all response types", () => {
       // Test that types are properly exported by creating variables of each type
       const createCheckoutResponse: CreateCheckoutResponse = {
         url: "https://checkout.stripe.com/session123",
         donationId: "donation456",
-      };
+      }
 
       const donationListResponse: DonationListResponse = {
         donations: [],
@@ -788,7 +771,7 @@ describe("Donations Schemas", () => {
           hasMore: false,
           totalCount: 0,
         },
-      };
+      }
 
       const authorDonationStatsResponse: AuthorDonationStatsResponse = {
         totalCentsAllTime: 0,
@@ -797,43 +780,41 @@ describe("Donations Schemas", () => {
         topRules: [],
         byDay: [],
         recentDonors: [],
-      };
+      }
 
-      const supportedCurrency: SupportedCurrency = "USD";
-      const connectAccountStatus: ConnectAccountStatus = "NONE";
+      const supportedCurrency: SupportedCurrency = "USD"
+      const connectAccountStatus: ConnectAccountStatus = "NONE"
 
       const connectOnboardingResponse: ConnectOnboardingResponse = {
         url: "https://connect.stripe.com/onboarding/123",
         accountId: "acct_123456789",
-      };
+      }
 
       const connectStatusResponse: ConnectStatusResponse = {
         status: "NONE",
         accountId: null,
         canReceivePayouts: false,
-      };
+      }
 
-      expect(createCheckoutResponse).toBeDefined();
-      expect(donationListResponse).toBeDefined();
-      expect(authorDonationStatsResponse).toBeDefined();
-      expect(supportedCurrency).toBeDefined();
-      expect(connectAccountStatus).toBeDefined();
-      expect(connectOnboardingResponse).toBeDefined();
-      expect(connectStatusResponse).toBeDefined();
-    });
-  });
+      expect(createCheckoutResponse).toBeDefined()
+      expect(donationListResponse).toBeDefined()
+      expect(authorDonationStatsResponse).toBeDefined()
+      expect(supportedCurrency).toBeDefined()
+      expect(connectAccountStatus).toBeDefined()
+      expect(connectOnboardingResponse).toBeDefined()
+      expect(connectStatusResponse).toBeDefined()
+    })
+  })
 
   describe("Edge Cases and Integration", () => {
     it("should handle large donation amounts", () => {
       const largeAmountInput = {
         toUserId: "user123",
         amountCents: 19999, // Just under the maximum
-      };
+      }
 
-      expect(() =>
-        createCheckoutInputSchema.parse(largeAmountInput)
-      ).not.toThrow();
-    });
+      expect(() => createCheckoutInputSchema.parse(largeAmountInput)).not.toThrow()
+    })
 
     it("should handle complex donation list with mixed data", () => {
       const complexResponse = {
@@ -887,30 +868,26 @@ describe("Donations Schemas", () => {
           hasMore: true,
           totalCount: 150,
         },
-      };
+      }
 
-      expect(() =>
-        donationListResponseSchema.parse(complexResponse)
-      ).not.toThrow();
-    });
+      expect(() => donationListResponseSchema.parse(complexResponse)).not.toThrow()
+    })
 
     it("should handle boundary values for author stats", () => {
       const boundaryStats = {
         authorUserId: "user123",
         windowDays: 7, // Minimum allowed
-      };
+      }
 
-      expect(() => authorStatsInputSchema.parse(boundaryStats)).not.toThrow();
+      expect(() => authorStatsInputSchema.parse(boundaryStats)).not.toThrow()
 
       const maxBoundaryStats = {
         authorUserId: "user123",
         windowDays: 365, // Maximum allowed
-      };
+      }
 
-      expect(() =>
-        authorStatsInputSchema.parse(maxBoundaryStats)
-      ).not.toThrow();
-    });
+      expect(() => authorStatsInputSchema.parse(maxBoundaryStats)).not.toThrow()
+    })
 
     it("should handle comprehensive author donation stats", () => {
       const comprehensiveStats = {
@@ -956,35 +933,22 @@ describe("Donations Schemas", () => {
             lastDonationAt: new Date("2024-01-14T08:30:00Z"),
           },
         ],
-      };
+      }
 
-      expect(() =>
-        authorDonationStatsResponseSchema.parse(comprehensiveStats)
-      ).not.toThrow();
-    });
+      expect(() => authorDonationStatsResponseSchema.parse(comprehensiveStats)).not.toThrow()
+    })
 
     it("should handle all currency combinations", () => {
-      const currencies = [
-        "USD",
-        "EUR",
-        "GBP",
-        "CAD",
-        "AUD",
-        "JPY",
-        "CHF",
-        "SEK",
-        "NOK",
-        "DKK",
-      ];
+      const currencies = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "CHF", "SEK", "NOK", "DKK"]
 
-      currencies.forEach((currency) => {
+      currencies.forEach(currency => {
         const input = {
           toUserId: "user123",
           amountCents: 1000,
           currency,
-        };
-        expect(() => createCheckoutInputSchema.parse(input)).not.toThrow();
-      });
-    });
-  });
-});
+        }
+        expect(() => createCheckoutInputSchema.parse(input)).not.toThrow()
+      })
+    })
+  })
+})

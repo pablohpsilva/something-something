@@ -10,8 +10,8 @@ export const usersRouter = createTRPCRouter({
     return ctx.db.user.findMany({
       select: {
         id: true,
-        email: true,
-        name: true,
+        handle: true,
+        displayName: true,
         createdAt: true,
       },
     });
@@ -24,14 +24,17 @@ export const usersRouter = createTRPCRouter({
         where: { id: input.id },
         select: {
           id: true,
-          email: true,
-          name: true,
+          handle: true,
+          displayName: true,
+          avatarUrl: true,
+          bio: true,
+          role: true,
           createdAt: true,
-          posts: {
+          rulesCreated: {
             select: {
               id: true,
               title: true,
-              published: true,
+              status: true,
               createdAt: true,
             },
           },
@@ -42,15 +45,19 @@ export const usersRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        email: z.string().email(),
-        name: z.string().optional(),
+        handle: z.string().min(1).max(50),
+        displayName: z.string().min(1).max(100),
+        avatarUrl: z.string().url().optional(),
+        bio: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.user.create({
         data: {
-          email: input.email,
-          name: input.name,
+          handle: input.handle,
+          displayName: input.displayName,
+          avatarUrl: input.avatarUrl,
+          bio: input.bio,
         },
       });
     }),
@@ -59,14 +66,18 @@ export const usersRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        name: z.string().optional(),
+        displayName: z.string().min(1).max(100).optional(),
+        avatarUrl: z.string().url().optional(),
+        bio: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.user.update({
         where: { id: input.id },
         data: {
-          name: input.name,
+          displayName: input.displayName,
+          avatarUrl: input.avatarUrl,
+          bio: input.bio,
         },
       });
     }),

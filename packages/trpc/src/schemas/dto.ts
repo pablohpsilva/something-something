@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod"
 import {
   ruleIdSchema,
   ruleVersionIdSchema,
@@ -19,7 +19,7 @@ import {
   leaderboardScopeSchema,
   resourceLinkSchema,
   testedOnSchema,
-} from "./base";
+} from "./base"
 
 // Author DTO
 export const authorDTOSchema = z.object({
@@ -29,9 +29,9 @@ export const authorDTOSchema = z.object({
   avatarUrl: z.string().nullable(),
   role: userRoleSchema,
   isVerified: z.boolean().optional(),
-});
+})
 
-export type AuthorDTO = z.infer<typeof authorDTOSchema>;
+export type AuthorDTO = z.infer<typeof authorDTOSchema>
 
 // Tag DTO
 export const tagDTOSchema = z.object({
@@ -39,9 +39,9 @@ export const tagDTOSchema = z.object({
   slug: slugSchema,
   name: z.string(),
   count: z.number().int().optional(),
-});
+})
 
-export type TagDTO = z.infer<typeof tagDTOSchema>;
+export type TagDTO = z.infer<typeof tagDTOSchema>
 
 // Rule version summary DTO
 export const ruleVersionSummaryDTOSchema = z.object({
@@ -49,9 +49,9 @@ export const ruleVersionSummaryDTOSchema = z.object({
   version: z.string(),
   testedOn: testedOnSchema.nullable(),
   createdAt: z.date(),
-});
+})
 
-export type RuleVersionSummaryDTO = z.infer<typeof ruleVersionSummaryDTOSchema>;
+export type RuleVersionSummaryDTO = z.infer<typeof ruleVersionSummaryDTOSchema>
 
 // Rule metrics DTO
 export const ruleMetricsDTOSchema = z.object({
@@ -60,9 +60,9 @@ export const ruleMetricsDTOSchema = z.object({
   saves7: z.number().int(),
   forks7: z.number().int(),
   score: z.number(),
-});
+})
 
-export type RuleMetricsDTO = z.infer<typeof ruleMetricsDTOSchema>;
+export type RuleMetricsDTO = z.infer<typeof ruleMetricsDTOSchema>
 
 // Rule card DTO (for lists)
 export const ruleCardDTOSchema = z.object({
@@ -80,9 +80,9 @@ export const ruleCardDTOSchema = z.object({
   metrics: ruleMetricsDTOSchema,
   createdAt: z.date(),
   updatedAt: z.date(),
-});
+})
 
-export type RuleCardDTO = z.infer<typeof ruleCardDTOSchema>;
+export type RuleCardDTO = z.infer<typeof ruleCardDTOSchema>
 
 // Rule detail DTO (for individual rule pages)
 export const ruleDetailDTOSchema = ruleCardDTOSchema.extend({
@@ -96,9 +96,9 @@ export const ruleDetailDTOSchema = ruleCardDTOSchema.extend({
   userVote: z.enum(["up", "down"]).nullable().optional(),
   userFavorited: z.boolean().optional(),
   userWatching: z.boolean().optional(),
-});
+})
 
-export type RuleDetailDTO = z.infer<typeof ruleDetailDTOSchema>;
+export type RuleDetailDTO = z.infer<typeof ruleDetailDTOSchema>
 
 // Rule version detail DTO
 export const ruleVersionDetailDTOSchema = z.object({
@@ -113,9 +113,9 @@ export const ruleVersionDetailDTOSchema = z.object({
   createdAt: z.date(),
   score: z.number().optional(),
   userVote: z.enum(["up", "down"]).nullable().optional(),
-});
+})
 
-export type RuleVersionDetailDTO = z.infer<typeof ruleVersionDetailDTOSchema>;
+export type RuleVersionDetailDTO = z.infer<typeof ruleVersionDetailDTOSchema>
 
 // Comment DTO
 export const commentDTOSchema: z.ZodType<any> = z.object({
@@ -133,9 +133,9 @@ export const commentDTOSchema: z.ZodType<any> = z.object({
   repliesCount: z.number().int().optional(),
   canEdit: z.boolean().optional(), // if user can edit this comment
   canDelete: z.boolean().optional(), // if user can delete this comment
-});
+})
 
-export type CommentDTO = z.infer<typeof commentDTOSchema>;
+export type CommentDTO = z.infer<typeof commentDTOSchema>
 
 // Notification DTO
 export const notificationDTOSchema = z.object({
@@ -149,9 +149,9 @@ export const notificationDTOSchema = z.object({
   message: z.string().optional(),
   actionUrl: z.string().optional(),
   actor: authorDTOSchema.optional(),
-});
+})
 
-export type NotificationDTO = z.infer<typeof notificationDTOSchema>;
+export type NotificationDTO = z.infer<typeof notificationDTOSchema>
 
 // Claim DTO
 export const claimDTOSchema = z.object({
@@ -168,9 +168,9 @@ export const claimDTOSchema = z.object({
   reviewedBy: authorDTOSchema.nullable(),
   reviewedAt: z.date().nullable(),
   note: z.string().nullable(),
-});
+})
 
-export type ClaimDTO = z.infer<typeof claimDTOSchema>;
+export type ClaimDTO = z.infer<typeof claimDTOSchema>
 
 // Vote summary DTO
 export const voteSummaryDTOSchema = z.object({
@@ -178,9 +178,9 @@ export const voteSummaryDTOSchema = z.object({
   upCount: z.number().int(),
   downCount: z.number().int(),
   myVote: z.number().min(-1).max(1), // -1, 0, or 1
-});
+})
 
-export type VoteSummaryDTO = z.infer<typeof voteSummaryDTOSchema>;
+export type VoteSummaryDTO = z.infer<typeof voteSummaryDTOSchema>
 
 // Metrics summary DTO
 export const metricsSummaryDTOSchema = z.object({
@@ -206,9 +206,9 @@ export const metricsSummaryDTOSchema = z.object({
   }),
   score: z.number(),
   trend: z.enum(["up", "down", "stable"]),
-});
+})
 
-export type MetricsSummaryDTO = z.infer<typeof metricsSummaryDTOSchema>;
+export type MetricsSummaryDTO = z.infer<typeof metricsSummaryDTOSchema>
 
 // User profile DTO
 export const userProfileDTOSchema = z.object({
@@ -228,9 +228,9 @@ export const userProfileDTOSchema = z.object({
     following: z.number().int(),
   }),
   isFollowing: z.boolean().optional(),
-});
+})
 
-export type UserProfileDTO = z.infer<typeof userProfileDTOSchema>;
+export type UserProfileDTO = z.infer<typeof userProfileDTOSchema>
 
 // Follower DTO
 export const followerDTOSchema = z.object({
@@ -240,9 +240,9 @@ export const followerDTOSchema = z.object({
   avatarUrl: z.string().nullable(),
   isVerified: z.boolean().optional(),
   followedAt: z.date(),
-});
+})
 
-export type FollowerDTO = z.infer<typeof followerDTOSchema>;
+export type FollowerDTO = z.infer<typeof followerDTOSchema>
 
 // Enhanced Notification DTO
 export const enhancedNotificationDTOSchema = z.object({
@@ -269,11 +269,9 @@ export const enhancedNotificationDTOSchema = z.object({
       avatarUrl: z.string().nullable(),
     })
     .optional(),
-});
+})
 
-export type EnhancedNotificationDTO = z.infer<
-  typeof enhancedNotificationDTOSchema
->;
+export type EnhancedNotificationDTO = z.infer<typeof enhancedNotificationDTOSchema>
 
 // Social stats DTO
 export const socialStatsDTO = z.object({
@@ -282,9 +280,9 @@ export const socialStatsDTO = z.object({
   watchersCount: z.number().int().optional(),
   isFollowing: z.boolean().optional(),
   isWatching: z.boolean().optional(),
-});
+})
 
-export type SocialStatsDTO = z.infer<typeof socialStatsDTO>;
+export type SocialStatsDTO = z.infer<typeof socialStatsDTO>
 
 // Leaderboard entry DTO
 export const leaderboardEntryDTOSchema = z.object({
@@ -305,9 +303,9 @@ export const leaderboardEntryDTOSchema = z.object({
   forks: z.number().int().optional(),
   votes: z.number().int().optional(),
   rankDelta: z.number().int().nullable().optional(),
-});
+})
 
-export type LeaderboardEntryDTO = z.infer<typeof leaderboardEntryDTOSchema>;
+export type LeaderboardEntryDTO = z.infer<typeof leaderboardEntryDTOSchema>
 
 // Badge DTO
 export const badgeDTOSchema = z.object({
@@ -315,9 +313,9 @@ export const badgeDTOSchema = z.object({
   name: z.string(),
   description: z.string(),
   awardedAt: z.date().optional(), // present when listing user badges
-});
+})
 
-export type BadgeDTO = z.infer<typeof badgeDTOSchema>;
+export type BadgeDTO = z.infer<typeof badgeDTOSchema>
 
 // Donation DTO
 export const donationDTOSchema = z.object({
@@ -348,9 +346,9 @@ export const donationDTOSchema = z.object({
   status: z.enum(["INIT", "SUCCEEDED", "FAILED"]),
   createdAt: z.date(),
   message: z.string().nullable(),
-});
+})
 
-export type DonationDTO = z.infer<typeof donationDTOSchema>;
+export type DonationDTO = z.infer<typeof donationDTOSchema>
 
 // Author donation stats DTO
 export const authorDonationStatsDTOSchema = z.object({
@@ -383,11 +381,9 @@ export const authorDonationStatsDTOSchema = z.object({
       lastDonationAt: z.date(),
     })
   ),
-});
+})
 
-export type AuthorDonationStatsDTO = z.infer<
-  typeof authorDonationStatsDTOSchema
->;
+export type AuthorDonationStatsDTO = z.infer<typeof authorDonationStatsDTOSchema>
 
 // Search result DTO
 export const searchResultDTOSchema = z.object({
@@ -410,9 +406,9 @@ export const searchResultDTOSchema = z.object({
   snippetHtml: z.string().nullable(), // Highlighted snippet
   createdAt: z.date(),
   updatedAt: z.date(),
-});
+})
 
-export type SearchResultDTO = z.infer<typeof searchResultDTOSchema>;
+export type SearchResultDTO = z.infer<typeof searchResultDTOSchema>
 
 // Search suggestion DTO
 export const searchSuggestionDTOSchema = z.object({
@@ -420,9 +416,9 @@ export const searchSuggestionDTOSchema = z.object({
   slug: z.string(),
   title: z.string(),
   similarity: z.number(),
-});
+})
 
-export type SearchSuggestionDTO = z.infer<typeof searchSuggestionDTOSchema>;
+export type SearchSuggestionDTO = z.infer<typeof searchSuggestionDTOSchema>
 
 // Search facet DTO
 export const searchFacetDTOSchema = z.object({
@@ -430,6 +426,6 @@ export const searchFacetDTOSchema = z.object({
   value: z.string(),
   count: z.number().int(),
   selected: z.boolean().optional(),
-});
+})
 
-export type SearchFacetDTO = z.infer<typeof searchFacetDTOSchema>;
+export type SearchFacetDTO = z.infer<typeof searchFacetDTOSchema>

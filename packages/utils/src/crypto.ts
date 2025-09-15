@@ -45,11 +45,15 @@ function normalizeIp(ip: string): string {
   // Handle comma-separated IPs (X-Forwarded-For)
   const firstIp = (ip.split(",")[0] || "").trim();
 
-  // Remove port if present
-  const withoutPort = firstIp.replace(/:\d+$/, "");
+  // Handle IPv6 brackets first
+  const withoutBrackets = firstIp.replace(/^\[|\]$/g, "");
 
-  // Handle IPv6 brackets
-  return withoutPort.replace(/^\[|\]$/g, "").toLowerCase();
+  // Remove port if present (handle both IPv4 and IPv6)
+  const withoutPort = withoutBrackets.includes(':') && !withoutBrackets.includes('::') 
+    ? withoutBrackets.replace(/:(\d+)$/, '') // IPv4 with port
+    : withoutBrackets.replace(/:\d+$/, ""); // General port removal
+
+  return withoutPort.toLowerCase();
 }
 
 /**
@@ -58,13 +62,13 @@ function normalizeIp(ip: string): string {
 function normalizeUA(ua: string): string {
   if (!ua || ua === "unknown") return "unknown";
 
-  // Remove specific version numbers but keep major versions
+  // Handle browser-specific versions first (preserve major versions)
   return ua
-    .replace(/\d+\.\d+\.\d+\.\d+/g, "X.X.X.X") // Remove detailed versions
-    .replace(/Chrome\/\d+\.\d+\.\d+/g, "Chrome/X.X.X") // Normalize Chrome
-    .replace(/Firefox\/\d+\.\d+/g, "Firefox/X.X") // Normalize Firefox
-    .replace(/Safari\/\d+\.\d+/g, "Safari/X.X") // Normalize Safari
-    .replace(/Edge\/\d+\.\d+/g, "Edge/X.X") // Normalize Edge
+    .replace(/Chrome\/(\d+)\.\d+\.\d+/g, "Chrome/$1.X.X") // Keep Chrome major version
+    .replace(/Firefox\/(\d+)\.\d+/g, "Firefox/$1.X") // Keep Firefox major version
+    .replace(/Safari\/(\d+)\.\d+/g, "Safari/$1.X") // Keep Safari major version
+    .replace(/Edge\/(\d+)\.\d+/g, "Edge/$1.X") // Keep Edge major version
+    .replace(/\d+\.\d+\.\d+\.\d+/g, "X.X.X.X") // Remove other detailed versions
     .trim();
 }
 
@@ -113,7 +117,7 @@ export function hashComposite(...values: string[]): string {
  */
 export function hashTimeWindow(value: string, windowMs: number): string {
   const windowStart = Math.floor(Date.now() / windowMs) * windowMs;
-  return hashComposite(value, windowStart.toString());
+  return hashComposite(value, windowStart.toString(), windowMs.toString());
 }
 
 /**

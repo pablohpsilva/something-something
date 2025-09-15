@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { cuidOrUuidSchema, cursorSchema, limitSchema } from "./base";
+import { z } from "zod"
+import { cuidOrUuidSchema, cursorSchema, limitSchema } from "./base"
 
 /**
  * Search input schema with filters and pagination
@@ -19,7 +19,7 @@ export const searchInputSchema = z.object({
     .default({}),
   limit: z.number().int().min(1).max(100).default(20),
   offset: z.number().int().min(0).max(1000).default(0),
-});
+})
 
 /**
  * Search suggestion input schema
@@ -27,14 +27,14 @@ export const searchInputSchema = z.object({
 export const suggestInputSchema = z.object({
   q: z.string().trim().min(1).max(100),
   limit: z.number().int().min(1).max(20).default(8),
-});
+})
 
 /**
  * Search refresh input schema
  */
 export const refreshRuleInputSchema = z.object({
   ruleId: cuidOrUuidSchema,
-});
+})
 
 /**
  * Search result response schema
@@ -73,7 +73,7 @@ export const searchResultResponseSchema = z.object({
     filters: z.record(z.unknown()),
     took: z.number(),
   }),
-});
+})
 
 /**
  * Search suggestion response schema
@@ -87,7 +87,7 @@ export const suggestResponseSchema = z.object({
       similarity: z.number(),
     })
   ),
-});
+})
 
 /**
  * Search stats response schema
@@ -96,7 +96,7 @@ export const searchStatsResponseSchema = z.object({
   totalIndexed: z.number().int(),
   lastUpdated: z.date().nullable(),
   avgTsvLength: z.number(),
-});
+})
 
 /**
  * Search operation response schema
@@ -105,7 +105,7 @@ export const searchOperationResponseSchema = z.object({
   success: z.boolean(),
   message: z.string().optional(),
   count: z.number().int().optional(),
-});
+})
 
 /**
  * Advanced search filters schema
@@ -129,11 +129,9 @@ export const advancedFiltersSchema = z.object({
       max: z.number().min(0),
     })
     .optional(),
-  sortBy: z
-    .enum(["relevance", "date", "score", "trending", "title"])
-    .default("relevance"),
+  sortBy: z.enum(["relevance", "date", "score", "trending", "title"]).default("relevance"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
-});
+})
 
 /**
  * Search facets response schema
@@ -165,17 +163,15 @@ export const searchFacetsResponseSchema = z.object({
       count: z.number().int(),
     })
   ),
-});
+})
 
 // Type exports
-export type SearchInput = z.infer<typeof searchInputSchema>;
-export type SuggestInput = z.infer<typeof suggestInputSchema>;
-export type RefreshRuleInput = z.infer<typeof refreshRuleInputSchema>;
-export type SearchResultResponse = z.infer<typeof searchResultResponseSchema>;
-export type SuggestResponse = z.infer<typeof suggestResponseSchema>;
-export type SearchStatsResponse = z.infer<typeof searchStatsResponseSchema>;
-export type SearchOperationResponse = z.infer<
-  typeof searchOperationResponseSchema
->;
-export type AdvancedFilters = z.infer<typeof advancedFiltersSchema>;
-export type SearchFacetsResponse = z.infer<typeof searchFacetsResponseSchema>;
+export type SearchInput = z.infer<typeof searchInputSchema>
+export type SuggestInput = z.infer<typeof suggestInputSchema>
+export type RefreshRuleInput = z.infer<typeof refreshRuleInputSchema>
+export type SearchResultResponse = z.infer<typeof searchResultResponseSchema>
+export type SuggestResponse = z.infer<typeof suggestResponseSchema>
+export type SearchStatsResponse = z.infer<typeof searchStatsResponseSchema>
+export type SearchOperationResponse = z.infer<typeof searchOperationResponseSchema>
+export type AdvancedFilters = z.infer<typeof advancedFiltersSchema>
+export type SearchFacetsResponse = z.infer<typeof searchFacetsResponseSchema>

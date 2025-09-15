@@ -6,7 +6,7 @@ import {
   type NotifyAuthorPublishedParams,
   type NotifyClaimVerdictParams,
   type NotifyDonationReceivedParams,
-} from "../notify";
+} from "./notify";
 
 // Mock the prisma client
 vi.mock("@repo/db", () => ({

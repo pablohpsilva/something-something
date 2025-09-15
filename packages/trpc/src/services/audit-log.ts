@@ -1,13 +1,13 @@
-import { prisma } from "@repo/db/client";
-import type { User } from "@repo/db";
+import { prisma } from "@repo/db/client"
+import type { User } from "@repo/db"
 
 export interface AuditLogEntry {
-  action: string;
-  actorId?: string;
-  targetId?: string;
-  targetType?: string;
-  metadata?: Record<string, any>;
-  reason?: string;
+  action: string
+  actorId?: string
+  targetId?: string
+  targetType?: string
+  metadata?: Record<string, any>
+  reason?: string
 }
 
 /**
@@ -28,9 +28,9 @@ export class AuditLogService {
           metadata: entry.metadata,
           reason: entry.reason,
         },
-      });
+      })
     } catch (error) {
-      console.error("Failed to create audit log entry:", error);
+      console.error("Failed to create audit log entry:", error)
       // Don't throw - audit logging should not break the main flow
     }
   }
@@ -49,7 +49,7 @@ export class AuditLogService {
       targetId: ruleId,
       targetType: "rule",
       metadata,
-    });
+    })
   }
 
   /**
@@ -68,7 +68,7 @@ export class AuditLogService {
       targetType: "rule",
       reason,
       metadata,
-    });
+    })
   }
 
   /**
@@ -87,7 +87,7 @@ export class AuditLogService {
       targetType: "comment",
       reason,
       metadata,
-    });
+    })
   }
 
   /**
@@ -104,7 +104,7 @@ export class AuditLogService {
       targetId: claimId,
       targetType: "author_claim",
       metadata,
-    });
+    })
   }
 
   /**
@@ -123,7 +123,7 @@ export class AuditLogService {
       targetType: "author_claim",
       reason,
       metadata,
-    });
+    })
   }
 
   /**
@@ -142,7 +142,7 @@ export class AuditLogService {
       targetType: "user",
       reason,
       metadata,
-    });
+    })
   }
 
   /**
@@ -159,17 +159,13 @@ export class AuditLogService {
       targetId: userId,
       targetType: "user",
       metadata,
-    });
+    })
   }
 
   /**
    * Get audit logs for a specific target
    */
-  static async getLogsForTarget(
-    targetId: string,
-    targetType: string,
-    limit = 50
-  ): Promise<any> {
+  static async getLogsForTarget(targetId: string, targetType: string, limit = 50): Promise<any> {
     return prisma.auditLog.findMany({
       where: {
         targetId,
@@ -189,7 +185,7 @@ export class AuditLogService {
         createdAt: "desc",
       },
       take: limit,
-    });
+    })
   }
 
   /**
@@ -211,7 +207,7 @@ export class AuditLogService {
         createdAt: "desc",
       },
       take: limit,
-    });
+    })
   }
 
   /**
@@ -236,7 +232,7 @@ export class AuditLogService {
         createdAt: "desc",
       },
       take: limit,
-    });
+    })
   }
 }
 
@@ -251,7 +247,7 @@ export const auditLog = {
   claimReject: AuditLogService.logClaimReject,
   userBan: AuditLogService.logUserBan,
   userUnban: AuditLogService.logUserUnban,
-};
+}
 
 // Export AuditLog as an alias for AuditLogService for backward compatibility
-export const AuditLog = AuditLogService;
+export const AuditLog = AuditLogService

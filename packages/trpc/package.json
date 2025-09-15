@@ -20,6 +20,7 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@repo/config": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/utils": "workspace:*",
     "@trpc/server": "^11.0.0-rc.553",

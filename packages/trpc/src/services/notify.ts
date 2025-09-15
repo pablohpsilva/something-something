@@ -3,58 +3,58 @@
  * Handles creation of notifications for various social events
  */
 
-import { prisma } from "@repo/db";
-import type { NotificationType } from "@repo/db";
+import { prisma } from "@repo/db"
+import type { NotificationType } from "@repo/db"
 
 // Notification payload types
 export interface NotifyNewVersionParams {
-  ruleId: string;
-  ruleSlug: string;
-  versionId: string;
-  version: string;
-  authorId: string;
-  authorHandle: string;
-  authorDisplayName: string;
+  ruleId: string
+  ruleSlug: string
+  versionId: string
+  version: string
+  authorId: string
+  authorHandle: string
+  authorDisplayName: string
 }
 
 export interface NotifyCommentReplyParams {
-  ruleId: string;
-  ruleSlug: string;
-  commentId: string;
-  parentAuthorId?: string;
-  actorUserId: string;
-  actorHandle: string;
-  actorDisplayName: string;
+  ruleId: string
+  ruleSlug: string
+  commentId: string
+  parentAuthorId?: string
+  actorUserId: string
+  actorHandle: string
+  actorDisplayName: string
 }
 
 export interface NotifyAuthorPublishedParams {
-  ruleId: string;
-  ruleSlug: string;
-  ruleTitle: string;
-  authorId: string;
-  authorHandle: string;
-  authorDisplayName: string;
+  ruleId: string
+  ruleSlug: string
+  ruleTitle: string
+  authorId: string
+  authorHandle: string
+  authorDisplayName: string
 }
 
 export interface NotifyClaimVerdictParams {
-  userId: string;
-  ruleId: string;
-  ruleSlug: string;
-  ruleTitle: string;
-  verdict: "APPROVED" | "REJECTED";
-  reviewerHandle?: string;
+  userId: string
+  ruleId: string
+  ruleSlug: string
+  ruleTitle: string
+  verdict: "APPROVED" | "REJECTED"
+  reviewerHandle?: string
 }
 
 export interface NotifyDonationReceivedParams {
-  toUserId: string;
-  donationId: string;
-  amountCents: number;
-  currency: string;
-  fromUserId?: string;
-  fromUserHandle?: string;
-  fromUserDisplayName?: string;
-  ruleId?: string;
-  ruleSlug?: string;
+  toUserId: string
+  donationId: string
+  amountCents: number
+  currency: string
+  fromUserId?: string
+  fromUserHandle?: string
+  fromUserDisplayName?: string
+  ruleId?: string
+  ruleSlug?: string
 }
 
 /**
@@ -73,17 +73,17 @@ export const Notifications = {
           userId: { not: params.authorId },
         },
         select: { userId: true },
-      });
+      })
 
-      const userIds = [...new Set(watchers.map((w) => w.userId))];
+      const userIds = [...new Set(watchers.map(w => w.userId))]
 
       if (userIds.length === 0) {
-        return 0;
+        return 0
       }
 
       // Create notifications for all watchers
       await prisma.notification.createMany({
-        data: userIds.map((userId) => ({
+        data: userIds.map(userId => ({
           userId,
           type: "NEW_VERSION" as NotificationType,
           payload: {
@@ -98,12 +98,12 @@ export const Notifications = {
             },
           },
         })),
-      });
+      })
 
-      return userIds.length;
+      return userIds.length
     } catch (error) {
-      console.error("Failed to create new version notifications:", error);
-      return 0;
+      console.error("Failed to create new version notifications:", error)
+      return 0
     }
   },
 
@@ -112,14 +112,11 @@ export const Notifications = {
    */
   async commentReply(params: NotifyCommentReplyParams): Promise<number> {
     try {
-      const recipients = new Set<string>();
+      const recipients = new Set<string>()
 
       // Add parent comment author (if exists and not the actor)
-      if (
-        params.parentAuthorId &&
-        params.parentAuthorId !== params.actorUserId
-      ) {
-        recipients.add(params.parentAuthorId);
+      if (params.parentAuthorId && params.parentAuthorId !== params.actorUserId) {
+        recipients.add(params.parentAuthorId)
       }
 
       // Add rule watchers (exclude actor)
@@ -129,21 +126,21 @@ export const Notifications = {
           userId: { not: params.actorUserId },
         },
         select: { userId: true },
-      });
+      })
 
       for (const watcher of watchers) {
         if (watcher.userId !== params.actorUserId) {
-          recipients.add(watcher.userId);
+          recipients.add(watcher.userId)
         }
       }
 
       if (recipients.size === 0) {
-        return 0;
+        return 0
       }
 
       // Create notifications for all recipients
       await prisma.notification.createMany({
-        data: [...recipients].map((userId) => ({
+        data: [...recipients].map(userId => ({
           userId,
           type: "COMMENT_REPLY" as NotificationType,
           payload: {
@@ -158,12 +155,12 @@ export const Notifications = {
             },
           },
         })),
-      });
+      })
 
-      return recipients.size;
+      return recipients.size
     } catch (error) {
-      console.error("Failed to create comment reply notifications:", error);
-      return 0;
+      console.error("Failed to create comment reply notifications:", error)
+      return 0
     }
   },
 
@@ -176,17 +173,17 @@ export const Notifications = {
       const followers = await prisma.follow.findMany({
         where: { authorUserId: params.authorId },
         select: { followerUserId: true },
-      });
+      })
 
-      const userIds = followers.map((f) => f.followerUserId);
+      const userIds = followers.map(f => f.followerUserId)
 
       if (userIds.length === 0) {
-        return 0;
+        return 0
       }
 
       // Create notifications for all followers
       await prisma.notification.createMany({
-        data: userIds.map((userId) => ({
+        data: userIds.map(userId => ({
           userId,
           type: "AUTHOR_PUBLISHED" as NotificationType,
           payload: {
@@ -200,12 +197,12 @@ export const Notifications = {
             },
           },
         })),
-      });
+      })
 
-      return userIds.length;
+      return userIds.length
     } catch (error) {
-      console.error("Failed to create author published notifications:", error);
-      return 0;
+      console.error("Failed to create author published notifications:", error)
+      return 0
     }
   },
 
@@ -230,21 +227,19 @@ export const Notifications = {
               : null,
           },
         },
-      });
+      })
 
-      return 1;
+      return 1
     } catch (error) {
-      console.error("Failed to create claim verdict notification:", error);
-      return 0;
+      console.error("Failed to create claim verdict notification:", error)
+      return 0
     }
   },
 
   /**
    * Notify user when they receive a donation
    */
-  async donationReceived(
-    params: NotifyDonationReceivedParams
-  ): Promise<number> {
+  async donationReceived(params: NotifyDonationReceivedParams): Promise<number> {
     try {
       await prisma.notification.create({
         data: {
@@ -269,12 +264,12 @@ export const Notifications = {
               : null,
           },
         },
-      });
+      })
 
-      return 1;
+      return 1
     } catch (error) {
-      console.error("Failed to create donation received notification:", error);
-      return 0;
+      console.error("Failed to create donation received notification:", error)
+      return 0
     }
   },
 
@@ -282,23 +277,23 @@ export const Notifications = {
    * Parse notification payload for UI display
    */
   parseNotificationForUI(notification: {
-    id: string;
-    type: NotificationType;
-    payload: any;
-    readAt: Date | null;
-    createdAt: Date;
+    id: string
+    type: NotificationType
+    payload: any
+    readAt: Date | null
+    createdAt: Date
   }): {
-    title: string;
-    message: string;
-    actionUrl?: string;
+    title: string
+    message: string
+    actionUrl?: string
     actor?: {
-      id: string;
-      handle: string;
-      displayName: string;
-      avatarUrl: string | null;
-    };
+      id: string
+      handle: string
+      displayName: string
+      avatarUrl: string | null
+    }
   } {
-    const { type, payload } = notification;
+    const { type, payload } = notification
 
     switch (type) {
       case "NEW_VERSION":
@@ -314,7 +309,7 @@ export const Notifications = {
                 avatarUrl: null, // Would need to fetch from user table
               }
             : undefined,
-        };
+        }
 
       case "COMMENT_REPLY":
         return {
@@ -331,7 +326,7 @@ export const Notifications = {
                 avatarUrl: null,
               }
             : undefined,
-        };
+        }
 
       case "AUTHOR_PUBLISHED":
         return {
@@ -348,26 +343,22 @@ export const Notifications = {
                 avatarUrl: null,
               }
             : undefined,
-        };
+        }
 
       case "CLAIM_VERDICT":
         return {
           title: `Claim ${payload.verdict}`,
-          message: `Your claim on "${
-            payload.ruleTitle
-          }" was ${payload.verdict.toLowerCase()}`,
+          message: `Your claim on "${payload.ruleTitle}" was ${payload.verdict.toLowerCase()}`,
           actionUrl: `/rules/${payload.ruleSlug}`,
-        };
+        }
 
       case "DONATION_RECEIVED":
-        const amount = (payload.amountCents / 100).toFixed(2);
-        const fromUser = payload.fromUser?.displayName || "Anonymous";
+        const amount = (payload.amountCents / 100).toFixed(2)
+        const fromUser = payload.fromUser?.displayName || "Anonymous"
         return {
           title: "Donation Received",
           message: `You received ${payload.currency} ${amount} from ${fromUser}`,
-          actionUrl: payload.rule
-            ? `/rules/${payload.rule.slug}`
-            : "/donations",
+          actionUrl: payload.rule ? `/rules/${payload.rule.slug}` : "/donations",
           actor: payload.fromUser
             ? {
                 id: payload.fromUser.id,
@@ -376,13 +367,13 @@ export const Notifications = {
                 avatarUrl: null,
               }
             : undefined,
-        };
+        }
 
       default:
         return {
           title: "Notification",
           message: "You have a new notification",
-        };
+        }
     }
   },
-};
+}

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest"
 import {
   commentCreateSchema,
   commentListSchema,
@@ -12,7 +12,7 @@ import {
   type CommentDeleteInput,
   type CommentDTO,
   type CommentListResponse,
-} from "./comment";
+} from "./comment"
 
 describe("Comment Schemas", () => {
   describe("commentCreateSchema", () => {
@@ -20,32 +20,32 @@ describe("Comment Schemas", () => {
       const validComment = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         body: "This is a great rule!",
-      };
+      }
 
-      const result = commentCreateSchema.parse(validComment);
-      expect(result).toEqual(validComment);
-    });
+      const result = commentCreateSchema.parse(validComment)
+      expect(result).toEqual(validComment)
+    })
 
     it("should accept comment with parent ID", () => {
       const validComment = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         parentId: "clkv6tv5l0001l608w5i10wd8",
         body: "This is a reply to another comment",
-      };
+      }
 
-      const result = commentCreateSchema.parse(validComment);
-      expect(result).toEqual(validComment);
-    });
+      const result = commentCreateSchema.parse(validComment)
+      expect(result).toEqual(validComment)
+    })
 
     it("should accept comment without parent ID", () => {
       const validComment = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         body: "This is a top-level comment",
-      };
+      }
 
-      const result = commentCreateSchema.parse(validComment);
-      expect(result).toEqual(validComment);
-    });
+      const result = commentCreateSchema.parse(validComment)
+      expect(result).toEqual(validComment)
+    })
 
     it("should reject empty rule ID", () => {
       expect(() =>
@@ -53,8 +53,8 @@ describe("Comment Schemas", () => {
           ruleId: "",
           body: "This is a comment",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject empty parent ID", () => {
       expect(() =>
@@ -63,8 +63,8 @@ describe("Comment Schemas", () => {
           parentId: "",
           body: "This is a comment",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject empty body", () => {
       expect(() =>
@@ -72,8 +72,8 @@ describe("Comment Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           body: "",
         })
-      ).toThrow("Comment cannot be empty");
-    });
+      ).toThrow("Comment cannot be empty")
+    })
 
     it("should reject body that's too long", () => {
       expect(() =>
@@ -81,53 +81,53 @@ describe("Comment Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           body: "a".repeat(5001),
         })
-      ).toThrow("Comment too long");
-    });
+      ).toThrow("Comment too long")
+    })
 
     it("should accept body at minimum length", () => {
       const validComment = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         body: "a", // Exactly 1 character
-      };
+      }
 
-      expect(() => commentCreateSchema.parse(validComment)).not.toThrow();
-    });
+      expect(() => commentCreateSchema.parse(validComment)).not.toThrow()
+    })
 
     it("should accept body at maximum length", () => {
       const validComment = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         body: "a".repeat(5000), // Exactly 5000 characters
-      };
+      }
 
-      expect(() => commentCreateSchema.parse(validComment)).not.toThrow();
-    });
+      expect(() => commentCreateSchema.parse(validComment)).not.toThrow()
+    })
 
     it("should reject missing required fields", () => {
-      expect(() => commentCreateSchema.parse({})).toThrow();
+      expect(() => commentCreateSchema.parse({})).toThrow()
 
       expect(() =>
         commentCreateSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
         })
-      ).toThrow(); // Missing body
+      ).toThrow() // Missing body
 
       expect(() =>
         commentCreateSchema.parse({
           body: "This is a comment",
         })
-      ).toThrow(); // Missing ruleId
-    });
+      ).toThrow() // Missing ruleId
+    })
 
     it("should have correct TypeScript type", () => {
       const comment: CommentCreateInput = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         parentId: "clkv6tv5l0001l608w5i10wd8",
         body: "This is a comment",
-      };
+      }
 
-      expect(commentCreateSchema.parse(comment)).toEqual(comment);
-    });
-  });
+      expect(commentCreateSchema.parse(comment)).toEqual(comment)
+    })
+  })
 
   describe("commentListSchema", () => {
     it("should accept valid list request with all parameters", () => {
@@ -136,59 +136,59 @@ describe("Comment Schemas", () => {
         cursor: "cursor-123",
         limit: 25,
         mode: "flat" as const,
-      };
+      }
 
-      const result = commentListSchema.parse(validRequest);
-      expect(result).toEqual(validRequest);
-    });
+      const result = commentListSchema.parse(validRequest)
+      expect(result).toEqual(validRequest)
+    })
 
     it("should use default values", () => {
       const result = commentListSchema.parse({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
-      });
+      })
 
       expect(result).toEqual({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         limit: 20, // Default
         mode: "tree", // Default
-      });
-    });
+      })
+    })
 
     it("should accept partial parameters", () => {
       const validRequest = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         limit: 10,
-      };
+      }
 
-      const result = commentListSchema.parse(validRequest);
+      const result = commentListSchema.parse(validRequest)
       expect(result).toEqual({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         limit: 10,
         mode: "tree", // Default
-      });
-    });
+      })
+    })
 
     it("should accept both mode values", () => {
       const flatMode = commentListSchema.parse({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         mode: "flat",
-      });
-      expect(flatMode.mode).toBe("flat");
+      })
+      expect(flatMode.mode).toBe("flat")
 
       const treeMode = commentListSchema.parse({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         mode: "tree",
-      });
-      expect(treeMode.mode).toBe("tree");
-    });
+      })
+      expect(treeMode.mode).toBe("tree")
+    })
 
     it("should reject empty rule ID", () => {
       expect(() =>
         commentListSchema.parse({
           ruleId: "",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid mode", () => {
       expect(() =>
@@ -196,8 +196,8 @@ describe("Comment Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           mode: "invalid",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject limit that's too small", () => {
       expect(() =>
@@ -205,8 +205,8 @@ describe("Comment Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           limit: 0,
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject limit that's too large", () => {
       expect(() =>
@@ -214,8 +214,8 @@ describe("Comment Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           limit: 51,
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should accept limit at boundaries", () => {
       expect(() =>
@@ -223,19 +223,19 @@ describe("Comment Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           limit: 1, // Minimum
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentListSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           limit: 50, // Maximum
         })
-      ).not.toThrow();
-    });
+      ).not.toThrow()
+    })
 
     it("should reject missing rule ID", () => {
-      expect(() => commentListSchema.parse({})).toThrow();
-    });
+      expect(() => commentListSchema.parse({})).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const request: CommentListInput = {
@@ -243,22 +243,22 @@ describe("Comment Schemas", () => {
         cursor: "cursor-123",
         limit: 25,
         mode: "flat",
-      };
+      }
 
-      expect(commentListSchema.parse(request)).toEqual(request);
-    });
-  });
+      expect(commentListSchema.parse(request)).toEqual(request)
+    })
+  })
 
   describe("commentEditSchema", () => {
     it("should accept valid comment edit", () => {
       const validEdit = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         body: "This is the updated comment",
-      };
+      }
 
-      const result = commentEditSchema.parse(validEdit);
-      expect(result).toEqual(validEdit);
-    });
+      const result = commentEditSchema.parse(validEdit)
+      expect(result).toEqual(validEdit)
+    })
 
     it("should reject empty comment ID", () => {
       expect(() =>
@@ -266,8 +266,8 @@ describe("Comment Schemas", () => {
           commentId: "",
           body: "Updated comment",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject empty body", () => {
       expect(() =>
@@ -275,8 +275,8 @@ describe("Comment Schemas", () => {
           commentId: "clkv6tv5l0001l608w5i10wd7",
           body: "",
         })
-      ).toThrow("Comment cannot be empty");
-    });
+      ).toThrow("Comment cannot be empty")
+    })
 
     it("should reject body that's too long", () => {
       expect(() =>
@@ -284,80 +284,80 @@ describe("Comment Schemas", () => {
           commentId: "clkv6tv5l0001l608w5i10wd7",
           body: "a".repeat(5001),
         })
-      ).toThrow("Comment too long");
-    });
+      ).toThrow("Comment too long")
+    })
 
     it("should accept body at minimum length", () => {
       const validEdit = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         body: "a", // Exactly 1 character
-      };
+      }
 
-      expect(() => commentEditSchema.parse(validEdit)).not.toThrow();
-    });
+      expect(() => commentEditSchema.parse(validEdit)).not.toThrow()
+    })
 
     it("should accept body at maximum length", () => {
       const validEdit = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         body: "a".repeat(5000), // Exactly 5000 characters
-      };
+      }
 
-      expect(() => commentEditSchema.parse(validEdit)).not.toThrow();
-    });
+      expect(() => commentEditSchema.parse(validEdit)).not.toThrow()
+    })
 
     it("should reject missing required fields", () => {
-      expect(() => commentEditSchema.parse({})).toThrow();
+      expect(() => commentEditSchema.parse({})).toThrow()
 
       expect(() =>
         commentEditSchema.parse({
           commentId: "clkv6tv5l0001l608w5i10wd7",
         })
-      ).toThrow(); // Missing body
+      ).toThrow() // Missing body
 
       expect(() =>
         commentEditSchema.parse({
           body: "Updated comment",
         })
-      ).toThrow(); // Missing commentId
-    });
+      ).toThrow() // Missing commentId
+    })
 
     it("should have correct TypeScript type", () => {
       const edit: CommentEditInput = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         body: "This is the updated comment",
-      };
+      }
 
-      expect(commentEditSchema.parse(edit)).toEqual(edit);
-    });
-  });
+      expect(commentEditSchema.parse(edit)).toEqual(edit)
+    })
+  })
 
   describe("commentDeleteSchema", () => {
     it("should accept valid comment deletion", () => {
       const validDelete = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         reason: "Inappropriate content",
-      };
+      }
 
-      const result = commentDeleteSchema.parse(validDelete);
-      expect(result).toEqual(validDelete);
-    });
+      const result = commentDeleteSchema.parse(validDelete)
+      expect(result).toEqual(validDelete)
+    })
 
     it("should accept deletion without reason", () => {
       const validDelete = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
-      };
+      }
 
-      const result = commentDeleteSchema.parse(validDelete);
-      expect(result).toEqual(validDelete);
-    });
+      const result = commentDeleteSchema.parse(validDelete)
+      expect(result).toEqual(validDelete)
+    })
 
     it("should reject empty comment ID", () => {
       expect(() =>
         commentDeleteSchema.parse({
           commentId: "",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject reason that's too long", () => {
       expect(() =>
@@ -365,40 +365,40 @@ describe("Comment Schemas", () => {
           commentId: "clkv6tv5l0001l608w5i10wd7",
           reason: "a".repeat(201),
         })
-      ).toThrow("Reason too long");
-    });
+      ).toThrow("Reason too long")
+    })
 
     it("should accept reason at maximum length", () => {
       const validDelete = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         reason: "a".repeat(200), // Exactly 200 characters
-      };
+      }
 
-      expect(() => commentDeleteSchema.parse(validDelete)).not.toThrow();
-    });
+      expect(() => commentDeleteSchema.parse(validDelete)).not.toThrow()
+    })
 
     it("should accept empty reason", () => {
       const validDelete = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         reason: "",
-      };
+      }
 
-      expect(() => commentDeleteSchema.parse(validDelete)).not.toThrow();
-    });
+      expect(() => commentDeleteSchema.parse(validDelete)).not.toThrow()
+    })
 
     it("should reject missing comment ID", () => {
-      expect(() => commentDeleteSchema.parse({})).toThrow();
-    });
+      expect(() => commentDeleteSchema.parse({})).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const deletion: CommentDeleteInput = {
         commentId: "clkv6tv5l0001l608w5i10wd7",
         reason: "Inappropriate content",
-      };
+      }
 
-      expect(commentDeleteSchema.parse(deletion)).toEqual(deletion);
-    });
-  });
+      expect(commentDeleteSchema.parse(deletion)).toEqual(deletion)
+    })
+  })
 
   describe("commentDTOSchema", () => {
     it("should accept valid comment DTO", () => {
@@ -421,11 +421,11 @@ describe("Comment Schemas", () => {
         children: [],
         canEdit: true,
         canDelete: false,
-      };
+      }
 
-      const result = commentDTOSchema.parse(validDTO);
-      expect(result).toEqual(validDTO);
-    });
+      const result = commentDTOSchema.parse(validDTO)
+      expect(result).toEqual(validDTO)
+    })
 
     it("should accept comment DTO with null values", () => {
       const validDTO = {
@@ -444,11 +444,11 @@ describe("Comment Schemas", () => {
         updatedAt: new Date("2024-01-01T00:00:00Z"),
         edited: false,
         depth: 0,
-      };
+      }
 
-      const result = commentDTOSchema.parse(validDTO);
-      expect(result).toEqual(validDTO);
-    });
+      const result = commentDTOSchema.parse(validDTO)
+      expect(result).toEqual(validDTO)
+    })
 
     it("should accept comment DTO without optional fields", () => {
       const validDTO = {
@@ -468,11 +468,11 @@ describe("Comment Schemas", () => {
         edited: false,
         depth: 0,
         // Optional fields omitted: children, canEdit, canDelete
-      };
+      }
 
-      const result = commentDTOSchema.parse(validDTO);
-      expect(result).toEqual(validDTO);
-    });
+      const result = commentDTOSchema.parse(validDTO)
+      expect(result).toEqual(validDTO)
+    })
 
     it("should accept nested comment structure", () => {
       const childComment = {
@@ -491,7 +491,7 @@ describe("Comment Schemas", () => {
         updatedAt: new Date("2024-01-01T01:00:00Z"),
         edited: false,
         depth: 1,
-      };
+      }
 
       const parentComment = {
         id: "clkv6tv5l0001l608w5i10wd7",
@@ -510,11 +510,11 @@ describe("Comment Schemas", () => {
         edited: false,
         depth: 0,
         children: [childComment],
-      };
+      }
 
-      const result = commentDTOSchema.parse(parentComment);
-      expect(result).toEqual(parentComment);
-    });
+      const result = commentDTOSchema.parse(parentComment)
+      expect(result).toEqual(parentComment)
+    })
 
     it("should accept deeply nested comment structure", () => {
       const deepChild = {
@@ -533,7 +533,7 @@ describe("Comment Schemas", () => {
         updatedAt: new Date("2024-01-01T02:00:00Z"),
         edited: false,
         depth: 2,
-      };
+      }
 
       const middleChild = {
         id: "clkv6tv5l0001l608w5i10wd9",
@@ -552,7 +552,7 @@ describe("Comment Schemas", () => {
         edited: false,
         depth: 1,
         children: [deepChild],
-      };
+      }
 
       const parentComment = {
         id: "clkv6tv5l0001l608w5i10wd7",
@@ -571,11 +571,11 @@ describe("Comment Schemas", () => {
         edited: false,
         depth: 0,
         children: [middleChild],
-      };
+      }
 
-      const result = commentDTOSchema.parse(parentComment);
-      expect(result).toEqual(parentComment);
-    });
+      const result = commentDTOSchema.parse(parentComment)
+      expect(result).toEqual(parentComment)
+    })
 
     it("should reject invalid depth", () => {
       expect(() =>
@@ -596,19 +596,19 @@ describe("Comment Schemas", () => {
           edited: false,
           depth: -1, // Invalid negative depth
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject missing required fields", () => {
-      expect(() => commentDTOSchema.parse({})).toThrow();
+      expect(() => commentDTOSchema.parse({})).toThrow()
 
       expect(() =>
         commentDTOSchema.parse({
           id: "clkv6tv5l0001l608w5i10wd7",
           // Missing other required fields
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid author structure", () => {
       expect(() =>
@@ -627,8 +627,8 @@ describe("Comment Schemas", () => {
           edited: false,
           depth: 0,
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const dto: CommentDTO = {
@@ -650,11 +650,11 @@ describe("Comment Schemas", () => {
         children: [],
         canEdit: true,
         canDelete: false,
-      };
+      }
 
-      expect(commentDTOSchema.parse(dto)).toEqual(dto);
-    });
-  });
+      expect(commentDTOSchema.parse(dto)).toEqual(dto)
+    })
+  })
 
   describe("commentListResponseSchema", () => {
     it("should accept valid comment list response", () => {
@@ -698,11 +698,11 @@ describe("Comment Schemas", () => {
         nextCursor: "cursor-next",
         hasMore: true,
         totalCount: 50,
-      };
+      }
 
-      const result = commentListResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = commentListResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept response without nextCursor", () => {
       const validResponse = {
@@ -727,22 +727,22 @@ describe("Comment Schemas", () => {
         ],
         hasMore: false,
         totalCount: 1,
-      };
+      }
 
-      const result = commentListResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = commentListResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept empty items array", () => {
       const validResponse = {
         items: [],
         hasMore: false,
         totalCount: 0,
-      };
+      }
 
-      const result = commentListResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = commentListResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept response with nested comments", () => {
       const validResponse = {
@@ -786,11 +786,11 @@ describe("Comment Schemas", () => {
         ],
         hasMore: false,
         totalCount: 2,
-      };
+      }
 
-      const result = commentListResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = commentListResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should reject invalid items", () => {
       expect(() =>
@@ -803,19 +803,19 @@ describe("Comment Schemas", () => {
           hasMore: false,
           totalCount: 1,
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject missing required fields", () => {
-      expect(() => commentListResponseSchema.parse({})).toThrow();
+      expect(() => commentListResponseSchema.parse({})).toThrow()
 
       expect(() =>
         commentListResponseSchema.parse({
           items: [],
           // Missing hasMore and totalCount
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const response: CommentListResponse = {
@@ -841,11 +841,11 @@ describe("Comment Schemas", () => {
         nextCursor: "cursor-next",
         hasMore: true,
         totalCount: 25,
-      };
+      }
 
-      expect(commentListResponseSchema.parse(response)).toEqual(response);
-    });
-  });
+      expect(commentListResponseSchema.parse(response)).toEqual(response)
+    })
+  })
 
   describe("Schema Integration", () => {
     it("should work with complete comment workflow", () => {
@@ -853,70 +853,70 @@ describe("Comment Schemas", () => {
       const createInput = commentCreateSchema.parse({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         body: "This is a great rule!",
-      });
+      })
 
       // List comments
       const listInput = commentListSchema.parse({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         limit: 10,
         mode: "tree",
-      });
+      })
 
       // Edit the comment
       const editInput = commentEditSchema.parse({
         commentId: "clkv6tv5l0001l608w5i10wd8",
         body: "This is an updated comment!",
-      });
+      })
 
       // Delete the comment
       const deleteInput = commentDeleteSchema.parse({
         commentId: "clkv6tv5l0001l608w5i10wd8",
         reason: "User requested deletion",
-      });
+      })
 
-      expect(createInput.ruleId).toBe("clkv6tv5l0001l608w5i10wd7");
-      expect(listInput.mode).toBe("tree");
-      expect(editInput.body).toBe("This is an updated comment!");
-      expect(deleteInput.reason).toBe("User requested deletion");
-    });
+      expect(createInput.ruleId).toBe("clkv6tv5l0001l608w5i10wd7")
+      expect(listInput.mode).toBe("tree")
+      expect(editInput.body).toBe("This is an updated comment!")
+      expect(deleteInput.reason).toBe("User requested deletion")
+    })
 
     it("should handle edge cases consistently", () => {
       // Test boundary conditions across schemas
-      const minBody = "a"; // 1 character
-      const maxBody = "a".repeat(5000); // 5000 characters
-      const maxReason = "a".repeat(200); // 200 characters
+      const minBody = "a" // 1 character
+      const maxBody = "a".repeat(5000) // 5000 characters
+      const maxReason = "a".repeat(200) // 200 characters
 
       expect(() =>
         commentCreateSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           body: minBody,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentCreateSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           body: maxBody,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentEditSchema.parse({
           commentId: "clkv6tv5l0001l608w5i10wd7",
           body: maxBody,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentDeleteSchema.parse({
           commentId: "clkv6tv5l0001l608w5i10wd7",
           reason: maxReason,
         })
-      ).not.toThrow();
-    });
+      ).not.toThrow()
+    })
 
     it("should validate ID consistency", () => {
-      const validId = "clkv6tv5l0001l608w5i10wd7";
+      const validId = "clkv6tv5l0001l608w5i10wd7"
 
       // All schemas should accept the same valid ID format (any non-empty string)
       expect(() =>
@@ -924,7 +924,7 @@ describe("Comment Schemas", () => {
           ruleId: validId,
           body: "Comment",
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentCreateSchema.parse({
@@ -932,55 +932,55 @@ describe("Comment Schemas", () => {
           parentId: validId,
           body: "Reply",
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentListSchema.parse({
           ruleId: validId,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentEditSchema.parse({
           commentId: validId,
           body: "Updated",
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         commentDeleteSchema.parse({
           commentId: validId,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       // Should also accept other valid non-empty strings
-      const simpleId = "simple-id";
+      const simpleId = "simple-id"
       expect(() =>
         commentCreateSchema.parse({
           ruleId: simpleId,
           body: "Comment",
         })
-      ).not.toThrow();
-    });
+      ).not.toThrow()
+    })
 
     it("should handle comment threading correctly", () => {
       // Test that parent-child relationships work correctly
-      const parentId = "clkv6tv5l0001l608w5i10wd7";
-      const childId = "clkv6tv5l0001l608w5i10wd8";
-      const ruleId = "clkv6tv5l0001l608w5i10wd9";
+      const parentId = "clkv6tv5l0001l608w5i10wd7"
+      const childId = "clkv6tv5l0001l608w5i10wd8"
+      const ruleId = "clkv6tv5l0001l608w5i10wd9"
 
       // Create parent comment
       const parentCreate = commentCreateSchema.parse({
         ruleId,
         body: "Parent comment",
-      });
+      })
 
       // Create child comment
       const childCreate = commentCreateSchema.parse({
         ruleId,
         parentId,
         body: "Child comment",
-      });
+      })
 
       // Verify DTO structure supports threading
       const threadedComment = commentDTOSchema.parse({
@@ -1018,13 +1018,13 @@ describe("Comment Schemas", () => {
             depth: 1,
           },
         ],
-      });
+      })
 
-      expect(parentCreate.body).toBe("Parent comment");
-      expect(childCreate.parentId).toBe(parentId);
-      expect(threadedComment.children).toHaveLength(1);
-      expect(threadedComment.children![0].depth).toBe(1);
-    });
+      expect(parentCreate.body).toBe("Parent comment")
+      expect(childCreate.parentId).toBe(parentId)
+      expect(threadedComment.children).toHaveLength(1)
+      expect(threadedComment.children![0].depth).toBe(1)
+    })
 
     it("should handle deleted comments appropriately", () => {
       // Test deleted comment representation
@@ -1044,11 +1044,11 @@ describe("Comment Schemas", () => {
         updatedAt: new Date("2024-01-01T00:05:00Z"),
         edited: false,
         depth: 0,
-      });
+      })
 
-      expect(deletedComment.isDeleted).toBe(true);
-      expect(deletedComment.bodyHtml).toBeNull();
-    });
+      expect(deletedComment.isDeleted).toBe(true)
+      expect(deletedComment.bodyHtml).toBeNull()
+    })
 
     it("should handle comment permissions correctly", () => {
       // Test permission flags in DTO
@@ -1070,10 +1070,10 @@ describe("Comment Schemas", () => {
         depth: 0,
         canEdit: true,
         canDelete: false,
-      });
+      })
 
-      expect(commentWithPermissions.canEdit).toBe(true);
-      expect(commentWithPermissions.canDelete).toBe(false);
-    });
-  });
-});
+      expect(commentWithPermissions.canEdit).toBe(true)
+      expect(commentWithPermissions.canDelete).toBe(false)
+    })
+  })
+})

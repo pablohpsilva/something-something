@@ -20,7 +20,10 @@
   "scripts": {
     "lint": "biome lint .",
     "format": "biome format . --write",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "nanoid": "^5.0.8",

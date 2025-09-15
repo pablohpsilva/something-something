@@ -1,12 +1,12 @@
 // Export the main router and types
-export { appRouter, type AppRouter } from "./routers";
-export { createContext, type Context } from "./trpc";
+export { appRouter, type AppRouter } from "./routers"
+export { createContext, type Context } from "./trpc"
 
 // Export commonly used schemas
-export * from "./schemas/dto";
-export * from "./schemas/base";
-export * from "./schemas/social";
-export * from "./schemas/donations";
+export * from "./schemas/dto"
+export * from "./schemas/base"
+export * from "./schemas/social"
+export * from "./schemas/donations"
 
 // Export router types for client usage
 export type {
@@ -14,18 +14,18 @@ export type {
   UpdateRuleInput,
   ListRulesInput,
   GetRuleBySlugInput,
-} from "./schemas/rule";
+} from "./schemas/rule"
 
 export type {
   CreateVersionInput,
   ForkVersionInput,
   ListVersionsByRuleInput,
-} from "./schemas/version";
+} from "./schemas/version"
 
-export type { CommentCreateInput, CommentListInput } from "./schemas/comment";
+export type { CommentCreateInput, CommentListInput } from "./schemas/comment"
 
-export type { VoteRuleInput, VoteVersionInput } from "./schemas/vote";
+export type { VoteRuleInput, VoteVersionInput } from "./schemas/vote"
 
-export type { SearchInput, AdvancedFilters } from "./schemas/search";
+export type { SearchInput, AdvancedFilters } from "./schemas/search"
 
-export type { ListTagsInput, AttachTagsInput } from "./schemas/tags";
+export type { ListTagsInput, AttachTagsInput } from "./schemas/tags"

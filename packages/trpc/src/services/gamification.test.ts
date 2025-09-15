@@ -5,7 +5,7 @@ import {
   type AwardContext,
   type LeaderboardEntry,
   type LeaderboardParams,
-} from "../gamification";
+} from "./gamification";
 
 // Mock the prisma client
 vi.mock("@repo/db", () => ({
@@ -67,8 +67,8 @@ describe("GamificationService", () => {
   describe("BadgeCatalog", () => {
     it("should contain all expected badges", () => {
       expect(BadgeCatalog).toHaveLength(6);
-      
-      const slugs = BadgeCatalog.map(badge => badge.slug);
+
+      const slugs = BadgeCatalog.map((badge) => badge.slug);
       expect(slugs).toEqual([
         "first-contribution",
         "ten-upvotes",
@@ -188,14 +188,18 @@ describe("GamificationService", () => {
       );
 
       expect(result).toBe(false);
-      expect(console.warn).toHaveBeenCalledWith("Badge not found: nonexistent-badge");
+      expect(console.warn).toHaveBeenCalledWith(
+        "Badge not found: nonexistent-badge"
+      );
       expect(mockPrisma.userBadge.create).not.toHaveBeenCalled();
     });
 
     it("should return false if badge already awarded", async () => {
       const badge = { id: "badge-123", slug: "test-badge" };
       mockPrisma.badge.findUnique.mockResolvedValue(badge);
-      mockPrisma.userBadge.findUnique.mockResolvedValue({ id: "existing-award" });
+      mockPrisma.userBadge.findUnique.mockResolvedValue({
+        id: "existing-award",
+      });
 
       const result = await GamificationService.awardBadgeIfEligible(
         mockContext,
@@ -211,7 +215,9 @@ describe("GamificationService", () => {
       const badge = { id: "badge-123", slug: "test-badge" };
       mockPrisma.badge.findUnique.mockResolvedValue(badge);
       mockPrisma.userBadge.findUnique.mockResolvedValue(null);
-      mockPrisma.userBadge.create.mockRejectedValue(new Error("Database error"));
+      mockPrisma.userBadge.create.mockRejectedValue(
+        new Error("Database error")
+      );
 
       const result = await GamificationService.awardBadgeIfEligible(
         mockContext,
@@ -259,9 +265,11 @@ describe("GamificationService", () => {
   describe("checkFirstContribution", () => {
     it("should award badge for first published rule", async () => {
       mockPrisma.rule.count.mockResolvedValue(1);
-      
+
       // Mock the awardBadgeIfEligible method
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.checkFirstContribution(
         mockContext,
@@ -275,12 +283,16 @@ describe("GamificationService", () => {
           status: "PUBLISHED",
         },
       });
-      expect(awardSpy).toHaveBeenCalledWith(mockContext, "user-123", "first-contribution");
+      expect(awardSpy).toHaveBeenCalledWith(
+        mockContext,
+        "user-123",
+        "first-contribution"
+      );
     });
 
     it("should not award badge if not first rule", async () => {
       mockPrisma.rule.count.mockResolvedValue(2);
-      
+
       const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible");
 
       const result = await GamificationService.checkFirstContribution(
@@ -294,7 +306,7 @@ describe("GamificationService", () => {
 
     it("should not award badge if no published rules", async () => {
       mockPrisma.rule.count.mockResolvedValue(0);
-      
+
       const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible");
 
       const result = await GamificationService.checkFirstContribution(
@@ -315,8 +327,10 @@ describe("GamificationService", () => {
       };
       mockPrisma.rule.findUnique.mockResolvedValue(rule);
       mockPrisma.vote.count.mockResolvedValue(3); // 3 downvotes
-      
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.checkTenUpvotes(
         mockContext,
@@ -344,7 +358,10 @@ describe("GamificationService", () => {
         mockContext,
         "user-123",
         "ten-upvotes",
-        { ruleId: "rule-123", netScore: 12 }
+        {
+          ruleId: "rule-123",
+          netScore: 12,
+        }
       );
     });
 
@@ -386,7 +403,9 @@ describe("GamificationService", () => {
       mockPrisma.rule.findUnique.mockResolvedValue(rule);
       mockPrisma.vote.count.mockResolvedValue(2); // 2 downvotes, net = 10
 
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.checkTenUpvotes(
         mockContext,
@@ -398,7 +417,10 @@ describe("GamificationService", () => {
         mockContext,
         "user-123",
         "ten-upvotes",
-        { ruleId: "rule-123", netScore: 10 }
+        {
+          ruleId: "rule-123",
+          netScore: 10,
+        }
       );
     });
   });
@@ -412,7 +434,9 @@ describe("GamificationService", () => {
         createdByUserId: "user-123",
       });
 
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.checkHundredCopies(
         mockContext,
@@ -428,7 +452,10 @@ describe("GamificationService", () => {
         mockContext,
         "user-123",
         "hundred-copies",
-        { ruleId: "rule-123", totalCopies: 150 }
+        {
+          ruleId: "rule-123",
+          totalCopies: 150,
+        }
       );
     });
 
@@ -483,7 +510,9 @@ describe("GamificationService", () => {
         createdByUserId: "user-123",
       });
 
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.checkHundredCopies(
         mockContext,
@@ -495,14 +524,19 @@ describe("GamificationService", () => {
         mockContext,
         "user-123",
         "hundred-copies",
-        { ruleId: "rule-123", totalCopies: 100 }
+        {
+          ruleId: "rule-123",
+          totalCopies: 100,
+        }
       );
     });
   });
 
   describe("awardVerifiedAuthor", () => {
     it("should award verified author badge", async () => {
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.awardVerifiedAuthor(
         mockContext,
@@ -510,11 +544,17 @@ describe("GamificationService", () => {
       );
 
       expect(result).toBe(true);
-      expect(awardSpy).toHaveBeenCalledWith(mockContext, "user-123", "verified-author");
+      expect(awardSpy).toHaveBeenCalledWith(
+        mockContext,
+        "user-123",
+        "verified-author"
+      );
     });
 
     it("should return false if badge not awarded", async () => {
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(false);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(false);
 
       const result = await GamificationService.awardVerifiedAuthor(
         mockContext,
@@ -528,7 +568,7 @@ describe("GamificationService", () => {
   describe("awardTop10WeeklyBadges", () => {
     it("should award badges to top 10 rule authors", async () => {
       const topRuleIds = Array.from({ length: 15 }, (_, i) => `rule-${i + 1}`);
-      
+
       // Mock rule lookups for first 10 rules
       for (let i = 0; i < 10; i++) {
         mockPrisma.rule.findUnique.mockResolvedValueOnce({
@@ -536,7 +576,9 @@ describe("GamificationService", () => {
         });
       }
 
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.awardTop10WeeklyBadges(
         mockContext,
@@ -553,7 +595,10 @@ describe("GamificationService", () => {
         mockContext,
         "user-1",
         "top-10-week",
-        { ruleId: "rule-1", rank: 1 }
+        {
+          ruleId: "rule-1",
+          rank: 1,
+        }
       );
 
       // Check last award call
@@ -562,18 +607,23 @@ describe("GamificationService", () => {
         mockContext,
         "user-10",
         "top-10-week",
-        { ruleId: "rule-10", rank: 10 }
+        {
+          ruleId: "rule-10",
+          rank: 10,
+        }
       );
     });
 
     it("should handle fewer than 10 rules", async () => {
       const topRuleIds = ["rule-1", "rule-2", "rule-3"];
-      
+
       mockPrisma.rule.findUnique.mockResolvedValue({
         createdByUserId: "user-1",
       });
 
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.awardTop10WeeklyBadges(
         mockContext,
@@ -586,12 +636,14 @@ describe("GamificationService", () => {
 
     it("should handle rules not found", async () => {
       const topRuleIds = ["rule-1", "rule-2"];
-      
+
       mockPrisma.rule.findUnique
         .mockResolvedValueOnce({ createdByUserId: "user-1" })
         .mockResolvedValueOnce(null); // Rule not found
 
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible").mockResolvedValue(true);
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
+        .mockResolvedValue(true);
 
       const result = await GamificationService.awardTop10WeeklyBadges(
         mockContext,
@@ -604,12 +656,13 @@ describe("GamificationService", () => {
 
     it("should handle badge award failures", async () => {
       const topRuleIds = ["rule-1", "rule-2"];
-      
+
       mockPrisma.rule.findUnique.mockResolvedValue({
         createdByUserId: "user-1",
       });
 
-      const awardSpy = vi.spyOn(GamificationService, "awardBadgeIfEligible")
+      const awardSpy = vi
+        .spyOn(GamificationService, "awardBadgeIfEligible")
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(false); // Second award fails
 
@@ -687,7 +740,7 @@ describe("GamificationService", () => {
       );
 
       expect(result).toHaveLength(2); // Rule 3 filtered out due to low metrics
-      
+
       // Check ranking order (rule-2 should be first due to higher score)
       expect(result[0]).toEqual({
         rank: 1,
@@ -813,7 +866,7 @@ describe("GamificationService", () => {
 
       // Check that date filtering uses custom window
       const expectedStartDate = new Date("2024-01-01T12:00:00Z"); // 14 days before mockContext.now
-      
+
       expect(mockPrisma.rule.findMany).toHaveBeenCalledWith({
         where: {
           status: "PUBLISHED",
@@ -834,7 +887,7 @@ describe("GamificationService", () => {
         slug: `rule-${i}-slug`,
         title: `Rule ${i}`,
       }));
-      
+
       mockPrisma.rule.findMany.mockResolvedValue(manyRules);
 
       const params: LeaderboardParams = {
@@ -858,7 +911,7 @@ describe("GamificationService", () => {
           metrics: [], // No metrics
         },
       ];
-      
+
       mockPrisma.rule.findMany.mockResolvedValue(rulesWithNoMetrics);
 
       const params: LeaderboardParams = {
@@ -933,7 +986,9 @@ describe("GamificationService", () => {
 
     it("should update existing snapshot", async () => {
       const existingSnapshot = { id: "existing-snapshot" };
-      mockPrisma.leaderboardSnapshot.findFirst.mockResolvedValue(existingSnapshot);
+      mockPrisma.leaderboardSnapshot.findFirst.mockResolvedValue(
+        existingSnapshot
+      );
       mockPrisma.leaderboardSnapshot.update.mockResolvedValue(existingSnapshot);
 
       const params: LeaderboardParams = {
@@ -968,7 +1023,9 @@ describe("GamificationService", () => {
 
     it("should check for existing snapshot with correct date range", async () => {
       mockPrisma.leaderboardSnapshot.findFirst.mockResolvedValue(null);
-      mockPrisma.leaderboardSnapshot.create.mockResolvedValue({ id: "new-snapshot" });
+      mockPrisma.leaderboardSnapshot.create.mockResolvedValue({
+        id: "new-snapshot",
+      });
 
       const params: LeaderboardParams = {
         period: "MONTHLY",
@@ -993,7 +1050,8 @@ describe("GamificationService", () => {
       });
 
       // Verify the date is set to start of day
-      const actualCall = mockPrisma.leaderboardSnapshot.findFirst.mock.calls[0][0];
+      const actualCall =
+        mockPrisma.leaderboardSnapshot.findFirst.mock.calls[0][0];
       const actualDate = actualCall.where.createdAt.gte;
       expect(actualDate.getHours()).toBe(0);
       expect(actualDate.getMinutes()).toBe(0);
@@ -1008,7 +1066,7 @@ describe("GamificationService", () => {
         { id: "current-snapshot", createdAt: new Date("2024-01-15") },
         { id: "previous-snapshot", createdAt: new Date("2024-01-08") },
       ];
-      
+
       mockPrisma.leaderboardSnapshot.findMany.mockResolvedValue(snapshots);
 
       const result = await GamificationService.getPreviousSnapshot(
@@ -1033,7 +1091,7 @@ describe("GamificationService", () => {
       const snapshots = [
         { id: "current-snapshot", createdAt: new Date("2024-01-15") },
       ];
-      
+
       mockPrisma.leaderboardSnapshot.findMany.mockResolvedValue(snapshots);
 
       const result = await GamificationService.getPreviousSnapshot(
@@ -1080,18 +1138,19 @@ describe("GamificationService", () => {
   describe("recheckUserBadges", () => {
     it("should recheck all badge types for a user", async () => {
       // Mock user rules
-      const userRules = [
-        { id: "rule-1" },
-        { id: "rule-2" },
-      ];
+      const userRules = [{ id: "rule-1" }, { id: "rule-2" }];
       mockPrisma.rule.findMany.mockResolvedValue(userRules);
 
       // Mock badge check methods
-      const firstContributionSpy = vi.spyOn(GamificationService, "checkFirstContribution").mockResolvedValue(true);
-      const tenUpvotesSpy = vi.spyOn(GamificationService, "checkTenUpvotes")
+      const firstContributionSpy = vi
+        .spyOn(GamificationService, "checkFirstContribution")
+        .mockResolvedValue(true);
+      const tenUpvotesSpy = vi
+        .spyOn(GamificationService, "checkTenUpvotes")
         .mockResolvedValueOnce(false) // rule-1 doesn't get ten upvotes badge
         .mockResolvedValueOnce(true); // rule-2 gets ten upvotes badge
-      const hundredCopiesSpy = vi.spyOn(GamificationService, "checkHundredCopies")
+      const hundredCopiesSpy = vi
+        .spyOn(GamificationService, "checkHundredCopies")
         .mockResolvedValueOnce(true) // rule-1 gets hundred copies badge
         .mockResolvedValueOnce(false); // rule-2 doesn't get hundred copies badge
 
@@ -1101,11 +1160,14 @@ describe("GamificationService", () => {
       );
 
       expect(result).toBe(3); // 1 first contribution + 1 ten upvotes + 1 hundred copies
-      
-      expect(firstContributionSpy).toHaveBeenCalledWith(mockContext, "user-123");
+
+      expect(firstContributionSpy).toHaveBeenCalledWith(
+        mockContext,
+        "user-123"
+      );
       expect(tenUpvotesSpy).toHaveBeenCalledTimes(2); // Called for each rule
       expect(hundredCopiesSpy).toHaveBeenCalledTimes(2); // Called for each rule
-      
+
       expect(mockPrisma.rule.findMany).toHaveBeenCalledWith({
         where: { createdByUserId: "user-123", status: "PUBLISHED" },
         select: { id: true },
@@ -1114,10 +1176,15 @@ describe("GamificationService", () => {
 
     it("should handle user with no published rules", async () => {
       mockPrisma.rule.findMany.mockResolvedValue([]);
-      
-      const firstContributionSpy = vi.spyOn(GamificationService, "checkFirstContribution").mockResolvedValue(false);
+
+      const firstContributionSpy = vi
+        .spyOn(GamificationService, "checkFirstContribution")
+        .mockResolvedValue(false);
       const tenUpvotesSpy = vi.spyOn(GamificationService, "checkTenUpvotes");
-      const hundredCopiesSpy = vi.spyOn(GamificationService, "checkHundredCopies");
+      const hundredCopiesSpy = vi.spyOn(
+        GamificationService,
+        "checkHundredCopies"
+      );
 
       const result = await GamificationService.recheckUserBadges(
         mockContext,
@@ -1134,9 +1201,13 @@ describe("GamificationService", () => {
       const userRules = [{ id: "rule-1" }];
       mockPrisma.rule.findMany.mockResolvedValue(userRules);
 
-      vi.spyOn(GamificationService, "checkFirstContribution").mockResolvedValue(true);
+      vi.spyOn(GamificationService, "checkFirstContribution").mockResolvedValue(
+        true
+      );
       vi.spyOn(GamificationService, "checkTenUpvotes").mockResolvedValue(true);
-      vi.spyOn(GamificationService, "checkHundredCopies").mockResolvedValue(true);
+      vi.spyOn(GamificationService, "checkHundredCopies").mockResolvedValue(
+        true
+      );
 
       const result = await GamificationService.recheckUserBadges(
         mockContext,

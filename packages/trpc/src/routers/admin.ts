@@ -1,8 +1,8 @@
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, adminProcedure } from "../trpc";
-import { prisma } from "@repo/db/client";
-import { AuditLogService } from "../services/audit-log";
+import { z } from "zod"
+import { TRPCError } from "@trpc/server"
+import { createTRPCRouter, adminProcedure } from "../trpc"
+import { prisma } from "@repo/db/client"
+import { AuditLogService } from "../services/audit-log"
 
 export const adminRouter: any = createTRPCRouter({
   // ============================================================================
@@ -56,74 +56,72 @@ export const adminRouter: any = createTRPCRouter({
           cursor: { id: input.cursor },
           skip: 1,
         }),
-      });
+      })
 
-      const hasMore = claims.length > input.limit;
-      const items = hasMore ? claims.slice(0, -1) : claims;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : null;
+      const hasMore = claims.length > input.limit
+      const items = hasMore ? claims.slice(0, -1) : claims
+      const nextCursor = hasMore ? items[items.length - 1]?.id : null
 
       return {
         items,
         nextCursor,
-      };
+      }
     }),
 
   /**
    * Get claim details for review
    */
-  getClaim: adminProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ input }) => {
-      const claim = await prisma.authorClaim.findUnique({
-        where: { id: input.id },
-        include: {
-          rule: {
-            include: {
-              createdBy: {
-                select: {
-                  id: true,
-                  displayName: true,
-                  handle: true,
-                  // email: true, // Field doesn't exist in schema
-                },
-              },
-              currentVersion: {
-                select: {
-                  body: true,
-                  createdAt: true,
-                },
+  getClaim: adminProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+    const claim = await prisma.authorClaim.findUnique({
+      where: { id: input.id },
+      include: {
+        rule: {
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                displayName: true,
+                handle: true,
+                // email: true, // Field doesn't exist in schema
               },
             },
-          },
-          claimant: {
-            select: {
-              id: true,
-              displayName: true,
-              handle: true,
-              // email: true, // Field doesn't exist in schema
-              bio: true,
-              createdAt: true,
-            },
-          },
-          reviewer: {
-            select: {
-              id: true,
-              displayName: true,
-              handle: true,
+            currentVersion: {
+              select: {
+                body: true,
+                createdAt: true,
+              },
             },
           },
         },
-      });
+        claimant: {
+          select: {
+            id: true,
+            displayName: true,
+            handle: true,
+            // email: true, // Field doesn't exist in schema
+            bio: true,
+            createdAt: true,
+          },
+        },
+        reviewer: {
+          select: {
+            id: true,
+            displayName: true,
+            handle: true,
+          },
+        },
+      },
+    })
 
-      if (!claim) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Claim not found",
-        });
-      }
+    if (!claim) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Claim not found",
+      })
+    }
 
-      return claim;
-    }),
+    return claim
+  }),
 
   /**
    * Approve an author claim
@@ -139,20 +137,20 @@ export const adminRouter: any = createTRPCRouter({
       const claim = await prisma.authorClaim.findUnique({
         where: { id: input.id },
         include: { rule: true, claimant: true },
-      });
+      })
 
       if (!claim) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Claim not found",
-        });
+        })
       }
 
       if (claim.status !== "PENDING") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Claim has already been reviewed",
-        });
+        })
       }
 
       // Update claim status
@@ -164,7 +162,7 @@ export const adminRouter: any = createTRPCRouter({
           reviewNote: input.reviewNote,
           reviewedAt: new Date(),
         },
-      });
+      })
 
       // Update rule ownership
       await prisma.rule.update({
@@ -172,7 +170,7 @@ export const adminRouter: any = createTRPCRouter({
         data: {
           createdByUserId: claim.claimantId,
         },
-      });
+      })
 
       // Create audit log entry
       await AuditLogService.logClaimApprove(input.id, (ctx.user as any)?.id, {
@@ -180,9 +178,9 @@ export const adminRouter: any = createTRPCRouter({
         claimantId: claim.claimantId,
         originalAuthorId: claim.rule.createdByUserId,
         reviewNote: input.reviewNote,
-      });
+      })
 
-      return updatedClaim;
+      return updatedClaim
     }),
 
   /**
@@ -199,20 +197,20 @@ export const adminRouter: any = createTRPCRouter({
       const claim = await prisma.authorClaim.findUnique({
         where: { id: input.id },
         include: { rule: true, claimant: true },
-      });
+      })
 
       if (!claim) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Claim not found",
-        });
+        })
       }
 
       if (claim.status !== "PENDING") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Claim has already been reviewed",
-        });
+        })
       }
 
       // Update claim status
@@ -224,21 +222,16 @@ export const adminRouter: any = createTRPCRouter({
           reviewNote: input.reviewNote,
           reviewedAt: new Date(),
         },
-      });
+      })
 
       // Create audit log entry
-      await AuditLogService.logClaimReject(
-        input.id,
-        (ctx.user as any)?.id,
-        input.reviewNote,
-        {
-          ruleId: claim.ruleId,
-          claimantId: claim.claimantId,
-          originalAuthorId: claim.rule.createdByUserId,
-        }
-      );
+      await AuditLogService.logClaimReject(input.id, (ctx.user as any)?.id, input.reviewNote, {
+        ruleId: claim.ruleId,
+        claimantId: claim.claimantId,
+        originalAuthorId: claim.rule.createdByUserId,
+      })
 
-      return updatedClaim;
+      return updatedClaim
     }),
 
   // ============================================================================
@@ -289,22 +282,22 @@ export const adminRouter: any = createTRPCRouter({
             cursor: { id: input.cursor },
             skip: 1,
           }),
-        });
+        })
 
-        const hasMore = comments.length > input.limit;
-        const items = hasMore ? comments.slice(0, -1) : comments;
-        const nextCursor = hasMore ? items[items.length - 1]?.id : null;
+        const hasMore = comments.length > input.limit
+        const items = hasMore ? comments.slice(0, -1) : comments
+        const nextCursor = hasMore ? items[items.length - 1]?.id : null
 
         return {
-          items: items.map((comment) => ({
+          items: items.map(comment => ({
             ...comment,
             type: "comment" as const,
           })),
           nextCursor,
-        };
+        }
       }
 
-      return { items: [], nextCursor: null };
+      return { items: [], nextCursor: null }
     }),
 
   /**
@@ -320,20 +313,20 @@ export const adminRouter: any = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const comment = await prisma.comment.findUnique({
         where: { id: input.id },
-      });
+      })
 
       if (!comment) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Comment not found",
-        });
+        })
       }
 
       if (comment.deletedAt) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Comment is already deleted",
-        });
+        })
       }
 
       // Soft delete the comment
@@ -342,20 +335,15 @@ export const adminRouter: any = createTRPCRouter({
         data: {
           deletedAt: new Date(),
         },
-      });
+      })
 
       // Create audit log entry
-      await AuditLogService.logCommentDelete(
-        input.id,
-        (ctx.user as any)?.id,
-        input.reason,
-        {
-          authorId: comment.authorUserId,
-          ruleId: comment.ruleId,
-        }
-      );
+      await AuditLogService.logCommentDelete(input.id, (ctx.user as any)?.id, input.reason, {
+        authorId: comment.authorUserId,
+        ruleId: comment.ruleId,
+      })
 
-      return deletedComment;
+      return deletedComment
     }),
 
   /**
@@ -371,20 +359,20 @@ export const adminRouter: any = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const rule = await prisma.rule.findUnique({
         where: { id: input.id },
-      });
+      })
 
       if (!rule) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Rule not found",
-        });
+        })
       }
 
       if (rule.status === "DEPRECATED") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Rule is already deprecated",
-        });
+        })
       }
 
       // Update rule status
@@ -393,20 +381,15 @@ export const adminRouter: any = createTRPCRouter({
         data: {
           status: "DEPRECATED",
         },
-      });
+      })
 
       // Create audit log entry
-      await AuditLogService.logRuleDeprecate(
-        input.id,
-        (ctx.user as any)?.id,
-        input.reason,
-        {
-          originalStatus: rule.status,
-          authorId: rule.createdByUserId,
-        }
-      );
+      await AuditLogService.logRuleDeprecate(input.id, (ctx.user as any)?.id, input.reason, {
+        originalStatus: rule.status,
+        authorId: rule.createdByUserId,
+      })
 
-      return updatedRule;
+      return updatedRule
     }),
 
   // ============================================================================
@@ -426,14 +409,14 @@ export const adminRouter: any = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const where: any = {};
+      const where: any = {}
 
       if (input.action) {
-        where.action = input.action;
+        where.action = input.action
       }
 
       if (input.targetType) {
-        where.targetType = input.targetType;
+        where.targetType = input.targetType
       }
 
       const logs = await prisma.auditLog.findMany({
@@ -456,16 +439,16 @@ export const adminRouter: any = createTRPCRouter({
           cursor: { id: input.cursor },
           skip: 1,
         }),
-      });
+      })
 
-      const hasMore = logs.length > input.limit;
-      const items = hasMore ? logs.slice(0, -1) : logs;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : null;
+      const hasMore = logs.length > input.limit
+      const items = hasMore ? logs.slice(0, -1) : logs
+      const nextCursor = hasMore ? items[items.length - 1]?.id : null
 
       return {
         items,
         nextCursor,
-      };
+      }
     }),
 
   /**
@@ -480,11 +463,7 @@ export const adminRouter: any = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      return AuditLogService.getLogsForTarget(
-        input.targetId,
-        input.targetType,
-        input.limit
-      );
+      return AuditLogService.getLogsForTarget(input.targetId, input.targetType, input.limit)
     }),
 
   // ============================================================================
@@ -495,31 +474,26 @@ export const adminRouter: any = createTRPCRouter({
    * Get admin dashboard statistics
    */
   getDashboardStats: adminProcedure.query(async () => {
-    const [
-      pendingClaims,
-      totalUsers,
-      totalRules,
-      totalComments,
-      recentAuditLogs,
-    ] = await Promise.all([
-      prisma.authorClaim.count({
-        where: { status: "PENDING" },
-      }),
-      prisma.user.count(),
-      prisma.rule.count({
-        where: { status: "PUBLISHED" },
-      }),
-      prisma.comment.count({
-        where: { deletedAt: null },
-      }),
-      prisma.auditLog.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+    const [pendingClaims, totalUsers, totalRules, totalComments, recentAuditLogs] =
+      await Promise.all([
+        prisma.authorClaim.count({
+          where: { status: "PENDING" },
+        }),
+        prisma.user.count(),
+        prisma.rule.count({
+          where: { status: "PUBLISHED" },
+        }),
+        prisma.comment.count({
+          where: { deletedAt: null },
+        }),
+        prisma.auditLog.count({
+          where: {
+            createdAt: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+            },
           },
-        },
-      }),
-    ]);
+        }),
+      ])
 
     return {
       pendingClaims,
@@ -527,6 +501,6 @@ export const adminRouter: any = createTRPCRouter({
       totalRules,
       totalComments,
       recentAuditLogs,
-    };
+    }
   }),
-});
+})

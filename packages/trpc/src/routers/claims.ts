@@ -10,7 +10,10 @@ import { prisma } from "@repo/db/client";
 const claimCreateProcedure = createRateLimitedProcedure(
   protectedProcedure,
   "claims",
-  { requireAuth: true, weight: 1 }
+  {
+    requireAuth: true,
+    weight: 1,
+  }
 );
 
 export const claimsRouter = createTRPCRouter({
@@ -112,7 +115,7 @@ export const claimsRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const claims = await prisma.authorClaim.findMany({
         where: {
-          claimantId: (ctx.user as any)?.id,
+          claimantId: ctx.user?.id,
         },
         include: {
           rule: {
@@ -200,10 +203,7 @@ export const claimsRouter = createTRPCRouter({
       }
 
       // Only allow claimant or admins to view claim details
-      if (
-        claim.claimantId !== (ctx.user as any)?.id &&
-        (ctx.user as any)?.role !== "ADMIN"
-      ) {
+      if (claim.claimantId !== ctx.user?.id && ctx.user?.role !== "ADMIN") {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to view this claim",
@@ -258,7 +258,7 @@ export const claimsRouter = createTRPCRouter({
         });
       }
 
-      if (claim.claimantId !== (ctx.user as any)?.id) {
+      if (claim.claimantId !== ctx.user?.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Not authorized to cancel this claim",

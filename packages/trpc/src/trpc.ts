@@ -54,7 +54,7 @@ export const middleware = t.middleware;
 export const publicProcedure = t.procedure;
 
 // Middleware to require authentication
-export const requireAuth: any = t.middleware(({ ctx, next }) => {
+export const requireAuth = t.middleware(({ next }) => {
   // Authentication has been removed from this application
   throw new TRPCError({
     code: "UNAUTHORIZED",
@@ -63,8 +63,8 @@ export const requireAuth: any = t.middleware(({ ctx, next }) => {
 });
 
 // Middleware to require specific role
-export const requireRole = (role: "MOD" | "ADMIN") =>
-  t.middleware(({ ctx, next }) => {
+export const requireRole = (_role: "MOD" | "ADMIN") =>
+  t.middleware(({ next }) => {
     // Authentication has been removed from this application
     throw new TRPCError({
       code: "UNAUTHORIZED",
@@ -116,7 +116,7 @@ export const audit = (
           action,
           targetType: entity?.type || "unknown",
           targetId: entity?.id || "unknown",
-          metadata: diff ? (diff as any) : null,
+          metadata: diff ? (diff as any) : undefined,
         },
       })
       .catch((error) => {
@@ -127,7 +127,9 @@ export const audit = (
   });
 
 // Ownership check middleware
-export const requireOwnership = (getResourceUserId: (input: any) => string) =>
+export const requireOwnership = (
+  getResourceUserId: (input: unknown) => string
+) =>
   t.middleware(async ({ ctx, input, next }) => {
     if (!ctx.user) {
       throw new TRPCError({
@@ -178,7 +180,7 @@ export const eventRateLimitedProcedure = publicProcedure.use(
 
 // Factory function for creating rate-limited procedures
 export const createRateLimitedProcedure = (
-  baseProcedure: typeof publicProcedure | typeof protectedProcedure,
+  _baseProcedure: typeof publicProcedure | typeof protectedProcedure,
   bucket: string,
   options: { requireAuth?: boolean; weight?: number } = {}
 ) => {

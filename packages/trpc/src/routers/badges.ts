@@ -29,7 +29,13 @@ export const badgesRouter = router({
   listMine: protectedProcedure
     .output(userBadgesResponseSchema)
     .query(async ({ ctx }) => {
-      const userId = ctx.user!.id;
+      const userId = ctx.user?.id;
+      if (!userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        });
+      }
 
       const userBadges = await ctx.prisma.userBadge.findMany({
         where: { userId },
@@ -146,7 +152,13 @@ export const badgesRouter = router({
     .input(badgesRecheckInputSchema)
     .output(badgesRecheckResponseSchema)
     .mutation(async ({ ctx }) => {
-      const userId = ctx.user!.id;
+      const userId = ctx.user?.id;
+      if (!userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        });
+      }
 
       try {
         const awardContext = {

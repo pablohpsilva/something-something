@@ -3,13 +3,13 @@
  * Handles badge awarding, leaderboard computation, and ranking logic
  */
 
-import { prisma } from "@repo/db";
-import type { PrismaClient } from "@repo/db";
+import { prisma } from "@repo/db"
+import type { PrismaClient } from "@repo/db"
 
 export type AwardContext = {
-  prisma: PrismaClient;
-  now: Date;
-};
+  prisma: PrismaClient
+  now: Date
+}
 
 /**
  * Static badge catalog - seeded to database on startup
@@ -51,40 +51,40 @@ export const BadgeCatalog = [
     description: "Active 7 days in a row",
     criteria: { type: "streak", days: 7 },
   },
-] as const;
+] as const
 
 /**
  * Leaderboard entry for ranking computation
  */
 export interface LeaderboardEntry {
-  rank: number;
-  ruleId: string;
-  ruleSlug: string;
-  title: string;
+  rank: number
+  ruleId: string
+  ruleSlug: string
+  title: string
   author: {
-    id: string;
-    handle: string;
-    displayName: string;
-    avatarUrl: string | null;
-  };
-  score: number;
-  copies: number;
-  views: number;
-  saves?: number;
-  forks?: number;
-  votes?: number;
-  rankDelta?: number | null;
+    id: string
+    handle: string
+    displayName: string
+    avatarUrl: string | null
+  }
+  score: number
+  copies: number
+  views: number
+  saves?: number
+  forks?: number
+  votes?: number
+  rankDelta?: number | null
 }
 
 /**
  * Leaderboard computation parameters
  */
 export interface LeaderboardParams {
-  period: "DAILY" | "WEEKLY" | "MONTHLY" | "ALL";
-  scope: "GLOBAL" | "TAG" | "MODEL";
-  scopeRef?: string;
-  windowDays?: number;
-  limit?: number;
+  period: "DAILY" | "WEEKLY" | "MONTHLY" | "ALL"
+  scope: "GLOBAL" | "TAG" | "MODEL"
+  scopeRef?: string
+  windowDays?: number
+  limit?: number
 }
 
 /**
@@ -95,12 +95,12 @@ export const GamificationService = {
    * Seed badge catalog to database (idempotent)
    */
   async seedBadgeCatalog(ctx: AwardContext): Promise<number> {
-    let seeded = 0;
+    let seeded = 0
 
     for (const badge of BadgeCatalog) {
       const existing = await ctx.prisma.badge.findUnique({
         where: { slug: badge.slug },
-      });
+      })
 
       if (!existing) {
         await ctx.prisma.badge.create({
@@ -110,12 +110,12 @@ export const GamificationService = {
             description: badge.description,
             criteria: badge.criteria,
           },
-        });
-        seeded++;
+        })
+        seeded++
       }
     }
 
-    return seeded;
+    return seeded
   },
 
   /**
@@ -130,11 +130,11 @@ export const GamificationService = {
     try {
       const badge = await ctx.prisma.badge.findUnique({
         where: { slug },
-      });
+      })
 
       if (!badge) {
-        console.warn(`Badge not found: ${slug}`);
-        return false;
+        console.warn(`Badge not found: ${slug}`)
+        return false
       }
 
       // Check if already awarded
@@ -145,10 +145,10 @@ export const GamificationService = {
             badgeId: badge.id,
           },
         },
-      });
+      })
 
       if (existing) {
-        return false; // Already awarded
+        return false // Already awarded
       }
 
       // Award the badge
@@ -158,7 +158,7 @@ export const GamificationService = {
           badgeId: badge.id,
           awardedAt: ctx.now,
         },
-      });
+      })
 
       // Create audit log
       await ctx.prisma.auditLog.create({
@@ -173,36 +173,33 @@ export const GamificationService = {
             badgeMetadata: metadata || {},
           } as any,
         },
-      });
+      })
 
-      return true;
+      return true
     } catch (error) {
-      console.error(`Failed to award badge ${slug} to user ${userId}:`, error);
-      return false;
+      console.error(`Failed to award badge ${slug} to user ${userId}:`, error)
+      return false
     }
   },
 
   /**
    * Check and award first contribution badge
    */
-  async checkFirstContribution(
-    ctx: AwardContext,
-    userId: string
-  ): Promise<boolean> {
+  async checkFirstContribution(ctx: AwardContext, userId: string): Promise<boolean> {
     // Check if user has any published rules
     const publishedCount = await ctx.prisma.rule.count({
       where: {
         createdByUserId: userId,
         status: "PUBLISHED",
       },
-    });
+    })
 
     if (publishedCount === 1) {
       // This is their first published rule
-      return await this.awardBadgeIfEligible(ctx, userId, "first-contribution");
+      return await this.awardBadgeIfEligible(ctx, userId, "first-contribution")
     }
 
-    return false;
+    return false
   },
 
   /**
@@ -222,88 +219,75 @@ export const GamificationService = {
           },
         },
       },
-    });
+    })
 
-    if (!rule) return false;
+    if (!rule) return false
 
     // Calculate net score (upvotes - downvotes)
-    const upvotes = rule._count.votes;
+    const upvotes = rule._count.votes
     const downvotes = await ctx.prisma.vote.count({
       where: { ruleId, value: -1 },
-    });
+    })
 
-    const netScore = upvotes - downvotes;
+    const netScore = upvotes - downvotes
 
     if (netScore >= 10) {
-      return await this.awardBadgeIfEligible(
-        ctx,
-        rule.createdByUserId,
-        "ten-upvotes",
-        { ruleId, netScore }
-      );
+      return await this.awardBadgeIfEligible(ctx, rule.createdByUserId, "ten-upvotes", {
+        ruleId,
+        netScore,
+      })
     }
 
-    return false;
+    return false
   },
 
   /**
    * Check and award hundred copies badge for a rule
    */
-  async checkHundredCopies(
-    ctx: AwardContext,
-    ruleId: string
-  ): Promise<boolean> {
+  async checkHundredCopies(ctx: AwardContext, ruleId: string): Promise<boolean> {
     // Sum all-time copies from RuleMetricDaily
     const copySum = await ctx.prisma.ruleMetricDaily.aggregate({
       where: { ruleId },
       _sum: { copies: true },
-    });
+    })
 
-    const totalCopies = copySum._sum.copies || 0;
+    const totalCopies = copySum._sum.copies || 0
 
     if (totalCopies >= 100) {
       const rule = await ctx.prisma.rule.findUnique({
         where: { id: ruleId },
         select: { createdByUserId: true },
-      });
+      })
 
       if (rule) {
-        return await this.awardBadgeIfEligible(
-          ctx,
-          rule.createdByUserId,
-          "hundred-copies",
-          { ruleId, totalCopies }
-        );
+        return await this.awardBadgeIfEligible(ctx, rule.createdByUserId, "hundred-copies", {
+          ruleId,
+          totalCopies,
+        })
       }
     }
 
-    return false;
+    return false
   },
 
   /**
    * Award verified author badge
    */
-  async awardVerifiedAuthor(
-    ctx: AwardContext,
-    userId: string
-  ): Promise<boolean> {
-    return await this.awardBadgeIfEligible(ctx, userId, "verified-author");
+  async awardVerifiedAuthor(ctx: AwardContext, userId: string): Promise<boolean> {
+    return await this.awardBadgeIfEligible(ctx, userId, "verified-author")
   },
 
   /**
    * Award top 10 weekly badges to rule authors
    */
-  async awardTop10WeeklyBadges(
-    ctx: AwardContext,
-    topRuleIds: string[]
-  ): Promise<number> {
-    let awarded = 0;
+  async awardTop10WeeklyBadges(ctx: AwardContext, topRuleIds: string[]): Promise<number> {
+    let awarded = 0
 
     for (const ruleId of topRuleIds.slice(0, 10)) {
       const rule = await ctx.prisma.rule.findUnique({
         where: { id: ruleId },
         select: { createdByUserId: true },
-      });
+      })
 
       if (rule) {
         const wasAwarded = await this.awardBadgeIfEligible(
@@ -311,12 +295,12 @@ export const GamificationService = {
           rule.createdByUserId,
           "top-10-week",
           { ruleId, rank: topRuleIds.indexOf(ruleId) + 1 }
-        );
-        if (wasAwarded) awarded++;
+        )
+        if (wasAwarded) awarded++
       }
     }
 
-    return awarded;
+    return awarded
   },
 
   /**
@@ -326,24 +310,24 @@ export const GamificationService = {
     ctx: AwardContext,
     params: LeaderboardParams
   ): Promise<LeaderboardEntry[]> {
-    const { period, scope, scopeRef, windowDays, limit = 100 } = params;
+    const { period, scope, scopeRef, windowDays, limit = 100 } = params
 
     // Calculate date range based on period
-    let startDate: Date | undefined;
+    let startDate: Date | undefined
     if (period !== "ALL") {
-      const days = windowDays || this.getPeriodDays(period);
-      startDate = new Date(ctx.now);
-      startDate.setDate(startDate.getDate() - days);
+      const days = windowDays || this.getPeriodDays(period)
+      startDate = new Date(ctx.now)
+      startDate.setDate(startDate.getDate() - days)
     }
 
     // Build where clause for scope
-    let ruleWhere: any = {};
+    let ruleWhere: any = {}
     if (scope === "TAG" && scopeRef) {
       ruleWhere.tags = {
         some: { slug: scopeRef },
-      };
+      }
     } else if (scope === "MODEL" && scopeRef) {
-      ruleWhere.primaryModel = scopeRef;
+      ruleWhere.primaryModel = scopeRef
     }
 
     // Query rules with their metrics
@@ -365,27 +349,26 @@ export const GamificationService = {
           where: startDate ? { date: { gte: startDate } } : undefined,
         },
       },
-    });
+    })
 
     // Aggregate metrics and compute scores
     const entries = rules
-      .map((rule) => {
-        const metrics = rule.metrics;
+      .map(rule => {
+        const metrics = rule.metrics
 
         // Sum metrics across the period
-        const totalViews = metrics.reduce((sum, m) => sum + m.views, 0);
-        const totalCopies = metrics.reduce((sum, m) => sum + m.copies, 0);
-        const totalSaves = metrics.reduce((sum, m) => sum + m.saves, 0);
-        const totalForks = metrics.reduce((sum, m) => sum + m.forks, 0);
-        const totalVotes = metrics.reduce((sum, m) => sum + m.votes, 0);
+        const totalViews = metrics.reduce((sum, m) => sum + m.views, 0)
+        const totalCopies = metrics.reduce((sum, m) => sum + m.copies, 0)
+        const totalSaves = metrics.reduce((sum, m) => sum + m.saves, 0)
+        const totalForks = metrics.reduce((sum, m) => sum + m.forks, 0)
+        const totalVotes = metrics.reduce((sum, m) => sum + m.votes, 0)
 
         // Use latest score or compute weighted score
-        const latestScore =
-          metrics.length > 0 ? Math.max(...metrics.map((m) => m.score)) : 0;
+        const latestScore = metrics.length > 0 ? Math.max(...metrics.map(m => m.score)) : 0
 
         // Apply minimum thresholds
         if (totalViews < 10 && totalCopies < 1) {
-          return null;
+          return null
         }
 
         return {
@@ -400,24 +383,24 @@ export const GamificationService = {
           saves: totalSaves,
           forks: totalForks,
           votes: totalVotes,
-        };
+        }
       })
-      .filter((entry) => entry !== null);
+      .filter(entry => entry !== null)
 
     // Sort by score, then by tie-breakers
     entries.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      if (b.copies !== a.copies) return b.copies - a.copies;
-      if (b.views !== a.views) return b.views - a.views;
-      return 0; // Could add updatedAt tie-breaker
-    });
+      if (b.score !== a.score) return b.score - a.score
+      if (b.copies !== a.copies) return b.copies - a.copies
+      if (b.views !== a.views) return b.views - a.views
+      return 0 // Could add updatedAt tie-breaker
+    })
 
     // Assign ranks
     entries.forEach((entry, index) => {
-      entry.rank = index + 1;
-    });
+      entry.rank = index + 1
+    })
 
-    return entries.slice(0, limit);
+    return entries.slice(0, limit)
   },
 
   /**
@@ -428,11 +411,11 @@ export const GamificationService = {
     params: LeaderboardParams,
     entries: LeaderboardEntry[]
   ): Promise<string> {
-    const { period, scope, scopeRef } = params;
+    const { period, scope, scopeRef } = params
 
     // Check for existing snapshot today
-    const today = new Date(ctx.now);
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(ctx.now)
+    today.setHours(0, 0, 0, 0)
 
     const existing = await ctx.prisma.leaderboardSnapshot.findFirst({
       where: {
@@ -441,7 +424,7 @@ export const GamificationService = {
         scopeRef: scopeRef || null,
         createdAt: { gte: today },
       },
-    });
+    })
 
     if (existing) {
       // Update existing snapshot
@@ -459,8 +442,8 @@ export const GamificationService = {
             },
           } as any,
         },
-      });
-      return existing.id;
+      })
+      return existing.id
     } else {
       // Create new snapshot
       const snapshot = await ctx.prisma.leaderboardSnapshot.create({
@@ -479,8 +462,8 @@ export const GamificationService = {
             },
           } as any,
         },
-      });
-      return snapshot.id;
+      })
+      return snapshot.id
     }
   },
 
@@ -501,9 +484,9 @@ export const GamificationService = {
       },
       orderBy: { createdAt: "desc" },
       take: 2,
-    });
+    })
 
-    return snapshots.length > 1 ? snapshots[1] : null;
+    return snapshots.length > 1 ? snapshots[1] : null
   },
 
   /**
@@ -512,13 +495,13 @@ export const GamificationService = {
   getPeriodDays(period: string): number {
     switch (period) {
       case "DAILY":
-        return 1;
+        return 1
       case "WEEKLY":
-        return 7;
+        return 7
       case "MONTHLY":
-        return 30;
+        return 30
       default:
-        return 365; // ALL
+        return 365 // ALL
     }
   },
 
@@ -526,28 +509,28 @@ export const GamificationService = {
    * Recheck all badges for a user (rate-limited)
    */
   async recheckUserBadges(ctx: AwardContext, userId: string): Promise<number> {
-    let awarded = 0;
+    let awarded = 0
 
     // Check first contribution
     if (await this.checkFirstContribution(ctx, userId)) {
-      awarded++;
+      awarded++
     }
 
     // Check user's rules for vote and copy thresholds
     const userRules = await ctx.prisma.rule.findMany({
       where: { createdByUserId: userId, status: "PUBLISHED" },
       select: { id: true },
-    });
+    })
 
     for (const rule of userRules) {
       if (await this.checkTenUpvotes(ctx, rule.id)) {
-        awarded++;
+        awarded++
       }
       if (await this.checkHundredCopies(ctx, rule.id)) {
-        awarded++;
+        awarded++
       }
     }
 
-    return awarded;
+    return awarded
   },
-};
+}

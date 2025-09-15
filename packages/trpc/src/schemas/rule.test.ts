@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest"
 import {
   createRuleSchema,
   updateRuleSchema,
@@ -26,7 +26,7 @@ import {
   type GetTrendingRulesInput,
   type DuplicateRuleInput,
   type GetRuleStatsInput,
-} from "./rule";
+} from "./rule"
 
 describe("Rule Schemas", () => {
   describe("createRuleSchema", () => {
@@ -50,11 +50,11 @@ describe("Rule Schemas", () => {
           },
         ],
         idempotencyKey: "create-rule-key-123",
-      };
+      }
 
-      const result = createRuleSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = createRuleSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept minimal required fields", () => {
       const minimalInput = {
@@ -63,26 +63,26 @@ describe("Rule Schemas", () => {
         contentType: "RULE" as const,
         body: "Minimal body content",
         idempotencyKey: "minimal-key-456",
-      };
+      }
 
-      const result = createRuleSchema.parse(minimalInput);
-      expect(result).toEqual(minimalInput);
-    });
+      const result = createRuleSchema.parse(minimalInput)
+      expect(result).toEqual(minimalInput)
+    })
 
     it("should accept all valid content types", () => {
-      const contentTypes = ["PROMPT", "RULE", "MCP", "GUIDE"] as const;
+      const contentTypes = ["PROMPT", "RULE", "MCP", "GUIDE"] as const
 
-      contentTypes.forEach((contentType) => {
+      contentTypes.forEach(contentType => {
         const input = {
           title: `${contentType} Title`,
           summary: `${contentType} summary`,
           contentType,
           body: `${contentType} body`,
           idempotencyKey: `key-${contentType.toLowerCase()}`,
-        };
-        expect(() => createRuleSchema.parse(input)).not.toThrow();
-      });
-    });
+        }
+        expect(() => createRuleSchema.parse(input)).not.toThrow()
+      })
+    })
 
     it("should reject invalid content type", () => {
       const invalidInput = {
@@ -91,10 +91,10 @@ describe("Rule Schemas", () => {
         contentType: "INVALID_TYPE",
         body: "Test body",
         idempotencyKey: "test-key",
-      };
+      }
 
-      expect(() => createRuleSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => createRuleSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept input without optional fields", () => {
       const inputWithoutOptionals = {
@@ -103,14 +103,14 @@ describe("Rule Schemas", () => {
         contentType: "GUIDE" as const,
         body: "Body without optionals",
         idempotencyKey: "no-optionals-key",
-      };
+      }
 
-      const result = createRuleSchema.parse(inputWithoutOptionals);
-      expect(result.primaryModel).toBeUndefined();
-      expect(result.tags).toBeUndefined();
-      expect(result.testedOn).toBeUndefined();
-      expect(result.links).toBeUndefined();
-    });
+      const result = createRuleSchema.parse(inputWithoutOptionals)
+      expect(result.primaryModel).toBeUndefined()
+      expect(result.tags).toBeUndefined()
+      expect(result.testedOn).toBeUndefined()
+      expect(result.links).toBeUndefined()
+    })
 
     it("should accept empty arrays for optional array fields", () => {
       const input = {
@@ -121,10 +121,10 @@ describe("Rule Schemas", () => {
         tags: [],
         links: [],
         idempotencyKey: "empty-arrays-key",
-      };
+      }
 
-      expect(() => createRuleSchema.parse(input)).not.toThrow();
-    });
+      expect(() => createRuleSchema.parse(input)).not.toThrow()
+    })
 
     it("should accept multiple tags", () => {
       const input = {
@@ -134,10 +134,10 @@ describe("Rule Schemas", () => {
         body: "Body with multiple tags",
         tags: ["tag1", "tag2", "tag3", "javascript", "react", "testing"],
         idempotencyKey: "multi-tag-key",
-      };
+      }
 
-      expect(() => createRuleSchema.parse(input)).not.toThrow();
-    });
+      expect(() => createRuleSchema.parse(input)).not.toThrow()
+    })
 
     it("should accept multiple resource links", () => {
       const input = {
@@ -163,26 +163,26 @@ describe("Rule Schemas", () => {
           },
         ],
         idempotencyKey: "multi-link-key",
-      };
+      }
 
-      expect(() => createRuleSchema.parse(input)).not.toThrow();
-    });
+      expect(() => createRuleSchema.parse(input)).not.toThrow()
+    })
 
     it("should require all mandatory fields", () => {
-      const requiredFields = ["title", "contentType", "body"];
+      const requiredFields = ["title", "contentType", "body"]
 
-      requiredFields.forEach((field) => {
+      requiredFields.forEach(field => {
         const input = {
           title: "Test Rule",
           contentType: "RULE" as const,
           body: "Test body",
-        };
-        delete (input as any)[field];
+        }
+        delete (input as any)[field]
 
-        expect(() => createRuleSchema.parse(input)).toThrow();
-      });
-    });
-  });
+        expect(() => createRuleSchema.parse(input)).toThrow()
+      })
+    })
+  })
 
   describe("updateRuleSchema", () => {
     it("should accept valid rule update input", () => {
@@ -200,34 +200,34 @@ describe("Rule Schemas", () => {
           },
         ],
         idempotencyKey: "update-rule-key-123",
-      };
+      }
 
-      const result = updateRuleSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = updateRuleSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept minimal update input", () => {
       const minimalInput = {
         ruleId: "clkv6q4a40001356h2g8h2g8h",
         summary: "Updated summary only",
         idempotencyKey: "minimal-update-key",
-      };
+      }
 
-      const result = updateRuleSchema.parse(minimalInput);
-      expect(result.title).toBeUndefined();
-      expect(result.primaryModel).toBeUndefined();
-      expect(result.tags).toBeUndefined();
-      expect(result.links).toBeUndefined();
-    });
+      const result = updateRuleSchema.parse(minimalInput)
+      expect(result.title).toBeUndefined()
+      expect(result.primaryModel).toBeUndefined()
+      expect(result.tags).toBeUndefined()
+      expect(result.links).toBeUndefined()
+    })
 
     it("should require ruleId", () => {
       const inputWithoutRuleId = {
         summary: "Summary without ruleId",
         idempotencyKey: "key-without-ruleid",
-      };
+      }
 
-      expect(() => updateRuleSchema.parse(inputWithoutRuleId)).toThrow();
-    });
+      expect(() => updateRuleSchema.parse(inputWithoutRuleId)).toThrow()
+    })
 
     it("should accept update with only some optional fields", () => {
       const partialUpdate = {
@@ -235,11 +235,11 @@ describe("Rule Schemas", () => {
         title: "Only Title Updated",
         summary: "Summary is required",
         idempotencyKey: "partial-update-key",
-      };
+      }
 
-      expect(() => updateRuleSchema.parse(partialUpdate)).not.toThrow();
-    });
-  });
+      expect(() => updateRuleSchema.parse(partialUpdate)).not.toThrow()
+    })
+  })
 
   describe("ruleListFiltersSchema", () => {
     it("should accept valid filters", () => {
@@ -251,53 +251,53 @@ describe("Rule Schemas", () => {
         authorId: "author123",
         createdAfter: new Date("2024-01-01"),
         createdBefore: new Date("2024-12-31"),
-      };
+      }
 
-      const result = ruleListFiltersSchema.parse(validFilters);
-      expect(result).toEqual(validFilters);
-    });
+      const result = ruleListFiltersSchema.parse(validFilters)
+      expect(result).toEqual(validFilters)
+    })
 
     it("should accept empty filters", () => {
       const emptyFilters = {
         tags: [],
         model: "",
         status: "DRAFT" as const,
-      };
+      }
 
-      expect(() => ruleListFiltersSchema.parse(emptyFilters)).not.toThrow();
-    });
+      expect(() => ruleListFiltersSchema.parse(emptyFilters)).not.toThrow()
+    })
 
     it("should accept filters with only some fields", () => {
       const partialFilters = {
         tags: ["typescript"],
         status: "DRAFT" as const,
-      };
+      }
 
-      expect(() => ruleListFiltersSchema.parse(partialFilters)).not.toThrow();
-    });
+      expect(() => ruleListFiltersSchema.parse(partialFilters)).not.toThrow()
+    })
 
     it("should accept all valid status values", () => {
-      const statusValues = ["DRAFT", "PUBLISHED", "DEPRECATED"] as const;
+      const statusValues = ["DRAFT", "PUBLISHED", "DEPRECATED"] as const
 
-      statusValues.forEach((status) => {
+      statusValues.forEach(status => {
         const filters = {
           tags: [],
           model: "",
           status,
-        };
-        expect(() => ruleListFiltersSchema.parse(filters)).not.toThrow();
-      });
-    });
+        }
+        expect(() => ruleListFiltersSchema.parse(filters)).not.toThrow()
+      })
+    })
 
     it("should reject invalid status", () => {
       const invalidFilters = {
         tags: [],
         model: "",
         status: "INVALID_STATUS",
-      };
+      }
 
-      expect(() => ruleListFiltersSchema.parse(invalidFilters)).toThrow();
-    });
+      expect(() => ruleListFiltersSchema.parse(invalidFilters)).toThrow()
+    })
 
     it("should accept date range filters", () => {
       const dateFilters = {
@@ -306,11 +306,11 @@ describe("Rule Schemas", () => {
         status: "PUBLISHED" as const,
         createdAfter: new Date("2024-01-01T00:00:00Z"),
         createdBefore: new Date("2024-12-31T23:59:59Z"),
-      };
+      }
 
-      expect(() => ruleListFiltersSchema.parse(dateFilters)).not.toThrow();
-    });
-  });
+      expect(() => ruleListFiltersSchema.parse(dateFilters)).not.toThrow()
+    })
+  })
 
   describe("listRulesSchema", () => {
     it("should accept valid list rules input", () => {
@@ -324,49 +324,49 @@ describe("Rule Schemas", () => {
           status: "PUBLISHED" as const,
           contentType: "RULE" as const,
         },
-      };
+      }
 
-      const result = listRulesSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = listRulesSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept minimal input with defaults", () => {
       const minimalInput = {
         sort: "top" as const,
-      };
+      }
 
-      const result = listRulesSchema.parse(minimalInput);
-      expect(result.sort).toBe("top");
-      expect(result.filters).toBeUndefined();
-    });
+      const result = listRulesSchema.parse(minimalInput)
+      expect(result.sort).toBe("top")
+      expect(result.filters).toBeUndefined()
+    })
 
     it("should accept all valid sort options", () => {
-      const sortOptions = ["new", "top", "trending"] as const;
+      const sortOptions = ["new", "top", "trending"] as const
 
-      sortOptions.forEach((sort) => {
-        const input = { sort };
-        expect(() => listRulesSchema.parse(input)).not.toThrow();
-      });
-    });
+      sortOptions.forEach(sort => {
+        const input = { sort }
+        expect(() => listRulesSchema.parse(input)).not.toThrow()
+      })
+    })
 
     it("should reject invalid sort option", () => {
       const invalidInput = {
         sort: "INVALID_SORT",
-      };
+      }
 
-      expect(() => listRulesSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => listRulesSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept input without filters", () => {
       const inputWithoutFilters = {
         cursor: "no-filters-cursor",
         limit: 10,
         sort: "trending" as const,
-      };
+      }
 
-      expect(() => listRulesSchema.parse(inputWithoutFilters)).not.toThrow();
-    });
-  });
+      expect(() => listRulesSchema.parse(inputWithoutFilters)).not.toThrow()
+    })
+  })
 
   describe("getRuleBySlugSchema", () => {
     it("should accept valid slug input", () => {
@@ -374,41 +374,41 @@ describe("Rule Schemas", () => {
         slug: "test-rule-slug",
         includeMetrics: true,
         includeUserActions: true,
-      };
+      }
 
-      const result = getRuleBySlugSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = getRuleBySlugSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default values", () => {
       const minimalInput = {
         slug: "minimal-slug",
-      };
+      }
 
-      const result = getRuleBySlugSchema.parse(minimalInput);
-      expect(result.includeMetrics).toBe(true); // default
-      expect(result.includeUserActions).toBe(false); // default
-    });
+      const result = getRuleBySlugSchema.parse(minimalInput)
+      expect(result.includeMetrics).toBe(true) // default
+      expect(result.includeUserActions).toBe(false) // default
+    })
 
     it("should accept boolean overrides", () => {
       const customInput = {
         slug: "custom-slug",
         includeMetrics: false,
         includeUserActions: true,
-      };
+      }
 
-      const result = getRuleBySlugSchema.parse(customInput);
-      expect(result.includeMetrics).toBe(false);
-      expect(result.includeUserActions).toBe(true);
-    });
+      const result = getRuleBySlugSchema.parse(customInput)
+      expect(result.includeMetrics).toBe(false)
+      expect(result.includeUserActions).toBe(true)
+    })
 
     it("should require slug", () => {
       const inputWithoutSlug = {
         includeMetrics: true,
-      };
+      }
 
-      expect(() => getRuleBySlugSchema.parse(inputWithoutSlug)).toThrow();
-    });
+      expect(() => getRuleBySlugSchema.parse(inputWithoutSlug)).toThrow()
+    })
 
     it("should accept various slug formats", () => {
       const slugFormats = [
@@ -416,14 +416,14 @@ describe("Rule Schemas", () => {
         "slug-with-numbers-123",
         "very-long-slug-with-many-words-and-dashes",
         "abc",
-      ];
+      ]
 
-      slugFormats.forEach((slug) => {
-        const input = { slug };
-        expect(() => getRuleBySlugSchema.parse(input)).not.toThrow();
-      });
-    });
-  });
+      slugFormats.forEach(slug => {
+        const input = { slug }
+        expect(() => getRuleBySlugSchema.parse(input)).not.toThrow()
+      })
+    })
+  })
 
   describe("getRuleByIdSchema", () => {
     it("should accept valid ID input", () => {
@@ -431,50 +431,50 @@ describe("Rule Schemas", () => {
         ruleId: "clkv6q4a40010356h2g8h2g8h",
         includeMetrics: false,
         includeUserActions: true,
-      };
+      }
 
-      const result = getRuleByIdSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = getRuleByIdSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default values", () => {
       const minimalInput = {
         ruleId: "clkv6q4a40011356h2g8h2g8h",
-      };
+      }
 
-      const result = getRuleByIdSchema.parse(minimalInput);
-      expect(result.includeMetrics).toBe(true); // default
-      expect(result.includeUserActions).toBe(false); // default
-    });
+      const result = getRuleByIdSchema.parse(minimalInput)
+      expect(result.includeMetrics).toBe(true) // default
+      expect(result.includeUserActions).toBe(false) // default
+    })
 
     it("should require ruleId", () => {
       const inputWithoutId = {
         includeMetrics: false,
-      };
+      }
 
-      expect(() => getRuleByIdSchema.parse(inputWithoutId)).toThrow();
-    });
-  });
+      expect(() => getRuleByIdSchema.parse(inputWithoutId)).toThrow()
+    })
+  })
 
   describe("publishRuleSchema", () => {
     it("should accept valid publish input", () => {
       const validInput = {
         ruleId: "clkv6q4a40012356h2g8h2g8h",
         idempotencyKey: "publish-key-123",
-      };
+      }
 
-      const result = publishRuleSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = publishRuleSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should require ruleId", () => {
       const inputWithoutRuleId = {
         idempotencyKey: "publish-key",
-      };
+      }
 
-      expect(() => publishRuleSchema.parse(inputWithoutRuleId)).toThrow();
-    });
-  });
+      expect(() => publishRuleSchema.parse(inputWithoutRuleId)).toThrow()
+    })
+  })
 
   describe("deprecateRuleSchema", () => {
     it("should accept valid deprecate input with reason", () => {
@@ -482,52 +482,52 @@ describe("Rule Schemas", () => {
         ruleId: "clkv6q4a40014356h2g8h2g8h",
         reason: "This rule is outdated and no longer applicable",
         idempotencyKey: "deprecate-key-123",
-      };
+      }
 
-      const result = deprecateRuleSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = deprecateRuleSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept input without reason", () => {
       const inputWithoutReason = {
         ruleId: "clkv6q4a40015356h2g8h2g8h",
         idempotencyKey: "deprecate-no-reason-key",
-      };
+      }
 
-      const result = deprecateRuleSchema.parse(inputWithoutReason);
-      expect(result.reason).toBeUndefined();
-    });
+      const result = deprecateRuleSchema.parse(inputWithoutReason)
+      expect(result.reason).toBeUndefined()
+    })
 
     it("should validate reason length", () => {
-      const longReason = "a".repeat(501); // Exceeds 500 char limit
+      const longReason = "a".repeat(501) // Exceeds 500 char limit
       const invalidInput = {
         ruleId: "clkv6q4a40016356h2g8h2g8h",
         reason: longReason,
         idempotencyKey: "long-reason-key",
-      };
+      }
 
-      expect(() => deprecateRuleSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => deprecateRuleSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept reason at max length", () => {
-      const maxLengthReason = "a".repeat(500); // Exactly 500 chars
+      const maxLengthReason = "a".repeat(500) // Exactly 500 chars
       const validInput = {
         ruleId: "clkv6q4a40017356h2g8h2g8h",
         reason: maxLengthReason,
         idempotencyKey: "max-reason-key",
-      };
+      }
 
-      expect(() => deprecateRuleSchema.parse(validInput)).not.toThrow();
-    });
+      expect(() => deprecateRuleSchema.parse(validInput)).not.toThrow()
+    })
 
     it("should require ruleId", () => {
       const inputWithoutRuleId = {
         idempotencyKey: "deprecate-key",
-      };
+      }
 
-      expect(() => deprecateRuleSchema.parse(inputWithoutRuleId)).toThrow();
-    });
-  });
+      expect(() => deprecateRuleSchema.parse(inputWithoutRuleId)).toThrow()
+    })
+  })
 
   describe("softDeleteRuleSchema", () => {
     it("should accept valid soft delete input with reason", () => {
@@ -535,43 +535,43 @@ describe("Rule Schemas", () => {
         ruleId: "clkv6q4a40019356h2g8h2g8h",
         reason: "Rule violates community guidelines",
         idempotencyKey: "soft-delete-key-123",
-      };
+      }
 
-      const result = softDeleteRuleSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = softDeleteRuleSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept input without reason", () => {
       const inputWithoutReason = {
         ruleId: "clkv6q4a40020356h2g8h2g8h",
         idempotencyKey: "soft-delete-no-reason-key",
-      };
+      }
 
-      const result = softDeleteRuleSchema.parse(inputWithoutReason);
-      expect(result.reason).toBeUndefined();
-    });
+      const result = softDeleteRuleSchema.parse(inputWithoutReason)
+      expect(result.reason).toBeUndefined()
+    })
 
     it("should validate reason length", () => {
-      const longReason = "b".repeat(501); // Exceeds 500 char limit
+      const longReason = "b".repeat(501) // Exceeds 500 char limit
       const invalidInput = {
         ruleId: "clkv6q4a40021356h2g8h2g8h",
         reason: longReason,
         idempotencyKey: "long-delete-reason-key",
-      };
+      }
 
-      expect(() => softDeleteRuleSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => softDeleteRuleSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept empty reason string", () => {
       const emptyReasonInput = {
         ruleId: "clkv6q4a40022356h2g8h2g8h",
         reason: "",
         idempotencyKey: "empty-reason-key",
-      };
+      }
 
-      expect(() => softDeleteRuleSchema.parse(emptyReasonInput)).not.toThrow();
-    });
-  });
+      expect(() => softDeleteRuleSchema.parse(emptyReasonInput)).not.toThrow()
+    })
+  })
 
   describe("getRulesByAuthorSchema", () => {
     it("should accept valid author rules input", () => {
@@ -581,49 +581,47 @@ describe("Rule Schemas", () => {
         limit: 15,
         sort: "new" as const,
         includePrivate: true,
-      };
+      }
 
-      const result = getRulesByAuthorSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = getRulesByAuthorSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default values", () => {
       const minimalInput = {
         authorId: "author456",
         sort: "top" as const,
-      };
+      }
 
-      const result = getRulesByAuthorSchema.parse(minimalInput);
-      expect(result.includePrivate).toBe(false); // default
-    });
+      const result = getRulesByAuthorSchema.parse(minimalInput)
+      expect(result.includePrivate).toBe(false) // default
+    })
 
     it("should require authorId", () => {
       const inputWithoutAuthorId = {
         sort: "new" as const,
-      };
+      }
 
-      expect(() =>
-        getRulesByAuthorSchema.parse(inputWithoutAuthorId)
-      ).toThrow();
-    });
+      expect(() => getRulesByAuthorSchema.parse(inputWithoutAuthorId)).toThrow()
+    })
 
     it("should accept includePrivate true and false", () => {
       const privateTrue = {
         authorId: "author-private-true",
         sort: "top" as const,
         includePrivate: true,
-      };
+      }
 
       const privateFalse = {
         authorId: "author-private-false",
         sort: "trending" as const,
         includePrivate: false,
-      };
+      }
 
-      expect(() => getRulesByAuthorSchema.parse(privateTrue)).not.toThrow();
-      expect(() => getRulesByAuthorSchema.parse(privateFalse)).not.toThrow();
-    });
-  });
+      expect(() => getRulesByAuthorSchema.parse(privateTrue)).not.toThrow()
+      expect(() => getRulesByAuthorSchema.parse(privateFalse)).not.toThrow()
+    })
+  })
 
   describe("getTrendingRulesSchema", () => {
     it("should accept valid trending rules input", () => {
@@ -636,49 +634,47 @@ describe("Rule Schemas", () => {
           model: "gpt-4",
           status: "PUBLISHED" as const,
         },
-      };
+      }
 
-      const result = getTrendingRulesSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = getTrendingRulesSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default values", () => {
-      const minimalInput = {};
+      const minimalInput = {}
 
-      const result = getTrendingRulesSchema.parse(minimalInput);
-      expect(result.period).toBe("week"); // default
-      expect(result.filters).toBeUndefined();
-    });
+      const result = getTrendingRulesSchema.parse(minimalInput)
+      expect(result.period).toBe("week") // default
+      expect(result.filters).toBeUndefined()
+    })
 
     it("should accept all valid period values", () => {
-      const periods = ["day", "week", "month"] as const;
+      const periods = ["day", "week", "month"] as const
 
-      periods.forEach((period) => {
-        const input = { period };
-        expect(() => getTrendingRulesSchema.parse(input)).not.toThrow();
-      });
-    });
+      periods.forEach(period => {
+        const input = { period }
+        expect(() => getTrendingRulesSchema.parse(input)).not.toThrow()
+      })
+    })
 
     it("should reject invalid period", () => {
       const invalidInput = {
         period: "year",
-      };
+      }
 
-      expect(() => getTrendingRulesSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => getTrendingRulesSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept input without filters", () => {
       const inputWithoutFilters = {
         cursor: "no-filters-trending",
         limit: 30,
         period: "day" as const,
-      };
+      }
 
-      expect(() =>
-        getTrendingRulesSchema.parse(inputWithoutFilters)
-      ).not.toThrow();
-    });
-  });
+      expect(() => getTrendingRulesSchema.parse(inputWithoutFilters)).not.toThrow()
+    })
+  })
 
   describe("duplicateRuleSchema", () => {
     it("should accept valid duplicate input", () => {
@@ -687,82 +683,82 @@ describe("Rule Schemas", () => {
         title: "Duplicated Rule Title",
         summary: "Summary for duplicated rule",
         idempotencyKey: "duplicate-key-123",
-      };
+      }
 
-      const result = duplicateRuleSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = duplicateRuleSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept input without title", () => {
       const inputWithoutTitle = {
         ruleId: "clkv6q4a40031356h2g8h2g8h",
         summary: "Summary without custom title",
         idempotencyKey: "duplicate-no-title-key",
-      };
+      }
 
-      const result = duplicateRuleSchema.parse(inputWithoutTitle);
-      expect(result.title).toBeUndefined();
-    });
+      const result = duplicateRuleSchema.parse(inputWithoutTitle)
+      expect(result.title).toBeUndefined()
+    })
 
     it("should require ruleId", () => {
       const inputWithoutRuleId = {
         summary: "Required summary",
         idempotencyKey: "duplicate-key",
-      };
+      }
 
-      expect(() => duplicateRuleSchema.parse(inputWithoutRuleId)).toThrow();
-    });
-  });
+      expect(() => duplicateRuleSchema.parse(inputWithoutRuleId)).toThrow()
+    })
+  })
 
   describe("getRuleStatsSchema", () => {
     it("should accept valid stats input", () => {
       const validInput = {
         ruleId: "clkv6q4a40040356h2g8h2g8h",
         period: "month" as const,
-      };
+      }
 
-      const result = getRuleStatsSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = getRuleStatsSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default period", () => {
       const minimalInput = {
         ruleId: "clkv6q4a40041356h2g8h2g8h",
-      };
+      }
 
-      const result = getRuleStatsSchema.parse(minimalInput);
-      expect(result.period).toBe("week"); // default
-    });
+      const result = getRuleStatsSchema.parse(minimalInput)
+      expect(result.period).toBe("week") // default
+    })
 
     it("should accept all valid period values", () => {
-      const periods = ["day", "week", "month", "all"] as const;
+      const periods = ["day", "week", "month", "all"] as const
 
-      periods.forEach((period) => {
+      periods.forEach(period => {
         const input = {
           ruleId: "clkv6q4a40042356h2g8h2g8h",
           period,
-        };
-        expect(() => getRuleStatsSchema.parse(input)).not.toThrow();
-      });
-    });
+        }
+        expect(() => getRuleStatsSchema.parse(input)).not.toThrow()
+      })
+    })
 
     it("should reject invalid period", () => {
       const invalidInput = {
         ruleId: "clkv6q4a40043356h2g8h2g8h",
         period: "year",
-      };
+      }
 
-      expect(() => getRuleStatsSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => getRuleStatsSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should require ruleId", () => {
       const inputWithoutId = {
         period: "day" as const,
-      };
+      }
 
-      expect(() => getRuleStatsSchema.parse(inputWithoutId)).toThrow();
-    });
-  });
+      expect(() => getRuleStatsSchema.parse(inputWithoutId)).toThrow()
+    })
+  })
 
   describe("Type Exports", () => {
     it("should export all input types", () => {
@@ -773,86 +769,85 @@ describe("Rule Schemas", () => {
         contentType: "RULE",
         body: "Test",
         idempotencyKey: "test",
-      };
+      }
 
       const updateRuleInput: UpdateRuleInput = {
         ruleId: "clkv6q4a40050356h2g8h2g8h",
         summary: "Test",
         idempotencyKey: "test",
-      };
+      }
 
       const ruleListFilters: RuleListFilters = {
         tags: [],
         model: "",
         status: "ALL",
-      };
+      }
 
       const listRulesInput: ListRulesInput = {
         sort: "CREATED_ASC",
-      };
+      }
 
       const getRuleBySlugInput: GetRuleBySlugInput = {
         slug: "test-slug",
-      };
+      }
 
       const getRuleByIdInput: GetRuleByIdInput = {
         ruleId: "clkv6q4a40051356h2g8h2g8h",
-      };
+      }
 
       const publishRuleInput: PublishRuleInput = {
         ruleId: "clkv6q4a40052356h2g8h2g8h",
         idempotencyKey: "test",
-      };
+      }
 
       const deprecateRuleInput: DeprecateRuleInput = {
         ruleId: "clkv6q4a40053356h2g8h2g8h",
         idempotencyKey: "test",
-      };
+      }
 
       const softDeleteRuleInput: SoftDeleteRuleInput = {
         ruleId: "clkv6q4a40054356h2g8h2g8h",
         idempotencyKey: "test",
-      };
+      }
 
       const getRulesByAuthorInput: GetRulesByAuthorInput = {
         authorId: "author",
         sort: "CREATED_ASC",
-      };
+      }
 
-      const getTrendingRulesInput: GetTrendingRulesInput = {};
+      const getTrendingRulesInput: GetTrendingRulesInput = {}
 
       const duplicateRuleInput: DuplicateRuleInput = {
         ruleId: "clkv6q4a40055356h2g8h2g8h",
         summary: "test",
         idempotencyKey: "test",
-      };
+      }
 
       const getRuleStatsInput: GetRuleStatsInput = {
         ruleId: "clkv6q4a40056356h2g8h2g8h",
-      };
+      }
 
-      expect(createRuleInput).toBeDefined();
-      expect(updateRuleInput).toBeDefined();
-      expect(ruleListFilters).toBeDefined();
-      expect(listRulesInput).toBeDefined();
-      expect(getRuleBySlugInput).toBeDefined();
-      expect(getRuleByIdInput).toBeDefined();
-      expect(publishRuleInput).toBeDefined();
-      expect(deprecateRuleInput).toBeDefined();
-      expect(softDeleteRuleInput).toBeDefined();
-      expect(getRulesByAuthorInput).toBeDefined();
-      expect(getTrendingRulesInput).toBeDefined();
-      expect(duplicateRuleInput).toBeDefined();
-      expect(getRuleStatsInput).toBeDefined();
-    });
-  });
+      expect(createRuleInput).toBeDefined()
+      expect(updateRuleInput).toBeDefined()
+      expect(ruleListFilters).toBeDefined()
+      expect(listRulesInput).toBeDefined()
+      expect(getRuleBySlugInput).toBeDefined()
+      expect(getRuleByIdInput).toBeDefined()
+      expect(publishRuleInput).toBeDefined()
+      expect(deprecateRuleInput).toBeDefined()
+      expect(softDeleteRuleInput).toBeDefined()
+      expect(getRulesByAuthorInput).toBeDefined()
+      expect(getTrendingRulesInput).toBeDefined()
+      expect(duplicateRuleInput).toBeDefined()
+      expect(getRuleStatsInput).toBeDefined()
+    })
+  })
 
   describe("Edge Cases and Integration", () => {
     it("should handle complex rule creation with all optional fields", () => {
       const complexRule = {
         title: "Complex Rule with All Features",
-        summary:
-          "A comprehensive rule demonstrating all available features and options",
+        summary: "A comprehensive rule demonstrating all available features and options",
         contentType: "RULE" as const,
         primaryModel: "gpt-4-turbo-preview",
         tags: [
@@ -910,10 +905,10 @@ function complexRule() {
           },
         ],
         idempotencyKey: "complex_rule_creation_2024_04_15_comprehensive",
-      };
+      }
 
-      expect(() => createRuleSchema.parse(complexRule)).not.toThrow();
-    });
+      expect(() => createRuleSchema.parse(complexRule)).not.toThrow()
+    })
 
     it("should handle rule updates with partial data", () => {
       const partialUpdates = [
@@ -942,12 +937,12 @@ function complexRule() {
           ],
           idempotencyKey: "tags-links-update",
         },
-      ];
+      ]
 
-      partialUpdates.forEach((update) => {
-        expect(() => updateRuleSchema.parse(update)).not.toThrow();
-      });
-    });
+      partialUpdates.forEach(update => {
+        expect(() => updateRuleSchema.parse(update)).not.toThrow()
+      })
+    })
 
     it("should handle complex filtering scenarios", () => {
       const complexFilters = [
@@ -973,12 +968,12 @@ function complexRule() {
           contentType: "GUIDE" as const,
           createdAfter: new Date("2023-01-01T00:00:00Z"),
         },
-      ];
+      ]
 
-      complexFilters.forEach((filters) => {
-        expect(() => ruleListFiltersSchema.parse(filters)).not.toThrow();
-      });
-    });
+      complexFilters.forEach(filters => {
+        expect(() => ruleListFiltersSchema.parse(filters)).not.toThrow()
+      })
+    })
 
     it("should handle pagination edge cases", () => {
       const paginationCases = [
@@ -997,12 +992,12 @@ function complexRule() {
           limit: 25,
           sort: "new" as const,
         },
-      ];
+      ]
 
-      paginationCases.forEach((pagination) => {
-        expect(() => listRulesSchema.parse(pagination)).not.toThrow();
-      });
-    });
+      paginationCases.forEach(pagination => {
+        expect(() => listRulesSchema.parse(pagination)).not.toThrow()
+      })
+    })
 
     it("should handle various slug formats", () => {
       const slugFormats = [
@@ -1010,17 +1005,17 @@ function complexRule() {
         "slug-with-numbers-123",
         "very-long-slug-with-many-words-and-dashes-that-might-be-used-for-seo",
         "abc", // Minimum 3 characters
-      ];
+      ]
 
-      slugFormats.forEach((slug) => {
+      slugFormats.forEach(slug => {
         const input = {
           slug,
           includeMetrics: false,
           includeUserActions: true,
-        };
-        expect(() => getRuleBySlugSchema.parse(input)).not.toThrow();
-      });
-    });
+        }
+        expect(() => getRuleBySlugSchema.parse(input)).not.toThrow()
+      })
+    })
 
     it("should handle reason field edge cases", () => {
       const reasonCases = [
@@ -1044,13 +1039,13 @@ function complexRule() {
           // No reason field
           idempotencyKey: "no-reason-key",
         },
-      ];
+      ]
 
-      reasonCases.forEach((reasonCase) => {
-        expect(() => deprecateRuleSchema.parse(reasonCase)).not.toThrow();
-        expect(() => softDeleteRuleSchema.parse(reasonCase)).not.toThrow();
-      });
-    });
+      reasonCases.forEach(reasonCase => {
+        expect(() => deprecateRuleSchema.parse(reasonCase)).not.toThrow()
+        expect(() => softDeleteRuleSchema.parse(reasonCase)).not.toThrow()
+      })
+    })
 
     it("should handle all period combinations across schemas", () => {
       const periodSchemas = [
@@ -1059,19 +1054,19 @@ function complexRule() {
           schema: getRuleStatsSchema,
           periods: ["day", "week", "month", "all"],
         },
-      ];
+      ]
 
       periodSchemas.forEach(({ schema, periods }) => {
-        periods.forEach((period) => {
+        periods.forEach(period => {
           const input =
             schema === getTrendingRulesSchema
               ? { period }
-              : { ruleId: "clkv6q4a40080356h2g8h2g8h", period };
+              : { ruleId: "clkv6q4a40080356h2g8h2g8h", period }
 
-          expect(() => schema.parse(input)).not.toThrow();
-        });
-      });
-    });
+          expect(() => schema.parse(input)).not.toThrow()
+        })
+      })
+    })
 
     it("should validate that all schemas handle required fields correctly", () => {
       const schemaRequirements = [
@@ -1098,19 +1093,19 @@ function complexRule() {
             ruleId: "clkv6q4a40091356h2g8h2g8h",
           },
         },
-      ];
+      ]
 
       schemaRequirements.forEach(({ schema, requiredFields, validInput }) => {
         // Test that valid input passes
-        expect(() => schema.parse(validInput)).not.toThrow();
+        expect(() => schema.parse(validInput)).not.toThrow()
 
         // Test that missing required fields fail
-        requiredFields.forEach((field) => {
-          const invalidInput = { ...validInput };
-          delete (invalidInput as any)[field];
-          expect(() => schema.parse(invalidInput)).toThrow();
-        });
-      });
-    });
-  });
-});
+        requiredFields.forEach(field => {
+          const invalidInput = { ...validInput }
+          delete (invalidInput as any)[field]
+          expect(() => schema.parse(invalidInput)).toThrow()
+        })
+      })
+    })
+  })
+})

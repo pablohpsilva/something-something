@@ -1,10 +1,5 @@
-import { z } from "zod";
-import {
-  cuidOrUuidSchema,
-  cursorSchema,
-  limitSchema,
-  donationStatusSchema,
-} from "./base";
+import { z } from "zod"
+import { cuidOrUuidSchema, cursorSchema, limitSchema, donationStatusSchema } from "./base"
 
 /**
  * Create checkout session input schema
@@ -15,7 +10,7 @@ export const createCheckoutInputSchema = z.object({
   amountCents: z.number().int().min(100).max(20000), // $1.00 - $200.00
   currency: z.string().length(3).default("USD"),
   message: z.string().max(240).optional(), // Optional donor note
-});
+})
 
 /**
  * List donations input schema
@@ -24,7 +19,7 @@ export const listDonationsInputSchema = z.object({
   cursor: cursorSchema.optional(),
   limit: limitSchema.optional().default(20),
   type: z.enum(["received", "sent"]).default("received"),
-});
+})
 
 /**
  * Author donation stats input schema
@@ -32,14 +27,14 @@ export const listDonationsInputSchema = z.object({
 export const authorStatsInputSchema = z.object({
   authorUserId: cuidOrUuidSchema.optional(), // defaults to current user if omitted
   windowDays: z.number().int().min(7).max(365).default(30),
-});
+})
 
 // donationStatusSchema is imported from base.ts to avoid conflicts
 
 /**
  * Donation provider enum
  */
-export const donationProviderSchema = z.enum(["STRIPE"]);
+export const donationProviderSchema = z.enum(["STRIPE"])
 
 /**
  * Create checkout response schema
@@ -47,7 +42,7 @@ export const donationProviderSchema = z.enum(["STRIPE"]);
 export const createCheckoutResponseSchema = z.object({
   url: z.string().url(),
   donationId: z.string(),
-});
+})
 
 /**
  * Donation list response schema
@@ -89,7 +84,7 @@ export const donationListResponseSchema = z.object({
     hasMore: z.boolean(),
     totalCount: z.number().int(),
   }),
-});
+})
 
 /**
  * Author donation stats response schema
@@ -124,7 +119,7 @@ export const authorDonationStatsResponseSchema = z.object({
       lastDonationAt: z.date(),
     })
   ),
-});
+})
 
 /**
  * Supported currencies
@@ -140,17 +135,12 @@ export const supportedCurrenciesSchema = z.enum([
   "SEK",
   "NOK",
   "DKK",
-]);
+])
 
 /**
  * Connect account status (Phase 2)
  */
-export const connectAccountStatusSchema = z.enum([
-  "NONE",
-  "PENDING",
-  "VERIFIED",
-  "REJECTED",
-]);
+export const connectAccountStatusSchema = z.enum(["NONE", "PENDING", "VERIFIED", "REJECTED"])
 
 /**
  * Connect onboarding response (Phase 2)
@@ -158,7 +148,7 @@ export const connectAccountStatusSchema = z.enum([
 export const connectOnboardingResponseSchema = z.object({
   url: z.string().url(),
   accountId: z.string(),
-});
+})
 
 /**
  * Connect status response (Phase 2)
@@ -168,24 +158,18 @@ export const connectStatusResponseSchema = z.object({
   accountId: z.string().nullable(),
   canReceivePayouts: z.boolean(),
   requirements: z.array(z.string()).optional(),
-});
+})
 
 // Type exports
-export type CreateCheckoutInput = z.infer<typeof createCheckoutInputSchema>;
-export type ListDonationsInput = z.infer<typeof listDonationsInputSchema>;
-export type AuthorStatsInput = z.infer<typeof authorStatsInputSchema>;
-export type DonationStatus = z.infer<typeof donationStatusSchema>;
-export type DonationProvider = z.infer<typeof donationProviderSchema>;
-export type CreateCheckoutResponse = z.infer<
-  typeof createCheckoutResponseSchema
->;
-export type DonationListResponse = z.infer<typeof donationListResponseSchema>;
-export type AuthorDonationStatsResponse = z.infer<
-  typeof authorDonationStatsResponseSchema
->;
-export type SupportedCurrency = z.infer<typeof supportedCurrenciesSchema>;
-export type ConnectAccountStatus = z.infer<typeof connectAccountStatusSchema>;
-export type ConnectOnboardingResponse = z.infer<
-  typeof connectOnboardingResponseSchema
->;
-export type ConnectStatusResponse = z.infer<typeof connectStatusResponseSchema>;
+export type CreateCheckoutInput = z.infer<typeof createCheckoutInputSchema>
+export type ListDonationsInput = z.infer<typeof listDonationsInputSchema>
+export type AuthorStatsInput = z.infer<typeof authorStatsInputSchema>
+export type DonationStatus = z.infer<typeof donationStatusSchema>
+export type DonationProvider = z.infer<typeof donationProviderSchema>
+export type CreateCheckoutResponse = z.infer<typeof createCheckoutResponseSchema>
+export type DonationListResponse = z.infer<typeof donationListResponseSchema>
+export type AuthorDonationStatsResponse = z.infer<typeof authorDonationStatsResponseSchema>
+export type SupportedCurrency = z.infer<typeof supportedCurrenciesSchema>
+export type ConnectAccountStatus = z.infer<typeof connectAccountStatusSchema>
+export type ConnectOnboardingResponse = z.infer<typeof connectOnboardingResponseSchema>
+export type ConnectStatusResponse = z.infer<typeof connectStatusResponseSchema>

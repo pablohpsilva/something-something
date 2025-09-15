@@ -15,7 +15,7 @@ export function capitalize(str: string): string {
  */
 export function capitalizeWords(str: string): string {
   if (!str) return str;
-  return str.replace(/\b\w/g, (char) => char.toUpperCase());
+  return str.replace(/(^|[\s\-_])\w/g, (match) => match.toUpperCase());
 }
 
 /**
@@ -23,10 +23,8 @@ export function capitalizeWords(str: string): string {
  */
 export function toCamelCase(str: string): string {
   return str
-    .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
-      return index === 0 ? word.toLowerCase() : word.toUpperCase();
-    })
-    .replace(/\s+/g, "");
+    .replace(/[-_\s]+(.)/g, (_, char) => char.toUpperCase())
+    .replace(/^./, (char) => char.toLowerCase());
 }
 
 /**
@@ -34,10 +32,8 @@ export function toCamelCase(str: string): string {
  */
 export function toPascalCase(str: string): string {
   return str
-    .replace(/(?:^\w|[A-Z]|\b\w)/g, (word) => {
-      return word.toUpperCase();
-    })
-    .replace(/\s+/g, "");
+    .replace(/[-_\s]+(.)/g, (_, char) => char.toUpperCase())
+    .replace(/^./, (char) => char.toUpperCase());
 }
 
 /**
@@ -76,7 +72,9 @@ export function truncate(
   suffix: string = "..."
 ): string {
   if (str.length <= length) return str;
-  return str.slice(0, length - suffix.length) + suffix;
+  if (length <= 0) return suffix;
+  const maxContentLength = Math.max(0, length - suffix.length);
+  return str.slice(0, maxContentLength) + suffix;
 }
 
 /**
@@ -137,7 +135,9 @@ export function slugify(str: string): string {
  */
 export function getInitials(name: string, maxInitials: number = 2): string {
   return name
+    .trim()
     .split(/\s+/)
+    .filter((word) => word.length > 0)
     .map((word) => word.charAt(0).toUpperCase())
     .slice(0, maxInitials)
     .join("");
@@ -231,7 +231,7 @@ export function unescapeHtml(str: string): string {
  * Extract domain from email
  */
 export function extractEmailDomain(email: string): string {
-  const match = email.match(/@(.+)$/);
+  const match = email.match(/@([a-zA-Z0-9.-]+)/);
   return match ? match[1] || "" : "";
 }
 
@@ -261,16 +261,10 @@ export function formatPhoneNumber(
 ): string {
   const digits = phone.replace(/\D/g, "");
 
-  if (format === "us" && digits.length === 10) {
+  if (digits.length === 10) {
     return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  } else if (
-    format === "us" &&
-    digits.length === 11 &&
-    digits.startsWith("1")
-  ) {
-    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(
-      7
-    )}`;
+  } else if (digits.length === 11 && digits.startsWith("1")) {
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
   }
 
   return phone; // Return original if can't format
@@ -283,18 +277,23 @@ export function generateExcerpt(text: string, maxLength: number = 150): string {
   if (text.length <= maxLength) return text;
 
   // Try to break at sentence boundary
-  const sentences = text.split(/[.!?]+/);
-  let excerpt = "";
-
-  for (const sentence of sentences) {
-    if ((excerpt + sentence).length > maxLength) break;
-    excerpt += sentence + ".";
+  const sentenceMatch = text.match(/^(.{0,}?[.!?])\s*/);
+  if (sentenceMatch && sentenceMatch[1] && sentenceMatch[1].length <= maxLength) {
+    // Look for multiple sentences that fit
+    const sentences = text.match(/[^.!?]*[.!?]/g) || [];
+    let excerpt = "";
+    
+    for (const sentence of sentences) {
+      const potential = excerpt + sentence;
+      if (potential.length > maxLength) break;
+      excerpt = potential;
+    }
+    
+    if (excerpt.length > 0) {
+      return excerpt.trim();
+    }
   }
 
-  if (excerpt.length === 0) {
-    // Fallback to word boundary
-    return truncate(text, maxLength);
-  }
-
-  return excerpt.trim();
+  // Fallback to word boundary
+  return truncate(text, maxLength).replace(/\s+\.\.\.$/, "...");
 }

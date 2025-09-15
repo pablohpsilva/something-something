@@ -1,11 +1,8 @@
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import { router, publicProcedure } from "../trpc";
-import {
-  leaderboardGetInputSchema,
-  leaderboardResponseSchema,
-} from "../schemas/gamification";
-import { GamificationService } from "../services/gamification";
+import { z } from "zod"
+import { TRPCError } from "@trpc/server"
+import { router, publicProcedure } from "../trpc"
+import { leaderboardGetInputSchema, leaderboardResponseSchema } from "../schemas/gamification"
+import { GamificationService } from "../services/gamification"
 
 // Shared function to get leaderboard data
 async function getLeaderboardData(
@@ -24,7 +21,7 @@ async function getLeaderboardData(
       scopeRef: scopeRef || null,
     },
     orderBy: { createdAt: "desc" },
-  });
+  })
 
   if (!latestSnapshot) {
     return {
@@ -33,16 +30,16 @@ async function getLeaderboardData(
       hasMore: false,
       snapshotId: null,
       lastUpdated: null,
-    };
+    }
   }
 
   // Get entries for this snapshot
   const whereClause: any = {
     snapshotId: latestSnapshot.id,
-  };
+  }
 
   if (cursor) {
-    whereClause.id = { lt: cursor };
+    whereClause.id = { lt: cursor }
   }
 
   const entries = await ctx.prisma.leaderboardEntry.findMany({
@@ -66,11 +63,11 @@ async function getLeaderboardData(
     },
     orderBy: [{ rank: "asc" }, { id: "desc" }],
     take: (limit || 25) + 1,
-  });
+  })
 
-  const hasMore = entries.length > (limit || 25);
-  const items = hasMore ? entries.slice(0, -1) : entries;
-  const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+  const hasMore = entries.length > (limit || 25)
+  const items = hasMore ? entries.slice(0, -1) : entries
+  const nextCursor = hasMore ? items[items.length - 1]?.id : undefined
 
   return {
     entries: items.map((entry: any) => ({
@@ -93,7 +90,7 @@ async function getLeaderboardData(
     hasMore,
     snapshotId: latestSnapshot.id,
     lastUpdated: latestSnapshot.createdAt,
-  };
+  }
 }
 
 export const leaderboardRouter = router({
@@ -104,7 +101,7 @@ export const leaderboardRouter = router({
     .input(leaderboardGetInputSchema)
     .output(leaderboardResponseSchema)
     .query(async ({ input, ctx }) => {
-      const { period, scope, scopeRef, cursor, limit } = input;
+      const { period, scope, scopeRef, cursor, limit } = input
 
       try {
         // Find the latest snapshot for this configuration
@@ -115,7 +112,7 @@ export const leaderboardRouter = router({
             scopeRef: scopeRef || null,
           },
           orderBy: { createdAt: "desc" },
-        });
+        })
 
         if (!latestSnapshot) {
           // No snapshot exists, return empty results
@@ -132,7 +129,7 @@ export const leaderboardRouter = router({
             pagination: {
               hasMore: false,
             },
-          };
+          }
         }
 
         // Get previous snapshot for rank deltas
@@ -141,42 +138,38 @@ export const leaderboardRouter = router({
           period,
           scope,
           scopeRef
-        );
+        )
 
         // Parse entries from snapshot
-        const snapshotData = latestSnapshot.rank as any;
-        let entries = snapshotData.entries || [];
+        const snapshotData = latestSnapshot.rank as any
+        let entries = snapshotData.entries || []
 
         // Add rank deltas if previous snapshot exists
         if (previousSnapshot) {
-          const prevEntries = (previousSnapshot.rank as any).entries || [];
-          const prevRankMap = new Map(
-            prevEntries.map((entry: any) => [entry.ruleId, entry.rank])
-          );
+          const prevEntries = (previousSnapshot.rank as any).entries || []
+          const prevRankMap = new Map(prevEntries.map((entry: any) => [entry.ruleId, entry.rank]))
 
           entries = entries.map((entry: any) => {
-            const prevRank = prevRankMap.get(entry.ruleId);
-            const rankDelta = prevRank ? (prevRank as number) - (entry.rank as number) : null;
-            return { ...entry, rankDelta };
-          });
+            const prevRank = prevRankMap.get(entry.ruleId)
+            const rankDelta = prevRank ? (prevRank as number) - (entry.rank as number) : null
+            return { ...entry, rankDelta }
+          })
         }
 
         // Apply cursor-based pagination
-        let startIndex = 0;
+        let startIndex = 0
         if (cursor) {
-          const cursorIndex = entries.findIndex(
-            (entry: any) => entry.ruleId === cursor
-          );
+          const cursorIndex = entries.findIndex((entry: any) => entry.ruleId === cursor)
           if (cursorIndex >= 0) {
-            startIndex = cursorIndex + 1;
+            startIndex = cursorIndex + 1
           }
         }
 
-        const paginatedEntries = entries.slice(startIndex, startIndex + limit);
-        const hasMore = startIndex + limit < entries.length;
+        const paginatedEntries = entries.slice(startIndex, startIndex + limit)
+        const hasMore = startIndex + limit < entries.length
         const nextCursor = hasMore
           ? paginatedEntries[paginatedEntries.length - 1]?.ruleId
-          : undefined;
+          : undefined
 
         return {
           entries: paginatedEntries,
@@ -184,25 +177,21 @@ export const leaderboardRouter = router({
             period,
             scope,
             scopeRef: scopeRef || null,
-            windowDays:
-              snapshotData.meta?.windowDays ||
-              GamificationService.getPeriodDays(period),
-            generatedAt:
-              snapshotData.meta?.generatedAt ||
-              latestSnapshot.createdAt.toISOString(),
+            windowDays: snapshotData.meta?.windowDays || GamificationService.getPeriodDays(period),
+            generatedAt: snapshotData.meta?.generatedAt || latestSnapshot.createdAt.toISOString(),
             totalEntries: entries.length,
           },
           pagination: {
             hasMore,
             nextCursor,
           },
-        };
+        }
       } catch (error) {
-        console.error("Failed to get leaderboard:", error);
+        console.error("Failed to get leaderboard:", error)
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to load leaderboard",
-        });
+        })
       }
     }),
 
@@ -249,7 +238,7 @@ export const leaderboardRouter = router({
           },
         },
         take: 20, // Top 20 tags
-      });
+      })
 
       // Get popular models with rule counts
       const modelCounts = await ctx.prisma.rule.groupBy({
@@ -261,26 +250,26 @@ export const leaderboardRouter = router({
         _count: {
           _all: true,
         },
-      });
+      })
 
       // Sort by count and take top 20
       const sortedModelCounts = modelCounts
         .sort((a, b) => b._count._all - a._count._all)
-        .slice(0, 20);
+        .slice(0, 20)
 
       return {
         tags: tags
-          .filter((tag) => tag._count.rules > 0)
-          .map((tag) => ({
+          .filter(tag => tag._count.rules > 0)
+          .map(tag => ({
             slug: tag.slug,
             name: tag.name,
             count: tag._count.rules,
           })),
-        models: sortedModelCounts.map((model) => ({
+        models: sortedModelCounts.map(model => ({
           name: model.primaryModel!,
           count: model._count._all,
         })),
-      };
+      }
     }),
 
   /**
@@ -301,7 +290,7 @@ export const leaderboardRouter = router({
       })
     )
     .query(async ({ input, ctx }) => {
-      const { ruleId, period } = input;
+      const { ruleId, period } = input
 
       const snapshot = await ctx.prisma.leaderboardSnapshot.findFirst({
         where: {
@@ -310,28 +299,27 @@ export const leaderboardRouter = router({
           scopeRef: null,
         },
         orderBy: { createdAt: "desc" },
-      });
+      })
 
       if (!snapshot) {
-        return { rank: null, totalEntries: 0, percentile: null };
+        return { rank: null, totalEntries: 0, percentile: null }
       }
 
-      const snapshotData = snapshot.rank as any;
-      const entries = snapshotData.entries || [];
-      const ruleEntry = entries.find((entry: any) => entry.ruleId === ruleId);
+      const snapshotData = snapshot.rank as any
+      const entries = snapshotData.entries || []
+      const ruleEntry = entries.find((entry: any) => entry.ruleId === ruleId)
 
       if (!ruleEntry) {
-        return { rank: null, totalEntries: entries.length, percentile: null };
+        return { rank: null, totalEntries: entries.length, percentile: null }
       }
 
-      const percentile =
-        ((entries.length - ruleEntry.rank + 1) / entries.length) * 100;
+      const percentile = ((entries.length - ruleEntry.rank + 1) / entries.length) * 100
 
       return {
         rank: ruleEntry.rank,
         totalEntries: entries.length,
         percentile: Math.round(percentile * 100) / 100,
-      };
+      }
     }),
 
   /**
@@ -364,7 +352,7 @@ export const leaderboardRouter = router({
         weekly: "WEEKLY" as const,
         monthly: "MONTHLY" as const,
         all: "ALL" as const,
-      };
+      }
 
       const result = await getLeaderboardData(
         ctx,
@@ -373,7 +361,7 @@ export const leaderboardRouter = router({
         undefined,
         undefined,
         input.limit
-      );
+      )
 
       return result.entries.map((entry: any) => ({
         id: entry.ruleId,
@@ -384,7 +372,7 @@ export const leaderboardRouter = router({
           handle: entry.author.handle,
           displayName: entry.author.displayName,
         },
-      }));
+      }))
     }),
 
   getTopAuthors: publicProcedure
@@ -412,7 +400,7 @@ export const leaderboardRouter = router({
         weekly: "WEEKLY" as const,
         monthly: "MONTHLY" as const,
         all: "ALL" as const,
-      };
+      }
 
       const result = await getLeaderboardData(
         ctx,
@@ -421,26 +409,26 @@ export const leaderboardRouter = router({
         undefined,
         undefined,
         1000 // Get more entries to aggregate by author
-      );
+      )
 
       // Group by author and sum scores
       const authorMap = new Map<
         string,
         {
-          id: string;
-          handle: string;
-          displayName: string;
-          totalScore: number;
-          rulesCount: number;
+          id: string
+          handle: string
+          displayName: string
+          totalScore: number
+          rulesCount: number
         }
-      >();
+      >()
 
       result.entries.forEach((entry: any) => {
-        const authorId = entry.author.id;
+        const authorId = entry.author.id
         if (authorMap.has(authorId)) {
-          const author = authorMap.get(authorId)!;
-          author.totalScore += entry.score;
-          author.rulesCount += 1;
+          const author = authorMap.get(authorId)!
+          author.totalScore += entry.score
+          author.rulesCount += 1
         } else {
           authorMap.set(authorId, {
             id: entry.author.id,
@@ -448,21 +436,21 @@ export const leaderboardRouter = router({
             displayName: entry.author.displayName,
             totalScore: entry.score,
             rulesCount: 1,
-          });
+          })
         }
-      });
+      })
 
       // Sort by total score and return top authors
       const topAuthors = Array.from(authorMap.values())
         .sort((a, b) => b.totalScore - a.totalScore)
-        .slice(0, input.limit);
+        .slice(0, input.limit)
 
-      return topAuthors.map((author) => ({
+      return topAuthors.map(author => ({
         id: author.id,
         handle: author.handle,
         displayName: author.displayName,
         score: author.totalScore,
         rulesCount: author.rulesCount,
-      }));
+      }))
     }),
-});
+})

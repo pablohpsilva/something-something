@@ -1,12 +1,6 @@
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
-import {
-  router,
-  protectedProcedure,
-  rateLimitedProcedure,
-  audit,
-  getRuleOwnership,
-} from "../trpc";
+import { TRPCError } from "@trpc/server"
+import { z } from "zod"
+import { router, protectedProcedure, rateLimitedProcedure, audit, getRuleOwnership } from "../trpc"
 import {
   createVersionSchema,
   forkVersionSchema,
@@ -15,45 +9,42 @@ import {
   getVersionDiffSchema,
   updateVersionSchema,
   setCurrentVersionSchema,
-} from "../schemas/version";
-import { ruleVersionDetailDTOSchema } from "../schemas/dto";
-import { Notifications } from "../services/notify";
-import { createPaginatedSchema } from "../schemas/base";
+} from "../schemas/version"
+import { ruleVersionDetailDTOSchema } from "../schemas/dto"
+import { Notifications } from "../services/notify"
+import { createPaginatedSchema } from "../schemas/base"
 
 // Helper function to increment semver
-function incrementVersion(
-  version: string,
-  type: "patch" | "minor" | "major" = "minor"
-): string {
-  const parts = version.split(".").map(Number);
-  const major = parts[0] || 0;
-  const minor = parts[1] || 0;
-  const patch = parts[2] || 0;
+function incrementVersion(version: string, type: "patch" | "minor" | "major" = "minor"): string {
+  const parts = version.split(".").map(Number)
+  const major = parts[0] || 0
+  const minor = parts[1] || 0
+  const patch = parts[2] || 0
 
   switch (type) {
     case "major":
-      return `${major + 1}.0.0`;
+      return `${major + 1}.0.0`
     case "minor":
-      return `${major}.${minor + 1}.0`;
+      return `${major}.${minor + 1}.0`
     case "patch":
-      return `${major}.${minor}.${patch + 1}`;
+      return `${major}.${minor}.${patch + 1}`
     default:
-      return `${major}.${minor + 1}.0`;
+      return `${major}.${minor + 1}.0`
   }
 }
 
 // Helper function to generate diff
 function generateDiff(oldText: string, newText: string): any {
   // Simple line-based diff - in production you'd use a proper diff library
-  const oldLines = oldText.split("\n");
-  const newLines = newText.split("\n");
+  const oldLines = oldText.split("\n")
+  const newLines = newText.split("\n")
 
-  const changes = [];
-  const maxLines = Math.max(oldLines.length, newLines.length);
+  const changes = []
+  const maxLines = Math.max(oldLines.length, newLines.length)
 
   for (let i = 0; i < maxLines; i++) {
-    const oldLine = oldLines[i] || "";
-    const newLine = newLines[i] || "";
+    const oldLine = oldLines[i] || ""
+    const newLine = newLines[i] || ""
 
     if (oldLine !== newLine) {
       if (oldLine && newLine) {
@@ -62,11 +53,11 @@ function generateDiff(oldText: string, newText: string): any {
           line: i + 1,
           old: oldLine,
           new: newLine,
-        });
+        })
       } else if (oldLine) {
-        changes.push({ type: "deleted", line: i + 1, content: oldLine });
+        changes.push({ type: "deleted", line: i + 1, content: oldLine })
       } else {
-        changes.push({ type: "added", line: i + 1, content: newLine });
+        changes.push({ type: "added", line: i + 1, content: newLine })
       }
     }
   }
@@ -74,11 +65,11 @@ function generateDiff(oldText: string, newText: string): any {
   return {
     changes,
     stats: {
-      additions: changes.filter((c) => c.type === "added").length,
-      deletions: changes.filter((c) => c.type === "deleted").length,
-      modifications: changes.filter((c) => c.type === "modified").length,
+      additions: changes.filter(c => c.type === "added").length,
+      deletions: changes.filter(c => c.type === "deleted").length,
+      modifications: changes.filter(c => c.type === "modified").length,
     },
-  };
+  }
 }
 
 export const versionsRouter = router({
@@ -87,30 +78,30 @@ export const versionsRouter = router({
     .input(listVersionsByRuleSchema)
     .output(createPaginatedSchema(ruleVersionDetailDTOSchema))
     .query(async ({ input, ctx }) => {
-      const { ruleId, cursor, limit, includeBody } = input;
+      const { ruleId, cursor, limit, includeBody } = input
 
       // Check if rule exists and user can access it
       const rule = await ctx.prisma.rule.findUnique({
         where: { id: ruleId, deletedAt: null },
         select: { id: true, status: true, createdByUserId: true },
-      });
+      })
 
       if (!rule) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Rule not found",
-        });
+        })
       }
 
       // Build where clause for cursor pagination
-      const where: any = { ruleId };
+      const where: any = { ruleId }
       if (cursor) {
         const cursorVersion = await ctx.prisma.ruleVersion.findUnique({
           where: { id: cursor },
           select: { createdAt: true },
-        });
+        })
         if (cursorVersion) {
-          where.createdAt = { lt: cursorVersion.createdAt };
+          where.createdAt = { lt: cursorVersion.createdAt }
         }
       }
 
@@ -139,28 +130,26 @@ export const versionsRouter = router({
             select: { voteVersions: true },
           },
         },
-      });
+      })
 
-      const hasMore = versions.length > limit;
-      const items = hasMore ? versions.slice(0, -1) : versions;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+      const hasMore = versions.length > limit
+      const items = hasMore ? versions.slice(0, -1) : versions
+      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined
 
       // Get vote scores for versions
-      const versionIds = items.map((v) => v.id);
+      const versionIds = items.map(v => v.id)
       const voteStats = await ctx.prisma.voteVersion.groupBy({
         by: ["ruleVersionId"],
         where: { ruleVersionId: { in: versionIds } },
         _sum: { value: true },
-      });
+      })
 
-      const transformedItems = items.map((version) => ({
+      const transformedItems = items.map(version => ({
         id: version.id,
         ruleId: version.ruleId,
         version: version.version,
         body: includeBody ? version.body : "",
-        testedOn:
-          (version.testedOn as { models?: string[]; stacks?: string[] }) ||
-          null,
+        testedOn: (version.testedOn as { models?: string[]; stacks?: string[] }) || null,
         changelog: version.changelog,
         parentVersionId: version.parentVersionId,
         createdBy: {
@@ -172,21 +161,17 @@ export const versionsRouter = router({
           isVerified: version.createdBy.authorProfile?.isVerified || false,
         },
         createdAt: version.createdAt,
-        score:
-          voteStats.find((vs) => vs.ruleVersionId === version.id)?._sum.value ||
-          0,
+        score: voteStats.find(vs => vs.ruleVersionId === version.id)?._sum.value || 0,
         userVote: version.voteVersions[0]
-          ? ((version.voteVersions[0].value > 0 ? "up" : "down") as
-              | "up"
-              | "down")
+          ? ((version.voteVersions[0].value > 0 ? "up" : "down") as "up" | "down")
           : null,
-      }));
+      }))
 
       return {
         items: transformedItems,
         nextCursor,
         hasMore,
-      };
+      }
     }),
 
   // Create new version
@@ -195,76 +180,69 @@ export const versionsRouter = router({
     .use(audit("version.create"))
     .output(z.object({ id: z.string(), version: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const {
-        ruleId,
-        baseVersionId,
-        body,
-        changelog,
-        testedOn,
-        version: inputVersion,
-      } = input;
+      const { ruleId, baseVersionId, body, changelog, testedOn, version: inputVersion } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to create versions for this rule",
-        });
+        })
       }
 
       // Get the base version or latest version
-      let baseVersion;
+      let baseVersion
       if (baseVersionId) {
         baseVersion = await ctx.prisma.ruleVersion.findUnique({
           where: { id: baseVersionId, ruleId },
           select: { version: true, body: true },
-        });
+        })
         if (!baseVersion) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Base version not found",
-          });
+          })
         }
       } else {
         baseVersion = await ctx.prisma.ruleVersion.findFirst({
           where: { ruleId },
           orderBy: { createdAt: "desc" },
           select: { version: true, body: true },
-        });
+        })
       }
 
       // Determine new version number
-      let newVersion: string;
+      let newVersion: string
       if (inputVersion) {
         // Check if version already exists
         const existingVersion = await ctx.prisma.ruleVersion.findFirst({
           where: { ruleId, version: inputVersion },
-        });
+        })
         if (existingVersion) {
           throw new TRPCError({
             code: "CONFLICT",
             message: "Version already exists",
-          });
+          })
         }
-        newVersion = inputVersion;
+        newVersion = inputVersion
       } else {
         // Auto-increment version
         const latestVersion = await ctx.prisma.ruleVersion.findFirst({
           where: { ruleId },
           orderBy: { createdAt: "desc" },
           select: { version: true },
-        });
+        })
 
         if (latestVersion) {
-          newVersion = incrementVersion(latestVersion.version, "minor");
+          newVersion = incrementVersion(latestVersion.version, "minor")
         } else {
-          newVersion = "1.0.0";
+          newVersion = "1.0.0"
         }
       }
 
       // Create version and update rule in transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
+      const result = await ctx.prisma.$transaction(async tx => {
         // Create the new version
         const version = await tx.ruleVersion.create({
           data: {
@@ -276,7 +254,7 @@ export const versionsRouter = router({
             parentVersionId: baseVersionId || null,
             createdByUserId: (ctx.user as any)?.id,
           },
-        });
+        })
 
         // Update rule's current version
         await tx.rule.update({
@@ -285,10 +263,10 @@ export const versionsRouter = router({
             currentVersionId: version.id,
             updatedAt: ctx.now,
           },
-        });
+        })
 
-        return { id: version.id, version: newVersion };
-      });
+        return { id: version.id, version: newVersion }
+      })
 
       // Send notifications (fire-and-forget)
       try {
@@ -301,7 +279,7 @@ export const versionsRouter = router({
           authorId: ctx.user!.id,
           authorHandle: ctx.user!.handle,
           authorDisplayName: ctx.user!.displayName,
-        });
+        })
 
         // If this is a published rule, notify followers about author activity
         if (rule.status === "PUBLISHED") {
@@ -312,13 +290,13 @@ export const versionsRouter = router({
             authorId: ctx.user!.id,
             authorHandle: ctx.user!.handle,
             authorDisplayName: ctx.user!.displayName,
-          });
+          })
         }
       } catch (error) {
-        console.error("Failed to send version notifications:", error);
+        console.error("Failed to send version notifications:", error)
       }
 
-      return result;
+      return result
     }),
 
   // Fork version
@@ -327,32 +305,32 @@ export const versionsRouter = router({
     .use(audit("version.fork"))
     .output(z.object({ id: z.string(), version: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const { ruleId, fromVersionId, newBody, changelog, testedOn } = input;
+      const { ruleId, fromVersionId, newBody, changelog, testedOn } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to fork versions for this rule",
-        });
+        })
       }
 
       // Get the source version
       const sourceVersion = await ctx.prisma.ruleVersion.findUnique({
         where: { id: fromVersionId, ruleId },
         select: { version: true, body: true, testedOn: true },
-      });
+      })
 
       if (!sourceVersion) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Source version not found",
-        });
+        })
       }
 
       // Generate new version number
-      const newVersionNumber = incrementVersion(sourceVersion.version, "patch");
+      const newVersionNumber = incrementVersion(sourceVersion.version, "patch")
 
       // Create forked version
       const version = await ctx.prisma.ruleVersion.create({
@@ -365,9 +343,9 @@ export const versionsRouter = router({
           parentVersionId: fromVersionId,
           createdByUserId: (ctx.user as any)?.id,
         },
-      });
+      })
 
-      return { id: version.id, version: newVersionNumber };
+      return { id: version.id, version: newVersionNumber }
     }),
 
   // Get version by ID
@@ -375,7 +353,7 @@ export const versionsRouter = router({
     .input(getVersionByIdSchema)
     .output(ruleVersionDetailDTOSchema.nullable())
     .query(async ({ input, ctx }) => {
-      const { versionId, includeUserActions } = input;
+      const { versionId, includeUserActions } = input
 
       const version = await ctx.prisma.ruleVersion.findUnique({
         where: { id: versionId },
@@ -400,15 +378,15 @@ export const versionsRouter = router({
             },
           },
         },
-      });
+      })
 
       if (!version || version.rule.deletedAt) {
-        return null;
+        return null
       }
 
       // Get vote information
-      let userVote = null;
-      let score = 0;
+      let userVote = null
+      let score = 0
 
       const [voteStats, userVoteRecord] = await Promise.all([
         ctx.prisma.voteVersion.aggregate({
@@ -425,23 +403,17 @@ export const versionsRouter = router({
               },
             })
           : null,
-      ]);
+      ])
 
-      score = voteStats._sum.value || 0;
-      userVote = userVoteRecord
-        ? userVoteRecord.value > 0
-          ? "up"
-          : "down"
-        : null;
+      score = voteStats._sum.value || 0
+      userVote = userVoteRecord ? (userVoteRecord.value > 0 ? "up" : "down") : null
 
       return {
         id: version.id,
         ruleId: version.ruleId,
         version: version.version,
         body: version.body,
-        testedOn:
-          (version.testedOn as { models?: string[]; stacks?: string[] }) ||
-          null,
+        testedOn: (version.testedOn as { models?: string[]; stacks?: string[] }) || null,
         changelog: version.changelog,
         parentVersionId: version.parentVersionId,
         createdBy: {
@@ -455,7 +427,7 @@ export const versionsRouter = router({
         createdAt: version.createdAt,
         score,
         userVote: userVote as "up" | "down" | null,
-      };
+      }
     }),
 
   // Get version diff
@@ -468,7 +440,7 @@ export const versionsRouter = router({
       })
     )
     .query(async ({ input, ctx }) => {
-      const { prevVersionId, currVersionId, format } = input;
+      const { prevVersionId, currVersionId, format } = input
 
       const [prevVersion, currVersion] = await Promise.all([
         ctx.prisma.ruleVersion.findUnique({
@@ -479,25 +451,25 @@ export const versionsRouter = router({
           where: { id: currVersionId },
           select: { body: true, ruleId: true },
         }),
-      ]);
+      ])
 
       if (!prevVersion || !currVersion) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "One or both versions not found",
-        });
+        })
       }
 
       if (prevVersion.ruleId !== currVersion.ruleId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Versions must belong to the same rule",
-        });
+        })
       }
 
-      const diff = generateDiff(prevVersion.body, currVersion.body);
+      const diff = generateDiff(prevVersion.body, currVersion.body)
 
-      return { diff, format };
+      return { diff, format }
     }),
 
   // Set current version
@@ -506,27 +478,27 @@ export const versionsRouter = router({
     .use(audit("version.set_current"))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const { ruleId, versionId } = input;
+      const { ruleId, versionId } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to modify this rule",
-        });
+        })
       }
 
       // Verify version belongs to rule
       const version = await ctx.prisma.ruleVersion.findUnique({
         where: { id: versionId, ruleId },
-      });
+      })
 
       if (!version) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Version not found for this rule",
-        });
+        })
       }
 
       await ctx.prisma.rule.update({
@@ -535,8 +507,8 @@ export const versionsRouter = router({
           currentVersionId: versionId,
           updatedAt: ctx.now,
         },
-      });
+      })
 
-      return { success: true };
+      return { success: true }
     }),
-});
+})

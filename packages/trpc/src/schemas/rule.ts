@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod"
 import {
   ruleIdSchema,
   slugSchema,
@@ -14,7 +14,7 @@ import {
   resourceLinkSchema,
   testedOnSchema,
   idempotencyKeySchema,
-} from "./base";
+} from "./base"
 
 // Rule creation schema
 export const createRuleSchema = z.object({
@@ -27,9 +27,9 @@ export const createRuleSchema = z.object({
   testedOn: testedOnSchema.optional(),
   links: z.array(resourceLinkSchema).optional(),
   idempotencyKey: idempotencyKeySchema,
-});
+})
 
-export type CreateRuleInput = z.infer<typeof createRuleSchema>;
+export type CreateRuleInput = z.infer<typeof createRuleSchema>
 
 // Rule update schema
 export const updateRuleSchema = z.object({
@@ -40,9 +40,9 @@ export const updateRuleSchema = z.object({
   tags: z.array(z.string()).optional(),
   links: z.array(resourceLinkSchema).optional(),
   idempotencyKey: idempotencyKeySchema,
-});
+})
 
-export type UpdateRuleInput = z.infer<typeof updateRuleSchema>;
+export type UpdateRuleInput = z.infer<typeof updateRuleSchema>
 
 // Rule list filters schema
 export const ruleListFiltersSchema = z.object({
@@ -53,62 +53,62 @@ export const ruleListFiltersSchema = z.object({
   authorId: z.string().optional(),
   createdAfter: z.date().optional(),
   createdBefore: z.date().optional(),
-});
+})
 
-export type RuleListFilters = z.infer<typeof ruleListFiltersSchema>;
+export type RuleListFilters = z.infer<typeof ruleListFiltersSchema>
 
 // Rule list input schema
 export const listRulesSchema = z.object({
   ...paginationSchema.shape,
   sort: sortSchema,
   filters: ruleListFiltersSchema.optional(),
-});
+})
 
-export type ListRulesInput = z.infer<typeof listRulesSchema>;
+export type ListRulesInput = z.infer<typeof listRulesSchema>
 
 // Get rule by slug schema
 export const getRuleBySlugSchema = z.object({
   slug: slugSchema,
   includeMetrics: z.boolean().default(true),
   includeUserActions: z.boolean().default(false),
-});
+})
 
-export type GetRuleBySlugInput = z.infer<typeof getRuleBySlugSchema>;
+export type GetRuleBySlugInput = z.infer<typeof getRuleBySlugSchema>
 
 // Get rule by ID schema
 export const getRuleByIdSchema = z.object({
   ruleId: ruleIdSchema,
   includeMetrics: z.boolean().default(true),
   includeUserActions: z.boolean().default(false),
-});
+})
 
-export type GetRuleByIdInput = z.infer<typeof getRuleByIdSchema>;
+export type GetRuleByIdInput = z.infer<typeof getRuleByIdSchema>
 
 // Publish rule schema
 export const publishRuleSchema = z.object({
   ruleId: ruleIdSchema,
   idempotencyKey: idempotencyKeySchema,
-});
+})
 
-export type PublishRuleInput = z.infer<typeof publishRuleSchema>;
+export type PublishRuleInput = z.infer<typeof publishRuleSchema>
 
 // Deprecate rule schema
 export const deprecateRuleSchema = z.object({
   ruleId: ruleIdSchema,
   reason: z.string().max(500).optional(),
   idempotencyKey: idempotencyKeySchema,
-});
+})
 
-export type DeprecateRuleInput = z.infer<typeof deprecateRuleSchema>;
+export type DeprecateRuleInput = z.infer<typeof deprecateRuleSchema>
 
 // Soft delete rule schema
 export const softDeleteRuleSchema = z.object({
   ruleId: ruleIdSchema,
   reason: z.string().max(500).optional(),
   idempotencyKey: idempotencyKeySchema,
-});
+})
 
-export type SoftDeleteRuleInput = z.infer<typeof softDeleteRuleSchema>;
+export type SoftDeleteRuleInput = z.infer<typeof softDeleteRuleSchema>
 
 // Get rules by author schema
 export const getRulesByAuthorSchema = z.object({
@@ -116,18 +116,18 @@ export const getRulesByAuthorSchema = z.object({
   ...paginationSchema.shape,
   sort: sortSchema,
   includePrivate: z.boolean().default(false),
-});
+})
 
-export type GetRulesByAuthorInput = z.infer<typeof getRulesByAuthorSchema>;
+export type GetRulesByAuthorInput = z.infer<typeof getRulesByAuthorSchema>
 
 // Get trending rules schema
 export const getTrendingRulesSchema = z.object({
   ...paginationSchema.shape,
   period: z.enum(["day", "week", "month"]).default("week"),
   filters: ruleListFiltersSchema.optional(),
-});
+})
 
-export type GetTrendingRulesInput = z.infer<typeof getTrendingRulesSchema>;
+export type GetTrendingRulesInput = z.infer<typeof getTrendingRulesSchema>
 
 // Duplicate rule schema
 export const duplicateRuleSchema = z.object({
@@ -135,14 +135,14 @@ export const duplicateRuleSchema = z.object({
   title: titleSchema.optional(),
   summary: summarySchema,
   idempotencyKey: idempotencyKeySchema,
-});
+})
 
-export type DuplicateRuleInput = z.infer<typeof duplicateRuleSchema>;
+export type DuplicateRuleInput = z.infer<typeof duplicateRuleSchema>
 
 // Rule stats schema
 export const getRuleStatsSchema = z.object({
   ruleId: ruleIdSchema,
   period: z.enum(["day", "week", "month", "all"]).default("week"),
-});
+})
 
-export type GetRuleStatsInput = z.infer<typeof getRuleStatsSchema>;
+export type GetRuleStatsInput = z.infer<typeof getRuleStatsSchema>

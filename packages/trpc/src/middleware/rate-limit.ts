@@ -308,7 +308,7 @@ export function withShadowBanCheck() {
  * Extract request headers from various tRPC contexts
  */
 function getRequestHeaders(
-  ctx: any
+  ctx: unknown
 ): Record<string, string | string[] | undefined> {
   // Next.js App Router / Pages Router / Standalone server
   if (ctx.req?.headers) {
@@ -333,7 +333,7 @@ function getRequestHeaders(
  * Log rate limit violation to audit log
  */
 async function logRateLimitViolation(
-  ctx: any,
+  ctx: unknown,
   details: {
     bucket: string;
     path: string;
@@ -377,7 +377,7 @@ export function createRateLimitedProcedure(
     weight?: number;
     burstProtection?: boolean;
   } = {}
-) {
+): any {
   let procedure = baseProcedure;
 
   // Add shadow ban check if user might be authenticated

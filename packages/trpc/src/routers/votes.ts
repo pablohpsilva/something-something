@@ -1,11 +1,6 @@
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import {
-  router,
-  publicProcedure,
-  protectedProcedure,
-  rateLimitedProcedure,
-} from "../trpc";
+import { z } from "zod"
+import { TRPCError } from "@trpc/server"
+import { router, publicProcedure, protectedProcedure, rateLimitedProcedure } from "../trpc"
 import {
   voteRuleSchema,
   voteVersionSchema,
@@ -13,38 +8,38 @@ import {
   userVotesQuerySchema,
   userVotesResponseSchema,
   voteValueToNumber,
-} from "../schemas/vote";
-import { voteSummaryDTOSchema } from "../schemas/dto";
-import { GamificationService } from "../services/gamification";
-import { createRateLimitedProcedure } from "../middleware/rate-limit";
+} from "../schemas/vote"
+import { voteSummaryDTOSchema } from "../schemas/dto"
+import { GamificationService } from "../services/gamification"
+import { createRateLimitedProcedure } from "../middleware/rate-limit"
 
 // Enhanced rate limited procedures for voting
 const voteRateLimitedProcedure = createRateLimitedProcedure(
   protectedProcedure,
   "votesPerUserPerMin",
   { requireAuth: true, burstProtection: true }
-);
+)
 
 export const votesRouter = router({
   upsertRuleVote: voteRateLimitedProcedure
     .input(voteRuleSchema)
     .output(voteSummaryDTOSchema)
     .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
-      const { ruleId, value } = input;
-      const userId = ctx.user!.id;
-      const numericValue = voteValueToNumber(value);
+      const { ruleId, value } = input
+      const userId = ctx.user!.id
+      const numericValue = voteValueToNumber(value)
 
       // Validate rule exists
       const rule = await ctx.prisma.rule.findUnique({
         where: { id: ruleId },
         select: { id: true },
-      });
+      })
 
       if (!rule) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Rule not found",
-        });
+        })
       }
 
       // Perform vote operation in transaction
@@ -53,7 +48,7 @@ export const votesRouter = router({
           // Remove vote
           await tx.vote.deleteMany({
             where: { userId, ruleId },
-          });
+          })
         } else {
           // Upsert vote
           await tx.vote.upsert({
@@ -62,7 +57,7 @@ export const votesRouter = router({
             },
             update: { value: numericValue },
             create: { userId, ruleId, value: numericValue },
-          });
+          })
         }
 
         // Create audit log
@@ -78,45 +73,45 @@ export const votesRouter = router({
               action: numericValue === 0 ? "remove" : "upsert",
             },
           },
-        });
+        })
 
         // Get updated vote counts with single query
         const voteStats = await tx.vote.aggregate({
           where: { ruleId },
           _count: { value: true },
           _sum: { value: true },
-        });
+        })
 
         const upCount = await tx.vote.count({
           where: { ruleId, value: 1 },
-        });
+        })
 
         const downCount = await tx.vote.count({
           where: { ruleId, value: -1 },
-        });
+        })
 
-        const score = voteStats._sum.value || 0;
+        const score = voteStats._sum.value || 0
 
         // Get user's current vote
         const userVote = await tx.vote.findUnique({
           where: {
             userId_ruleId: { userId, ruleId },
           },
-        });
+        })
 
         return {
           score,
           upCount,
           downCount,
           myVote: userVote?.value || 0,
-        };
-      });
+        }
+      })
 
       // Emit VOTE event to ingest (fire-and-forget, only for actual votes)
       if (numericValue !== 0) {
         try {
-          const ingestBaseUrl = process.env.INGEST_BASE_URL;
-          const ingestAppToken = process.env.INGEST_APP_TOKEN;
+          const ingestBaseUrl = process.env.INGEST_BASE_URL
+          const ingestAppToken = process.env.INGEST_APP_TOKEN
 
           if (ingestBaseUrl && ingestAppToken) {
             fetch(`${ingestBaseUrl}/ingest/events`, {
@@ -137,7 +132,7 @@ export const votesRouter = router({
                   },
                 ],
               }),
-            }).catch(() => {}); // Fire-and-forget
+            }).catch(() => {}) // Fire-and-forget
           }
         } catch (error) {
           // Ignore ingest errors
@@ -150,35 +145,35 @@ export const votesRouter = router({
           const awardContext = {
             prisma: ctx.prisma,
             now: new Date(),
-          };
-          await GamificationService.checkTenUpvotes(awardContext, ruleId);
+          }
+          await GamificationService.checkTenUpvotes(awardContext, ruleId)
         } catch (error) {
-          console.error("Failed to check ten upvotes badge:", error);
+          console.error("Failed to check ten upvotes badge:", error)
         }
       }
 
-      return result;
+      return result
     }),
 
   upsertVersionVote: voteRateLimitedProcedure
     .input(voteVersionSchema)
     .output(voteSummaryDTOSchema)
     .mutation(async ({ input, ctx }: { input: any; ctx: any }) => {
-      const { ruleVersionId, value } = input;
-      const userId = ctx.user!.id;
-      const numericValue = voteValueToNumber(value);
+      const { ruleVersionId, value } = input
+      const userId = ctx.user!.id
+      const numericValue = voteValueToNumber(value)
 
       // Validate version exists
       const version = await ctx.prisma.ruleVersion.findUnique({
         where: { id: ruleVersionId },
         select: { id: true, ruleId: true },
-      });
+      })
 
       if (!version) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Rule version not found",
-        });
+        })
       }
 
       // Perform vote operation in transaction
@@ -187,7 +182,7 @@ export const votesRouter = router({
           // Remove vote
           await tx.voteVersion.deleteMany({
             where: { userId, ruleVersionId },
-          });
+          })
         } else {
           // Upsert vote
           await tx.voteVersion.upsert({
@@ -196,7 +191,7 @@ export const votesRouter = router({
             },
             update: { value: numericValue },
             create: { userId, ruleVersionId, value: numericValue },
-          });
+          })
         }
 
         // Create audit log
@@ -213,45 +208,45 @@ export const votesRouter = router({
               ruleId: version.ruleId,
             },
           },
-        });
+        })
 
         // Get updated vote counts
         const voteStats = await tx.voteVersion.aggregate({
           where: { ruleVersionId },
           _count: { value: true },
           _sum: { value: true },
-        });
+        })
 
         const upCount = await tx.voteVersion.count({
           where: { ruleVersionId, value: 1 },
-        });
+        })
 
         const downCount = await tx.voteVersion.count({
           where: { ruleVersionId, value: -1 },
-        });
+        })
 
-        const score = voteStats._sum.value || 0;
+        const score = voteStats._sum.value || 0
 
         // Get user's current vote
         const userVote = await tx.voteVersion.findUnique({
           where: {
             userId_ruleVersionId: { userId, ruleVersionId },
           },
-        });
+        })
 
         return {
           score,
           upCount,
           downCount,
           myVote: userVote?.value || 0,
-        };
-      });
+        }
+      })
 
       // Emit VOTE event to ingest (fire-and-forget, only for actual votes)
       if (numericValue !== 0) {
         try {
-          const ingestBaseUrl = process.env.INGEST_BASE_URL;
-          const ingestAppToken = process.env.INGEST_APP_TOKEN;
+          const ingestBaseUrl = process.env.INGEST_BASE_URL
+          const ingestAppToken = process.env.INGEST_APP_TOKEN
 
           if (ingestBaseUrl && ingestAppToken) {
             fetch(`${ingestBaseUrl}/ingest/events`, {
@@ -273,21 +268,21 @@ export const votesRouter = router({
                   },
                 ],
               }),
-            }).catch(() => {}); // Fire-and-forget
+            }).catch(() => {}) // Fire-and-forget
           }
         } catch (error) {
           // Ignore ingest errors
         }
       }
 
-      return result;
+      return result
     }),
 
   getRuleScore: publicProcedure
     .input(z.object({ ruleId: z.string() }))
     .output(voteSummaryDTOSchema)
     .query(async ({ input, ctx }) => {
-      const { ruleId } = input;
+      const { ruleId } = input
 
       // Get vote counts efficiently
       const [voteStats, upCount, downCount] = await Promise.all([
@@ -301,18 +296,18 @@ export const votesRouter = router({
         ctx.prisma.vote.count({
           where: { ruleId, value: -1 },
         }),
-      ]);
+      ])
 
-      const score = voteStats._sum.value || 0;
+      const score = voteStats._sum.value || 0
 
-      let myVote = 0;
+      let myVote = 0
       if (ctx.user) {
         const userVote = await ctx.prisma.vote.findUnique({
           where: {
             userId_ruleId: { userId: ctx.user.id, ruleId },
           },
-        });
-        myVote = userVote?.value || 0;
+        })
+        myVote = userVote?.value || 0
       }
 
       return {
@@ -320,14 +315,14 @@ export const votesRouter = router({
         upCount,
         downCount,
         myVote,
-      };
+      }
     }),
 
   getVersionScore: publicProcedure
     .input(z.object({ ruleVersionId: z.string() }))
     .output(voteSummaryDTOSchema)
     .query(async ({ input, ctx }) => {
-      const { ruleVersionId } = input;
+      const { ruleVersionId } = input
 
       // Get vote counts efficiently
       const [voteStats, upCount, downCount] = await Promise.all([
@@ -341,18 +336,18 @@ export const votesRouter = router({
         ctx.prisma.voteVersion.count({
           where: { ruleVersionId, value: -1 },
         }),
-      ]);
+      ])
 
-      const score = voteStats._sum.value || 0;
+      const score = voteStats._sum.value || 0
 
-      let myVote = 0;
+      let myVote = 0
       if (ctx.user) {
         const userVote = await ctx.prisma.voteVersion.findUnique({
           where: {
             userId_ruleVersionId: { userId: ctx.user.id, ruleVersionId },
           },
-        });
-        myVote = userVote?.value || 0;
+        })
+        myVote = userVote?.value || 0
       }
 
       return {
@@ -360,18 +355,18 @@ export const votesRouter = router({
         upCount,
         downCount,
         myVote,
-      };
+      }
     }),
 
   getUserVotes: protectedProcedure
     .input(userVotesQuerySchema)
     .output(userVotesResponseSchema)
     .query(async ({ input, ctx }) => {
-      const { ruleIds, ruleVersionIds } = input;
-      const userId = ctx.user!.id;
+      const { ruleIds, ruleVersionIds } = input
+      const userId = ctx.user!.id
 
-      const ruleVotes: Record<string, number> = {};
-      const versionVotes: Record<string, number> = {};
+      const ruleVotes: Record<string, number> = {}
+      const versionVotes: Record<string, number> = {}
 
       if (ruleIds && ruleIds.length > 0) {
         const votes = await ctx.prisma.vote.findMany({
@@ -379,10 +374,10 @@ export const votesRouter = router({
             userId,
             ruleId: { in: ruleIds },
           },
-        });
+        })
 
         for (const vote of votes) {
-          ruleVotes[vote.ruleId] = vote.value;
+          ruleVotes[vote.ruleId] = vote.value
         }
       }
 
@@ -392,13 +387,13 @@ export const votesRouter = router({
             userId,
             ruleVersionId: { in: ruleVersionIds },
           },
-        });
+        })
 
         for (const vote of votes) {
-          versionVotes[vote.ruleVersionId] = vote.value;
+          versionVotes[vote.ruleVersionId] = vote.value
         }
       }
 
-      return { ruleVotes, versionVotes };
+      return { ruleVotes, versionVotes }
     }),
-});
+})

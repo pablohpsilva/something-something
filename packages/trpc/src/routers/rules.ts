@@ -1,5 +1,5 @@
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
+import { TRPCError } from "@trpc/server"
+import { z } from "zod"
 import {
   router,
   publicProcedure,
@@ -7,7 +7,7 @@ import {
   rateLimitedProcedure,
   audit,
   getRuleOwnership,
-} from "../trpc";
+} from "../trpc"
 import {
   createRuleSchema,
   updateRuleSchema,
@@ -21,11 +21,11 @@ import {
   getTrendingRulesSchema,
   duplicateRuleSchema,
   getRuleStatsSchema,
-} from "../schemas/rule";
-import { ruleCardDTOSchema, ruleDetailDTOSchema } from "../schemas/dto";
-import { GamificationService } from "../services/gamification";
-import { AuditLogService } from "../services/audit-log";
-import { createPaginatedSchema } from "../schemas/base";
+} from "../schemas/rule"
+import { ruleCardDTOSchema, ruleDetailDTOSchema } from "../schemas/dto"
+import { GamificationService } from "../services/gamification"
+import { AuditLogService } from "../services/audit-log"
+import { createPaginatedSchema } from "../schemas/base"
 
 export const rulesRouter = router({
   // List rules with pagination and filtering
@@ -33,7 +33,7 @@ export const rulesRouter = router({
     .input(listRulesSchema)
     .output(createPaginatedSchema(ruleCardDTOSchema))
     .query(async ({ input, ctx }) => {
-      const { cursor, limit, sort, filters } = input;
+      const { cursor, limit, sort, filters } = input
 
       // Build where clause
       const where: any = {
@@ -63,22 +63,22 @@ export const rulesRouter = router({
               },
             },
           }),
-      };
+      }
 
       // Build orderBy
-      let orderBy: any;
+      let orderBy: any
       switch (sort) {
         case "top":
           // For top, we'll sort by updatedAt for now since score is in a separate table
-          orderBy = [{ updatedAt: "desc" }, { createdAt: "desc" }];
-          break;
+          orderBy = [{ updatedAt: "desc" }, { createdAt: "desc" }]
+          break
         case "trending":
           // For trending, use recent updates
-          orderBy = [{ updatedAt: "desc" }, { createdAt: "desc" }];
-          break;
+          orderBy = [{ updatedAt: "desc" }, { createdAt: "desc" }]
+          break
         case "new":
         default:
-          orderBy = [{ createdAt: "desc" }];
+          orderBy = [{ createdAt: "desc" }]
       }
 
       // Handle cursor pagination
@@ -86,10 +86,10 @@ export const rulesRouter = router({
         const cursorRule = await ctx.prisma.rule.findUnique({
           where: { id: cursor },
           select: { createdAt: true },
-        });
+        })
 
         if (cursorRule) {
-          where.createdAt = { lt: cursorRule.createdAt };
+          where.createdAt = { lt: cursorRule.createdAt }
         }
       }
 
@@ -137,16 +137,16 @@ export const rulesRouter = router({
             },
           },
         },
-      });
+      })
 
-      const hasMore = rules.length > limit;
-      const items = hasMore ? rules.slice(0, -1) : rules;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+      const hasMore = rules.length > limit
+      const items = hasMore ? rules.slice(0, -1) : rules
+      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined
 
       // Get metrics for the last 7 days
-      const ruleIds = items.map((r) => r.id);
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const ruleIds = items.map(r => r.id)
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
       const metrics = await ctx.prisma.event.groupBy({
         by: ["ruleId", "type"],
@@ -156,10 +156,10 @@ export const rulesRouter = router({
           type: { in: ["VIEW", "COPY", "SAVE", "FORK"] },
         },
         _count: true,
-      });
+      })
 
       // Transform to DTO format
-      const transformedItems = items.map((rule) => ({
+      const transformedItems = items.map(rule => ({
         id: rule.id,
         slug: rule.slug,
         title: rule.title,
@@ -167,7 +167,7 @@ export const rulesRouter = router({
         contentType: rule.contentType,
         status: rule.status,
         primaryModel: rule.primaryModel,
-        tags: rule.tags.map((rt) => ({
+        tags: rule.tags.map(rt => ({
           id: rt.tag.id,
           slug: rt.tag.slug,
           name: rt.tag.name,
@@ -187,37 +187,29 @@ export const rulesRouter = router({
               version: rule.currentVersion.version,
               testedOn:
                 (rule.currentVersion.testedOn as {
-                  models?: string[];
-                  stacks?: string[];
+                  models?: string[]
+                  stacks?: string[]
                 }) || null,
               createdAt: rule.currentVersion.createdAt,
             }
           : null,
         metrics: {
-          views7:
-            metrics.find((m) => m.ruleId === rule.id && m.type === "VIEW")
-              ?._count || 0,
-          copies7:
-            metrics.find((m) => m.ruleId === rule.id && m.type === "COPY")
-              ?._count || 0,
-          saves7:
-            metrics.find((m) => m.ruleId === rule.id && m.type === "SAVE")
-              ?._count || 0,
-          forks7:
-            metrics.find((m) => m.ruleId === rule.id && m.type === "FORK")
-              ?._count || 0,
+          views7: metrics.find(m => m.ruleId === rule.id && m.type === "VIEW")?._count || 0,
+          copies7: metrics.find(m => m.ruleId === rule.id && m.type === "COPY")?._count || 0,
+          saves7: metrics.find(m => m.ruleId === rule.id && m.type === "SAVE")?._count || 0,
+          forks7: metrics.find(m => m.ruleId === rule.id && m.type === "FORK")?._count || 0,
           score: 0, // Calculate from metrics
         },
         createdAt: rule.createdAt,
         updatedAt: rule.updatedAt,
-      }));
+      }))
 
       return {
         items: transformedItems,
         nextCursor,
         hasMore,
         total: undefined, // Could add total count if needed
-      };
+      }
     }),
 
   // Get rule by slug
@@ -225,7 +217,7 @@ export const rulesRouter = router({
     .input(getRuleBySlugSchema)
     .output(ruleDetailDTOSchema.nullable())
     .query(async ({ input, ctx }) => {
-      const { slug, includeMetrics, includeUserActions } = input;
+      const { slug, includeMetrics, includeUserActions } = input
 
       const rule = await ctx.prisma.rule.findUnique({
         where: { slug, deletedAt: null },
@@ -275,16 +267,16 @@ export const rulesRouter = router({
             },
           },
         },
-      });
+      })
 
       if (!rule) {
-        return null;
+        return null
       }
 
       // Get user-specific data if authenticated
-      let userVote = null;
-      let userFavorited = false;
-      let userWatching = false;
+      let userVote = null
+      let userFavorited = false
+      let userWatching = false
 
       if (ctx.user && includeUserActions) {
         const [vote, favorite, watch] = await Promise.all([
@@ -312,11 +304,11 @@ export const rulesRouter = router({
               },
             },
           }),
-        ]);
+        ])
 
-        userVote = vote ? (vote.value > 0 ? "up" : "down") : null;
-        userFavorited = !!favorite;
-        userWatching = !!watch;
+        userVote = vote ? (vote.value > 0 ? "up" : "down") : null
+        userFavorited = !!favorite
+        userWatching = !!watch
       }
 
       // Get metrics if requested
@@ -326,11 +318,11 @@ export const rulesRouter = router({
         saves7: 0,
         forks7: 0,
         score: 0, // Calculate from metrics
-      };
+      }
 
       if (includeMetrics) {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
         const eventMetrics = await ctx.prisma.event.groupBy({
           by: ["type"],
@@ -340,15 +332,15 @@ export const rulesRouter = router({
             type: { in: ["VIEW", "COPY", "SAVE", "FORK"] },
           },
           _count: true,
-        });
+        })
 
         metrics = {
-          views7: eventMetrics.find((m) => m.type === "VIEW")?._count || 0,
-          copies7: eventMetrics.find((m) => m.type === "COPY")?._count || 0,
-          saves7: eventMetrics.find((m) => m.type === "SAVE")?._count || 0,
-          forks7: eventMetrics.find((m) => m.type === "FORK")?._count || 0,
+          views7: eventMetrics.find(m => m.type === "VIEW")?._count || 0,
+          copies7: eventMetrics.find(m => m.type === "COPY")?._count || 0,
+          saves7: eventMetrics.find(m => m.type === "SAVE")?._count || 0,
+          forks7: eventMetrics.find(m => m.type === "FORK")?._count || 0,
           score: 0, // Calculate from metrics
-        };
+        }
       }
 
       return {
@@ -360,12 +352,12 @@ export const rulesRouter = router({
         status: rule.status,
         primaryModel: rule.primaryModel,
         body: rule.currentVersion?.body || null,
-        tags: rule.tags.map((rt) => ({
+        tags: rule.tags.map(rt => ({
           id: rt.tag.id,
           slug: rt.tag.slug,
           name: rt.tag.name,
         })),
-        resourceLinks: rule.resourceLinks.map((rl) => ({
+        resourceLinks: rule.resourceLinks.map(rl => ({
           label: rl.label,
           url: rl.url,
           kind: rl.kind as any,
@@ -385,8 +377,8 @@ export const rulesRouter = router({
               version: rule.currentVersion.version,
               testedOn:
                 (rule.currentVersion.testedOn as {
-                  models?: string[];
-                  stacks?: string[];
+                  models?: string[]
+                  stacks?: string[]
                 }) || null,
               createdAt: rule.currentVersion.createdAt,
             }
@@ -402,7 +394,7 @@ export const rulesRouter = router({
         userWatching,
         createdAt: rule.createdAt,
         updatedAt: rule.updatedAt,
-      };
+      }
     }),
 
   // Create new rule
@@ -421,7 +413,7 @@ export const rulesRouter = router({
         testedOn,
         links,
         idempotencyKey,
-      } = input;
+      } = input
 
       // Check for idempotency
       if (idempotencyKey) {
@@ -436,22 +428,19 @@ export const rulesRouter = router({
           },
           orderBy: { createdAt: "desc" },
           take: 1,
-        });
+        })
 
-        if (
-          existing &&
-          existing.createdAt > new Date(Date.now() - 10 * 60 * 1000)
-        ) {
-          const entityId = existing.targetId;
+        if (existing && existing.createdAt > new Date(Date.now() - 10 * 60 * 1000)) {
+          const entityId = existing.targetId
           if (!entityId) {
-            return { id: "", slug: "" };
+            return { id: "", slug: "" }
           }
           const rule = await ctx.prisma.rule.findUnique({
             where: { id: entityId },
             select: { id: true, slug: true },
-          });
+          })
           if (rule) {
-            return { id: rule.id, slug: rule.slug };
+            return { id: rule.id, slug: rule.slug }
           }
         }
       }
@@ -460,22 +449,22 @@ export const rulesRouter = router({
       let slug = title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+        .replace(/^-+|-+$/g, "")
 
       // Ensure slug uniqueness
-      let counter = 0;
-      let finalSlug = slug;
+      let counter = 0
+      let finalSlug = slug
       while (true) {
         const existing = await ctx.prisma.rule.findUnique({
           where: { slug: finalSlug },
-        });
-        if (!existing) break;
-        counter++;
-        finalSlug = `${slug}-${counter}`;
+        })
+        if (!existing) break
+        counter++
+        finalSlug = `${slug}-${counter}`
       }
 
       // Create rule and initial version in transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
+      const result = await ctx.prisma.$transaction(async tx => {
         // Create the rule
         const rule = await tx.rule.create({
           data: {
@@ -487,7 +476,7 @@ export const rulesRouter = router({
             status: "DRAFT",
             createdByUserId: (ctx.user as any)?.id,
           },
-        });
+        })
 
         // Create initial version
         const version = await tx.ruleVersion.create({
@@ -499,19 +488,19 @@ export const rulesRouter = router({
             changelog: "Initial version",
             createdByUserId: (ctx.user as any)?.id,
           },
-        });
+        })
 
         // Set current version
         await tx.rule.update({
           where: { id: rule.id },
           data: { currentVersionId: version.id },
-        });
+        })
 
         // Add tags if provided
         if (tags && tags.length > 0) {
           // Find or create tags
           const tagRecords = await Promise.all(
-            tags.map(async (tagSlug) => {
+            tags.map(async tagSlug => {
               const tag = await tx.tag.upsert({
                 where: { slug: tagSlug },
                 update: {},
@@ -519,36 +508,36 @@ export const rulesRouter = router({
                   slug: tagSlug,
                   name: tagSlug.charAt(0).toUpperCase() + tagSlug.slice(1),
                 },
-              });
-              return tag;
+              })
+              return tag
             })
-          );
+          )
 
           // Create rule-tag relationships
           await tx.ruleTag.createMany({
-            data: tagRecords.map((tag) => ({
+            data: tagRecords.map(tag => ({
               ruleId: rule.id,
               tagId: tag.id,
             })),
-          });
+          })
         }
 
         // Add resource links if provided
         if (links && links.length > 0) {
           await tx.resourceLink.createMany({
-            data: links.map((link) => ({
+            data: links.map(link => ({
               ruleId: rule.id,
               label: link.label,
               url: link.url,
               kind: link.kind,
             })),
-          });
+          })
         }
 
-        return { id: rule.id, slug: rule.slug };
-      });
+        return { id: rule.id, slug: rule.slug }
+      })
 
-      return result;
+      return result
     }),
 
   // Update rule
@@ -557,23 +546,15 @@ export const rulesRouter = router({
     .use(audit("rule.update"))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const {
-        ruleId,
-        title,
-        summary,
-        primaryModel,
-        tags,
-        links,
-        idempotencyKey,
-      } = input;
+      const { ruleId, title, summary, primaryModel, tags, links, idempotencyKey } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to edit this rule",
-        });
+        })
       }
 
       // Cannot edit published rules' core properties (only mods/admins can)
@@ -581,10 +562,10 @@ export const rulesRouter = router({
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Published rules can only be edited by moderators or admins",
-        });
+        })
       }
 
-      await ctx.prisma.$transaction(async (tx) => {
+      await ctx.prisma.$transaction(async tx => {
         // Update rule
         await tx.rule.update({
           where: { id: ruleId },
@@ -593,19 +574,19 @@ export const rulesRouter = router({
             ...(summary !== undefined && { summary }),
             ...(primaryModel !== undefined && { primaryModel }),
           },
-        });
+        })
 
         // Update tags if provided
         if (tags) {
           // Remove existing tags
           await tx.ruleTag.deleteMany({
             where: { ruleId },
-          });
+          })
 
           if (tags.length > 0) {
             // Find or create new tags
             const tagRecords = await Promise.all(
-              tags.map(async (tagSlug) => {
+              tags.map(async tagSlug => {
                 const tag = await tx.tag.upsert({
                   where: { slug: tagSlug },
                   update: {},
@@ -613,18 +594,18 @@ export const rulesRouter = router({
                     slug: tagSlug,
                     name: tagSlug.charAt(0).toUpperCase() + tagSlug.slice(1),
                   },
-                });
-                return tag;
+                })
+                return tag
               })
-            );
+            )
 
             // Create new rule-tag relationships
             await tx.ruleTag.createMany({
-              data: tagRecords.map((tag) => ({
+              data: tagRecords.map(tag => ({
                 ruleId,
                 tagId: tag.id,
               })),
-            });
+            })
           }
         }
 
@@ -633,23 +614,23 @@ export const rulesRouter = router({
           // Remove existing links
           await tx.resourceLink.deleteMany({
             where: { ruleId },
-          });
+          })
 
           if (links.length > 0) {
             // Create new links
             await tx.resourceLink.createMany({
-              data: links.map((link) => ({
+              data: links.map(link => ({
                 ruleId,
                 label: link.label,
                 url: link.url,
                 kind: link.kind,
               })),
-            });
+            })
           }
         }
-      });
+      })
 
-      return { success: true };
+      return { success: true }
     }),
 
   // Publish rule
@@ -658,64 +639,61 @@ export const rulesRouter = router({
     .use(audit("rule.publish"))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const { ruleId } = input;
+      const { ruleId } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to publish this rule",
-        });
+        })
       }
 
       if (rule.status === "PUBLISHED") {
         throw new TRPCError({
           code: "CONFLICT",
           message: "Rule is already published",
-        });
+        })
       }
 
       // Ensure rule has a current version
       const ruleWithVersion = await ctx.prisma.rule.findUnique({
         where: { id: ruleId },
         include: { currentVersion: true },
-      });
+      })
 
       if (!ruleWithVersion?.currentVersion) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Rule must have a current version before publishing",
-        });
+        })
       }
 
       await ctx.prisma.rule.update({
         where: { id: ruleId },
         data: { status: "PUBLISHED" },
-      });
+      })
 
       // Log the publication
       await AuditLogService.logRulePublish(ruleId, ctx.user!.id, {
         title: rule.title,
         slug: rule.slug,
         previousStatus: rule.status,
-      });
+      })
 
       // Award first contribution badge if this is their first published rule
       try {
         const awardContext = {
           prisma: ctx.prisma,
           now: new Date(),
-        };
-        await GamificationService.checkFirstContribution(
-          awardContext,
-          ctx.user!.id
-        );
+        }
+        await GamificationService.checkFirstContribution(awardContext, ctx.user!.id)
       } catch (error) {
-        console.error("Failed to check first contribution badge:", error);
+        console.error("Failed to check first contribution badge:", error)
       }
 
-      return { success: true };
+      return { success: true }
     }),
 
   // Soft delete rule
@@ -724,15 +702,15 @@ export const rulesRouter = router({
     .use(audit("rule.delete"))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const { ruleId, reason } = input;
+      const { ruleId, reason } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to delete this rule",
-        });
+        })
       }
 
       await ctx.prisma.rule.update({
@@ -741,8 +719,8 @@ export const rulesRouter = router({
           deletedAt: ctx.now,
           status: "DEPRECATED",
         },
-      });
+      })
 
-      return { success: true };
+      return { success: true }
     }),
-});
+})

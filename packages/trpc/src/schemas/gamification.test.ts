@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest"
 import {
   leaderboardGetInputSchema,
   badgesListInputSchema,
@@ -20,7 +20,7 @@ import {
   type UserBadgesResponse,
   type BadgeCatalogResponse,
   type BadgesRecheckResponse,
-} from "./gamification";
+} from "./gamification"
 
 describe("Gamification Schemas", () => {
   describe("leaderboardGetInputSchema", () => {
@@ -31,114 +31,114 @@ describe("Gamification Schemas", () => {
         scopeRef: "javascript",
         cursor: "cursor123",
         limit: 50,
-      };
+      }
 
-      const result = leaderboardGetInputSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = leaderboardGetInputSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should use default values for optional fields", () => {
       const minimalInput = {
         period: "DAILY" as const,
-      };
+      }
 
-      const result = leaderboardGetInputSchema.parse(minimalInput);
+      const result = leaderboardGetInputSchema.parse(minimalInput)
       expect(result).toEqual({
         period: "DAILY",
         scope: "GLOBAL",
         limit: 25,
-      });
-    });
+      })
+    })
 
     it("should accept all valid period values", () => {
-      const periods = ["DAILY", "WEEKLY", "MONTHLY", "ALL"] as const;
+      const periods = ["DAILY", "WEEKLY", "MONTHLY", "ALL"] as const
 
-      periods.forEach((period) => {
-        const input = { period };
-        expect(() => leaderboardGetInputSchema.parse(input)).not.toThrow();
-      });
-    });
+      periods.forEach(period => {
+        const input = { period }
+        expect(() => leaderboardGetInputSchema.parse(input)).not.toThrow()
+      })
+    })
 
     it("should accept all valid scope values", () => {
-      const scopes = ["GLOBAL", "TAG", "MODEL"] as const;
+      const scopes = ["GLOBAL", "TAG", "MODEL"] as const
 
-      scopes.forEach((scope) => {
-        const input = { period: "DAILY" as const, scope };
-        expect(() => leaderboardGetInputSchema.parse(input)).not.toThrow();
-      });
-    });
+      scopes.forEach(scope => {
+        const input = { period: "DAILY" as const, scope }
+        expect(() => leaderboardGetInputSchema.parse(input)).not.toThrow()
+      })
+    })
 
     it("should reject invalid period values", () => {
       const invalidInput = {
         period: "INVALID",
-      };
+      }
 
-      expect(() => leaderboardGetInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => leaderboardGetInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should reject invalid scope values", () => {
       const invalidInput = {
         period: "DAILY" as const,
         scope: "INVALID",
-      };
+      }
 
-      expect(() => leaderboardGetInputSchema.parse(invalidInput)).toThrow();
-    });
+      expect(() => leaderboardGetInputSchema.parse(invalidInput)).toThrow()
+    })
 
     it("should accept input without optional fields", () => {
       const input = {
         period: "MONTHLY" as const,
         scope: "TAG" as const,
-      };
+      }
 
-      const result = leaderboardGetInputSchema.parse(input);
-      expect(result.period).toBe("MONTHLY");
-      expect(result.scope).toBe("TAG");
-      expect(result.limit).toBe(25); // default value
-    });
-  });
+      const result = leaderboardGetInputSchema.parse(input)
+      expect(result.period).toBe("MONTHLY")
+      expect(result.scope).toBe("TAG")
+      expect(result.limit).toBe(25) // default value
+    })
+  })
 
   describe("badgesListInputSchema", () => {
     it("should accept valid badges list input", () => {
       const validInput = {
         userId: "user123",
-      };
+      }
 
-      const result = badgesListInputSchema.parse(validInput);
-      expect(result).toEqual(validInput);
-    });
+      const result = badgesListInputSchema.parse(validInput)
+      expect(result).toEqual(validInput)
+    })
 
     it("should accept empty input", () => {
-      const emptyInput = {};
+      const emptyInput = {}
 
-      const result = badgesListInputSchema.parse(emptyInput);
-      expect(result).toEqual({});
-    });
+      const result = badgesListInputSchema.parse(emptyInput)
+      expect(result).toEqual({})
+    })
 
     it("should accept input without userId", () => {
-      const input = {};
+      const input = {}
 
-      expect(() => badgesListInputSchema.parse(input)).not.toThrow();
-    });
-  });
+      expect(() => badgesListInputSchema.parse(input)).not.toThrow()
+    })
+  })
 
   describe("badgesAllInputSchema", () => {
     it("should accept empty input", () => {
-      const emptyInput = {};
+      const emptyInput = {}
 
-      const result = badgesAllInputSchema.parse(emptyInput);
-      expect(result).toEqual({});
-    });
-  });
+      const result = badgesAllInputSchema.parse(emptyInput)
+      expect(result).toEqual({})
+    })
+  })
 
   describe("badgesRecheckInputSchema", () => {
     it("should accept empty input", () => {
-      const emptyInput = {};
+      const emptyInput = {}
 
-      const result = badgesRecheckInputSchema.parse(emptyInput);
-      expect(result).toEqual({});
-    });
-  });
+      const result = badgesRecheckInputSchema.parse(emptyInput)
+      expect(result).toEqual({})
+    })
+  })
 
   describe("leaderboardEntrySchema", () => {
     it("should accept valid leaderboard entry", () => {
@@ -160,11 +160,11 @@ describe("Gamification Schemas", () => {
         forks: 25,
         votes: 75,
         rankDelta: 2,
-      };
+      }
 
-      const result = leaderboardEntrySchema.parse(validEntry);
-      expect(result).toEqual(validEntry);
-    });
+      const result = leaderboardEntrySchema.parse(validEntry)
+      expect(result).toEqual(validEntry)
+    })
 
     it("should accept entry without optional fields", () => {
       const minimalEntry = {
@@ -181,11 +181,11 @@ describe("Gamification Schemas", () => {
         score: 80.0,
         copies: 50,
         views: 500,
-      };
+      }
 
-      const result = leaderboardEntrySchema.parse(minimalEntry);
-      expect(result).toEqual(minimalEntry);
-    });
+      const result = leaderboardEntrySchema.parse(minimalEntry)
+      expect(result).toEqual(minimalEntry)
+    })
 
     it("should accept null avatarUrl", () => {
       const entry = {
@@ -202,10 +202,10 @@ describe("Gamification Schemas", () => {
         score: 70.0,
         copies: 30,
         views: 300,
-      };
+      }
 
-      expect(() => leaderboardEntrySchema.parse(entry)).not.toThrow();
-    });
+      expect(() => leaderboardEntrySchema.parse(entry)).not.toThrow()
+    })
 
     it("should accept null rankDelta", () => {
       const entry = {
@@ -223,10 +223,10 @@ describe("Gamification Schemas", () => {
         copies: 20,
         views: 200,
         rankDelta: null,
-      };
+      }
 
-      expect(() => leaderboardEntrySchema.parse(entry)).not.toThrow();
-    });
+      expect(() => leaderboardEntrySchema.parse(entry)).not.toThrow()
+    })
 
     it("should reject zero or negative rank", () => {
       const invalidEntry = {
@@ -243,10 +243,10 @@ describe("Gamification Schemas", () => {
         score: 50.0,
         copies: 10,
         views: 100,
-      };
+      }
 
-      expect(() => leaderboardEntrySchema.parse(invalidEntry)).toThrow();
-    });
+      expect(() => leaderboardEntrySchema.parse(invalidEntry)).toThrow()
+    })
 
     it("should accept negative integer values", () => {
       const entryWithNegatives = {
@@ -267,13 +267,11 @@ describe("Gamification Schemas", () => {
         forks: -2,
         votes: -3,
         rankDelta: -5,
-      };
+      }
 
-      expect(() =>
-        leaderboardEntrySchema.parse(entryWithNegatives)
-      ).not.toThrow();
-    });
-  });
+      expect(() => leaderboardEntrySchema.parse(entryWithNegatives)).not.toThrow()
+    })
+  })
 
   describe("leaderboardResponseSchema", () => {
     it("should accept valid leaderboard response", () => {
@@ -307,11 +305,11 @@ describe("Gamification Schemas", () => {
           hasMore: true,
           nextCursor: "cursor456",
         },
-      };
+      }
 
-      const result = leaderboardResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = leaderboardResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept response without nextCursor", () => {
       const response = {
@@ -327,15 +325,15 @@ describe("Gamification Schemas", () => {
         pagination: {
           hasMore: false,
         },
-      };
+      }
 
-      expect(() => leaderboardResponseSchema.parse(response)).not.toThrow();
-    });
+      expect(() => leaderboardResponseSchema.parse(response)).not.toThrow()
+    })
 
     it("should accept all valid period values in meta", () => {
-      const periods = ["DAILY", "WEEKLY", "MONTHLY", "ALL"] as const;
+      const periods = ["DAILY", "WEEKLY", "MONTHLY", "ALL"] as const
 
-      periods.forEach((period) => {
+      periods.forEach(period => {
         const response = {
           entries: [],
           meta: {
@@ -349,15 +347,15 @@ describe("Gamification Schemas", () => {
           pagination: {
             hasMore: false,
           },
-        };
-        expect(() => leaderboardResponseSchema.parse(response)).not.toThrow();
-      });
-    });
+        }
+        expect(() => leaderboardResponseSchema.parse(response)).not.toThrow()
+      })
+    })
 
     it("should accept all valid scope values in meta", () => {
-      const scopes = ["GLOBAL", "TAG", "MODEL"] as const;
+      const scopes = ["GLOBAL", "TAG", "MODEL"] as const
 
-      scopes.forEach((scope) => {
+      scopes.forEach(scope => {
         const response = {
           entries: [],
           meta: {
@@ -371,11 +369,11 @@ describe("Gamification Schemas", () => {
           pagination: {
             hasMore: false,
           },
-        };
-        expect(() => leaderboardResponseSchema.parse(response)).not.toThrow();
-      });
-    });
-  });
+        }
+        expect(() => leaderboardResponseSchema.parse(response)).not.toThrow()
+      })
+    })
+  })
 
   describe("badgeSchema", () => {
     it("should accept valid badge", () => {
@@ -387,11 +385,11 @@ describe("Gamification Schemas", () => {
           rulesCreated: 1,
         },
         awardedAt: new Date("2024-01-15T10:00:00Z"),
-      };
+      }
 
-      const result = badgeSchema.parse(validBadge);
-      expect(result).toEqual(validBadge);
-    });
+      const result = badgeSchema.parse(validBadge)
+      expect(result).toEqual(validBadge)
+    })
 
     it("should accept badge without awardedAt", () => {
       const badge = {
@@ -401,11 +399,11 @@ describe("Gamification Schemas", () => {
         criteria: {
           rulesCreated: 100,
         },
-      };
+      }
 
-      const result = badgeSchema.parse(badge);
-      expect(result).toEqual(badge);
-    });
+      const result = badgeSchema.parse(badge)
+      expect(result).toEqual(badge)
+    })
 
     it("should accept complex criteria object", () => {
       const badge = {
@@ -417,11 +415,11 @@ describe("Gamification Schemas", () => {
           timeframe: "all-time",
           ruleTypes: ["PROMPT", "RULE"],
         },
-      };
+      }
 
-      expect(() => badgeSchema.parse(badge)).not.toThrow();
-    });
-  });
+      expect(() => badgeSchema.parse(badge)).not.toThrow()
+    })
+  })
 
   describe("userBadgesResponseSchema", () => {
     it("should accept valid user badges response", () => {
@@ -442,22 +440,22 @@ describe("Gamification Schemas", () => {
           },
         ],
         totalCount: 2,
-      };
+      }
 
-      const result = userBadgesResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = userBadgesResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept empty badges array", () => {
       const response = {
         badges: [],
         totalCount: 0,
-      };
+      }
 
-      const result = userBadgesResponseSchema.parse(response);
-      expect(result).toEqual(response);
-    });
-  });
+      const result = userBadgesResponseSchema.parse(response)
+      expect(result).toEqual(response)
+    })
+  })
 
   describe("badgeCatalogResponseSchema", () => {
     it("should accept valid badge catalog response", () => {
@@ -476,20 +474,20 @@ describe("Gamification Schemas", () => {
             criteria: { monthlyRank: { lte: 10 } },
           },
         ],
-      };
+      }
 
-      const result = badgeCatalogResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = badgeCatalogResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept empty badges array", () => {
       const response = {
         badges: [],
-      };
+      }
 
-      const result = badgeCatalogResponseSchema.parse(response);
-      expect(result).toEqual(response);
-    });
+      const result = badgeCatalogResponseSchema.parse(response)
+      expect(result).toEqual(response)
+    })
 
     it("should not include awardedAt in catalog badges", () => {
       const response = {
@@ -502,44 +500,42 @@ describe("Gamification Schemas", () => {
             // awardedAt should not be present in catalog
           },
         ],
-      };
+      }
 
-      expect(() => badgeCatalogResponseSchema.parse(response)).not.toThrow();
-    });
-  });
+      expect(() => badgeCatalogResponseSchema.parse(response)).not.toThrow()
+    })
+  })
 
   describe("badgesRecheckResponseSchema", () => {
     it("should accept valid recheck response", () => {
       const validResponse = {
         awarded: 3,
         message: "Awarded 3 new badges",
-      };
+      }
 
-      const result = badgesRecheckResponseSchema.parse(validResponse);
-      expect(result).toEqual(validResponse);
-    });
+      const result = badgesRecheckResponseSchema.parse(validResponse)
+      expect(result).toEqual(validResponse)
+    })
 
     it("should accept zero awarded badges", () => {
       const response = {
         awarded: 0,
         message: "No new badges awarded",
-      };
+      }
 
-      const result = badgesRecheckResponseSchema.parse(response);
-      expect(result).toEqual(response);
-    });
+      const result = badgesRecheckResponseSchema.parse(response)
+      expect(result).toEqual(response)
+    })
 
     it("should accept negative awarded count", () => {
       const responseWithNegative = {
         awarded: -1,
         message: "Negative count is allowed",
-      };
+      }
 
-      expect(() =>
-        badgesRecheckResponseSchema.parse(responseWithNegative)
-      ).not.toThrow();
-    });
-  });
+      expect(() => badgesRecheckResponseSchema.parse(responseWithNegative)).not.toThrow()
+    })
+  })
 
   describe("Type Exports", () => {
     it("should export all input types", () => {
@@ -548,17 +544,17 @@ describe("Gamification Schemas", () => {
         period: "DAILY",
         scope: "GLOBAL",
         limit: 25,
-      };
+      }
 
-      const badgesListInput: BadgesListInput = {};
-      const badgesAllInput: BadgesAllInput = {};
-      const badgesRecheckInput: BadgesRecheckInput = {};
+      const badgesListInput: BadgesListInput = {}
+      const badgesAllInput: BadgesAllInput = {}
+      const badgesRecheckInput: BadgesRecheckInput = {}
 
-      expect(leaderboardInput).toBeDefined();
-      expect(badgesListInput).toBeDefined();
-      expect(badgesAllInput).toBeDefined();
-      expect(badgesRecheckInput).toBeDefined();
-    });
+      expect(leaderboardInput).toBeDefined()
+      expect(badgesListInput).toBeDefined()
+      expect(badgesAllInput).toBeDefined()
+      expect(badgesRecheckInput).toBeDefined()
+    })
 
     it("should export all response types", () => {
       // Test that types are properly exported by creating variables of each type
@@ -576,7 +572,7 @@ describe("Gamification Schemas", () => {
         score: 100,
         copies: 50,
         views: 500,
-      };
+      }
 
       const leaderboardResponse: LeaderboardResponse = {
         entries: [leaderboardEntry],
@@ -591,19 +587,19 @@ describe("Gamification Schemas", () => {
         pagination: {
           hasMore: false,
         },
-      };
+      }
 
       const badge: Badge = {
         slug: "test-badge",
         name: "Test Badge",
         description: "Test description",
         criteria: {},
-      };
+      }
 
       const userBadgesResponse: UserBadgesResponse = {
         badges: [badge],
         totalCount: 1,
-      };
+      }
 
       const badgeCatalogResponse: BadgeCatalogResponse = {
         badges: [
@@ -614,21 +610,21 @@ describe("Gamification Schemas", () => {
             criteria: {},
           },
         ],
-      };
+      }
 
       const badgesRecheckResponse: BadgesRecheckResponse = {
         awarded: 1,
         message: "Awarded 1 badge",
-      };
+      }
 
-      expect(leaderboardEntry).toBeDefined();
-      expect(leaderboardResponse).toBeDefined();
-      expect(badge).toBeDefined();
-      expect(userBadgesResponse).toBeDefined();
-      expect(badgeCatalogResponse).toBeDefined();
-      expect(badgesRecheckResponse).toBeDefined();
-    });
-  });
+      expect(leaderboardEntry).toBeDefined()
+      expect(leaderboardResponse).toBeDefined()
+      expect(badge).toBeDefined()
+      expect(userBadgesResponse).toBeDefined()
+      expect(badgeCatalogResponse).toBeDefined()
+      expect(badgesRecheckResponse).toBeDefined()
+    })
+  })
 
   describe("Edge Cases and Integration", () => {
     it("should handle large numbers in leaderboard entries", () => {
@@ -650,12 +646,10 @@ describe("Gamification Schemas", () => {
         forks: 999999,
         votes: 999999,
         rankDelta: -999999,
-      };
+      }
 
-      expect(() =>
-        leaderboardEntrySchema.parse(entryWithLargeNumbers)
-      ).not.toThrow();
-    });
+      expect(() => leaderboardEntrySchema.parse(entryWithLargeNumbers)).not.toThrow()
+    })
 
     it("should handle complex nested criteria in badges", () => {
       const complexBadge = {
@@ -677,10 +671,10 @@ describe("Gamification Schemas", () => {
             end: "2024-12-31",
           },
         },
-      };
+      }
 
-      expect(() => badgeSchema.parse(complexBadge)).not.toThrow();
-    });
+      expect(() => badgeSchema.parse(complexBadge)).not.toThrow()
+    })
 
     it("should handle boundary values", () => {
       // Test minimum valid rank
@@ -698,20 +692,18 @@ describe("Gamification Schemas", () => {
         score: 0,
         copies: 0,
         views: 0,
-      };
+      }
 
-      expect(() => leaderboardEntrySchema.parse(minRankEntry)).not.toThrow();
+      expect(() => leaderboardEntrySchema.parse(minRankEntry)).not.toThrow()
 
       // Test zero awarded badges
       const zeroAwardedResponse = {
         awarded: 0,
         message: "No badges awarded",
-      };
+      }
 
-      expect(() =>
-        badgesRecheckResponseSchema.parse(zeroAwardedResponse)
-      ).not.toThrow();
-    });
+      expect(() => badgesRecheckResponseSchema.parse(zeroAwardedResponse)).not.toThrow()
+    })
 
     it("should validate leaderboard response with multiple entries", () => {
       const multiEntryResponse = {
@@ -760,11 +752,9 @@ describe("Gamification Schemas", () => {
         pagination: {
           hasMore: false,
         },
-      };
+      }
 
-      expect(() =>
-        leaderboardResponseSchema.parse(multiEntryResponse)
-      ).not.toThrow();
-    });
-  });
-});
+      expect(() => leaderboardResponseSchema.parse(multiEntryResponse)).not.toThrow()
+    })
+  })
+})

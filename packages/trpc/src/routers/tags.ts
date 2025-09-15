@@ -1,5 +1,5 @@
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
+import { TRPCError } from "@trpc/server"
+import { z } from "zod"
 import {
   router,
   publicProcedure,
@@ -8,7 +8,7 @@ import {
   modProcedure,
   audit,
   getRuleOwnership,
-} from "../trpc";
+} from "../trpc"
 import {
   listTagsSchema,
   getTagBySlugSchema,
@@ -18,9 +18,9 @@ import {
   updateTagSchema,
   getPopularTagsSchema,
   getTagSuggestionsSchema,
-} from "../schemas/tags";
-import { tagDTOSchema } from "../schemas/dto";
-import { createPaginatedSchema } from "../schemas/base";
+} from "../schemas/tags"
+import { tagDTOSchema } from "../schemas/dto"
+import { createPaginatedSchema } from "../schemas/base"
 
 export const tagsRouter = router({
   // List all tags
@@ -28,33 +28,31 @@ export const tagsRouter = router({
     .input(listTagsSchema)
     .output(createPaginatedSchema(tagDTOSchema))
     .query(async ({ input, ctx }) => {
-      const { cursor, limit, search, sort, includeCount } = input;
+      const { cursor, limit, search, sort, includeCount } = input
 
-      const where: any = {};
+      const where: any = {}
       if (search) {
         where.OR = [
           { name: { contains: search, mode: "insensitive" } },
           { slug: { contains: search, mode: "insensitive" } },
-        ];
+        ]
       }
 
       if (cursor) {
-        where.id = { gt: cursor };
+        where.id = { gt: cursor }
       }
 
-      let orderBy: any;
+      let orderBy: any
       switch (sort) {
         case "name":
-          orderBy = { name: "asc" };
-          break;
+          orderBy = { name: "asc" }
+          break
         case "recent":
-          orderBy = { id: "desc" };
-          break;
+          orderBy = { id: "desc" }
+          break
         case "count":
         default:
-          orderBy = includeCount
-            ? { rules: { _count: "desc" } }
-            : { name: "asc" };
+          orderBy = includeCount ? { rules: { _count: "desc" } } : { name: "asc" }
       }
 
       const tags = await ctx.prisma.tag.findMany({
@@ -74,14 +72,14 @@ export const tagsRouter = router({
               },
             }
           : undefined,
-      });
+      })
 
-      const hasMore = tags.length > limit;
-      const items = hasMore ? tags.slice(0, -1) : tags;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+      const hasMore = tags.length > limit
+      const items = hasMore ? tags.slice(0, -1) : tags
+      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined
 
       return {
-        items: items.map((tag) => ({
+        items: items.map(tag => ({
           id: tag.id,
           slug: tag.slug,
           name: tag.name,
@@ -89,7 +87,7 @@ export const tagsRouter = router({
         })),
         nextCursor,
         hasMore,
-      };
+      }
     }),
 
   // Get tag by slug
@@ -104,7 +102,7 @@ export const tagsRouter = router({
         .nullable()
     )
     .query(async ({ input, ctx }) => {
-      const { slug, includeStats } = input;
+      const { slug, includeStats } = input
 
       const tag = await ctx.prisma.tag.findUnique({
         where: { slug },
@@ -121,16 +119,16 @@ export const tagsRouter = router({
               },
             }
           : undefined,
-      });
+      })
 
       if (!tag) {
-        return null;
+        return null
       }
 
-      let recentRulesCount = 0;
+      let recentRulesCount = 0
       if (includeStats) {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
         recentRulesCount = await ctx.prisma.ruleTag.count({
           where: {
@@ -141,7 +139,7 @@ export const tagsRouter = router({
               createdAt: { gte: thirtyDaysAgo },
             },
           },
-        });
+        })
       }
 
       return {
@@ -150,7 +148,7 @@ export const tagsRouter = router({
         name: tag.name,
         rulesCount: (tag as any)._count?.rules || 0,
         recentRulesCount,
-      };
+      }
     }),
 
   // Attach tags to rule
@@ -159,21 +157,21 @@ export const tagsRouter = router({
     .use(audit("tags.attach"))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const { ruleId, tagSlugs } = input;
+      const { ruleId, tagSlugs } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to edit this rule",
-        });
+        })
       }
 
-      await ctx.prisma.$transaction(async (tx) => {
+      await ctx.prisma.$transaction(async tx => {
         // Find or create tags
         const tags = await Promise.all(
-          tagSlugs.map(async (slug) => {
+          tagSlugs.map(async slug => {
             return tx.tag.upsert({
               where: { slug },
               update: {},
@@ -181,9 +179,9 @@ export const tagsRouter = router({
                 slug,
                 name: slug.charAt(0).toUpperCase() + slug.slice(1),
               },
-            });
+            })
           })
-        );
+        )
 
         // Create rule-tag relationships (ignore duplicates)
         for (const tag of tags) {
@@ -199,11 +197,11 @@ export const tagsRouter = router({
               ruleId,
               tagId: tag.id,
             },
-          });
+          })
         }
-      });
+      })
 
-      return { success: true };
+      return { success: true }
     }),
 
   // Detach tags from rule
@@ -212,33 +210,33 @@ export const tagsRouter = router({
     .use(audit("tags.detach"))
     .output(z.object({ success: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      const { ruleId, tagSlugs } = input;
+      const { ruleId, tagSlugs } = input
 
-      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId);
+      const { rule, canEdit } = await getRuleOwnership(ctx, ruleId)
 
       if (!canEdit) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to edit this rule",
-        });
+        })
       }
 
       // Find tag IDs
       const tags = await ctx.prisma.tag.findMany({
         where: { slug: { in: tagSlugs } },
         select: { id: true },
-      });
+      })
 
       if (tags.length > 0) {
         await ctx.prisma.ruleTag.deleteMany({
           where: {
             ruleId,
-            tagId: { in: tags.map((t) => t.id) },
+            tagId: { in: tags.map(t => t.id) },
           },
-        });
+        })
       }
 
-      return { success: true };
+      return { success: true }
     }),
 
   // Create tag (mod/admin only)
@@ -247,17 +245,17 @@ export const tagsRouter = router({
     .use(audit("tag.create"))
     .output(tagDTOSchema)
     .mutation(async ({ input, ctx }) => {
-      const { slug, name, description } = input;
+      const { slug, name, description } = input
 
       const tag = await ctx.prisma.tag.create({
         data: { slug, name },
-      });
+      })
 
       return {
         id: tag.id,
         slug: tag.slug,
         name: tag.name,
-      };
+      }
     }),
 
   // Get popular tags
@@ -265,21 +263,21 @@ export const tagsRouter = router({
     .input(getPopularTagsSchema)
     .output(z.array(tagDTOSchema))
     .query(async ({ input, ctx }) => {
-      const { limit, period } = input;
+      const { limit, period } = input
 
-      let createdAfter: Date | undefined;
+      let createdAfter: Date | undefined
       if (period !== "all") {
-        createdAfter = new Date();
+        createdAfter = new Date()
         switch (period) {
           case "day":
-            createdAfter.setDate(createdAfter.getDate() - 1);
-            break;
+            createdAfter.setDate(createdAfter.getDate() - 1)
+            break
           case "week":
-            createdAfter.setDate(createdAfter.getDate() - 7);
-            break;
+            createdAfter.setDate(createdAfter.getDate() - 7)
+            break
           case "month":
-            createdAfter.setDate(createdAfter.getDate() - 30);
-            break;
+            createdAfter.setDate(createdAfter.getDate() - 30)
+            break
         }
       }
 
@@ -303,14 +301,14 @@ export const tagsRouter = router({
         orderBy: {
           rules: { _count: "desc" },
         },
-      });
+      })
 
-      return tags.map((tag) => ({
+      return tags.map(tag => ({
         id: tag.id,
         slug: tag.slug,
         name: tag.name,
         count: tag._count.rules,
-      }));
+      }))
     }),
 
   // Get tag suggestions
@@ -318,29 +316,29 @@ export const tagsRouter = router({
     .input(getTagSuggestionsSchema)
     .output(z.array(tagDTOSchema))
     .query(async ({ input, ctx }) => {
-      const { query, limit, excludeExisting } = input;
+      const { query, limit, excludeExisting } = input
 
       const where: any = {
         OR: [
           { name: { contains: query, mode: "insensitive" } },
           { slug: { contains: query, mode: "insensitive" } },
         ],
-      };
+      }
 
       if (excludeExisting && excludeExisting.length > 0) {
-        where.slug = { notIn: excludeExisting };
+        where.slug = { notIn: excludeExisting }
       }
 
       const tags = await ctx.prisma.tag.findMany({
         where,
         take: limit,
         orderBy: [{ name: "asc" }],
-      });
+      })
 
-      return tags.map((tag) => ({
+      return tags.map(tag => ({
         id: tag.id,
         slug: tag.slug,
         name: tag.name,
-      }));
+      }))
     }),
-});
+})

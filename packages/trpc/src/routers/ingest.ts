@@ -1,9 +1,5 @@
-import { z } from "zod";
-import {
-  createTRPCRouter,
-  rateLimitedProcedure,
-  protectedProcedure,
-} from "../server";
+import { z } from "zod"
+import { createTRPCRouter, rateLimitedProcedure, protectedProcedure } from "../server"
 
 export const ingestRouter = createTRPCRouter({
   getEvents: protectedProcedure
@@ -24,18 +20,18 @@ export const ingestRouter = createTRPCRouter({
         orderBy: {
           createdAt: "desc",
         },
-      });
+      })
 
-      let nextCursor: typeof input.cursor | undefined = undefined;
+      let nextCursor: typeof input.cursor | undefined = undefined
       if (events.length > input.limit) {
-        const nextItem = events.pop();
-        nextCursor = nextItem!.id;
+        const nextItem = events.pop()
+        nextCursor = nextItem!.id
       }
 
       return {
         events,
         nextCursor,
-      };
+      }
     }),
 
   createEvent: rateLimitedProcedure
@@ -51,7 +47,7 @@ export const ingestRouter = createTRPCRouter({
           type: input.type,
           data: input.data,
         },
-      });
+      })
     }),
 
   markProcessed: protectedProcedure
@@ -60,7 +56,7 @@ export const ingestRouter = createTRPCRouter({
       return ctx.db.ingestEvent.update({
         where: { id: input.id },
         data: { processed: true },
-      });
+      })
     }),
 
   batchMarkProcessed: protectedProcedure
@@ -69,6 +65,6 @@ export const ingestRouter = createTRPCRouter({
       return ctx.db.ingestEvent.updateMany({
         where: { id: { in: input.ids } },
         data: { processed: true },
-      });
+      })
     }),
-});
+})

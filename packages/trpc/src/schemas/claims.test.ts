@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vitest"
 import {
   submitClaimSchema,
   reviewClaimSchema,
@@ -14,7 +14,7 @@ import {
   type GetClaimByIdInput,
   type AssignClaimInput,
   type GetClaimsByRuleInput,
-} from "./claims";
+} from "./claims"
 
 describe("Claims Schemas", () => {
   describe("submitClaimSchema", () => {
@@ -24,32 +24,32 @@ describe("Claims Schemas", () => {
         evidenceUrl: "https://example.com/evidence",
         description: "This is my evidence for claiming this rule",
         idempotencyKey: "claim-key-123",
-      };
+      }
 
-      const result = submitClaimSchema.parse(validClaim);
-      expect(result).toEqual(validClaim);
-    });
+      const result = submitClaimSchema.parse(validClaim)
+      expect(result).toEqual(validClaim)
+    })
 
     it("should accept claim without evidence URL", () => {
       const validClaim = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         description: "This is my evidence for claiming this rule",
         idempotencyKey: "claim-key-123",
-      };
+      }
 
-      const result = submitClaimSchema.parse(validClaim);
-      expect(result).toEqual(validClaim);
-    });
+      const result = submitClaimSchema.parse(validClaim)
+      expect(result).toEqual(validClaim)
+    })
 
     it("should accept claim without idempotency key", () => {
       const validClaim = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         description: "This is my evidence for claiming this rule",
-      };
+      }
 
-      const result = submitClaimSchema.parse(validClaim);
-      expect(result).toEqual(validClaim);
-    });
+      const result = submitClaimSchema.parse(validClaim)
+      expect(result).toEqual(validClaim)
+    })
 
     it("should reject invalid rule ID", () => {
       expect(() =>
@@ -57,8 +57,8 @@ describe("Claims Schemas", () => {
           ruleId: "invalid-id",
           description: "This is my evidence for claiming this rule",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid evidence URL", () => {
       expect(() =>
@@ -67,8 +67,8 @@ describe("Claims Schemas", () => {
           evidenceUrl: "not-a-url",
           description: "This is my evidence for claiming this rule",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject description that's too short", () => {
       expect(() =>
@@ -76,8 +76,8 @@ describe("Claims Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           description: "Too short",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject description that's too long", () => {
       expect(() =>
@@ -85,42 +85,42 @@ describe("Claims Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           description: "a".repeat(1001),
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should accept description at minimum length", () => {
       const validClaim = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         description: "a".repeat(10), // Exactly 10 characters
-      };
+      }
 
-      expect(() => submitClaimSchema.parse(validClaim)).not.toThrow();
-    });
+      expect(() => submitClaimSchema.parse(validClaim)).not.toThrow()
+    })
 
     it("should accept description at maximum length", () => {
       const validClaim = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         description: "a".repeat(1000), // Exactly 1000 characters
-      };
+      }
 
-      expect(() => submitClaimSchema.parse(validClaim)).not.toThrow();
-    });
+      expect(() => submitClaimSchema.parse(validClaim)).not.toThrow()
+    })
 
     it("should reject missing required fields", () => {
-      expect(() => submitClaimSchema.parse({})).toThrow();
+      expect(() => submitClaimSchema.parse({})).toThrow()
 
       expect(() =>
         submitClaimSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
         })
-      ).toThrow(); // Missing description
+      ).toThrow() // Missing description
 
       expect(() =>
         submitClaimSchema.parse({
           description: "This is my evidence for claiming this rule",
         })
-      ).toThrow(); // Missing ruleId
-    });
+      ).toThrow() // Missing ruleId
+    })
 
     it("should have correct TypeScript type", () => {
       const claim: SubmitClaimInput = {
@@ -128,11 +128,11 @@ describe("Claims Schemas", () => {
         description: "This is my evidence for claiming this rule",
         evidenceUrl: "https://example.com/evidence",
         idempotencyKey: "claim-key-123",
-      };
+      }
 
-      expect(submitClaimSchema.parse(claim)).toEqual(claim);
-    });
-  });
+      expect(submitClaimSchema.parse(claim)).toEqual(claim)
+    })
+  })
 
   describe("reviewClaimSchema", () => {
     it("should accept valid claim review with approval", () => {
@@ -141,11 +141,11 @@ describe("Claims Schemas", () => {
         verdict: "APPROVED" as const,
         note: "Evidence is sufficient",
         idempotencyKey: "review-key-123",
-      };
+      }
 
-      const result = reviewClaimSchema.parse(validReview);
-      expect(result).toEqual(validReview);
-    });
+      const result = reviewClaimSchema.parse(validReview)
+      expect(result).toEqual(validReview)
+    })
 
     it("should accept valid claim review with rejection", () => {
       const validReview = {
@@ -153,32 +153,32 @@ describe("Claims Schemas", () => {
         verdict: "REJECTED" as const,
         note: "Evidence is insufficient",
         idempotencyKey: "review-key-123",
-      };
+      }
 
-      const result = reviewClaimSchema.parse(validReview);
-      expect(result).toEqual(validReview);
-    });
+      const result = reviewClaimSchema.parse(validReview)
+      expect(result).toEqual(validReview)
+    })
 
     it("should accept review without note", () => {
       const validReview = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         verdict: "APPROVED" as const,
         idempotencyKey: "review-key-123",
-      };
+      }
 
-      const result = reviewClaimSchema.parse(validReview);
-      expect(result).toEqual(validReview);
-    });
+      const result = reviewClaimSchema.parse(validReview)
+      expect(result).toEqual(validReview)
+    })
 
     it("should accept review without idempotency key", () => {
       const validReview = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         verdict: "APPROVED" as const,
-      };
+      }
 
-      const result = reviewClaimSchema.parse(validReview);
-      expect(result).toEqual(validReview);
-    });
+      const result = reviewClaimSchema.parse(validReview)
+      expect(result).toEqual(validReview)
+    })
 
     it("should reject invalid claim ID", () => {
       expect(() =>
@@ -186,8 +186,8 @@ describe("Claims Schemas", () => {
           claimId: "invalid-id",
           verdict: "APPROVED",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid verdict", () => {
       expect(() =>
@@ -195,15 +195,15 @@ describe("Claims Schemas", () => {
           claimId: "clkv6tv5l0001l608w5i10wd7",
           verdict: "INVALID",
         })
-      ).toThrow();
+      ).toThrow()
 
       expect(() =>
         reviewClaimSchema.parse({
           claimId: "clkv6tv5l0001l608w5i10wd7",
           verdict: "approved", // lowercase
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject note that's too long", () => {
       expect(() =>
@@ -212,44 +212,44 @@ describe("Claims Schemas", () => {
           verdict: "APPROVED",
           note: "a".repeat(1001),
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should accept note at maximum length", () => {
       const validReview = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         verdict: "APPROVED" as const,
         note: "a".repeat(1000), // Exactly 1000 characters
-      };
+      }
 
-      expect(() => reviewClaimSchema.parse(validReview)).not.toThrow();
-    });
+      expect(() => reviewClaimSchema.parse(validReview)).not.toThrow()
+    })
 
     it("should accept empty note", () => {
       const validReview = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         verdict: "APPROVED" as const,
         note: "",
-      };
+      }
 
-      expect(() => reviewClaimSchema.parse(validReview)).not.toThrow();
-    });
+      expect(() => reviewClaimSchema.parse(validReview)).not.toThrow()
+    })
 
     it("should reject missing required fields", () => {
-      expect(() => reviewClaimSchema.parse({})).toThrow();
+      expect(() => reviewClaimSchema.parse({})).toThrow()
 
       expect(() =>
         reviewClaimSchema.parse({
           claimId: "clkv6tv5l0001l608w5i10wd7",
         })
-      ).toThrow(); // Missing verdict
+      ).toThrow() // Missing verdict
 
       expect(() =>
         reviewClaimSchema.parse({
           verdict: "APPROVED",
         })
-      ).toThrow(); // Missing claimId
-    });
+      ).toThrow() // Missing claimId
+    })
 
     it("should have correct TypeScript type", () => {
       const review: ReviewClaimInput = {
@@ -257,11 +257,11 @@ describe("Claims Schemas", () => {
         verdict: "APPROVED",
         note: "Evidence is sufficient",
         idempotencyKey: "review-key-123",
-      };
+      }
 
-      expect(reviewClaimSchema.parse(review)).toEqual(review);
-    });
-  });
+      expect(reviewClaimSchema.parse(review)).toEqual(review)
+    })
+  })
 
   describe("listMyClaimsSchema", () => {
     it("should accept valid list request with all parameters", () => {
@@ -270,87 +270,87 @@ describe("Claims Schemas", () => {
         limit: 50,
         status: "PENDING" as const,
         sort: "new" as const,
-      };
+      }
 
-      const result = listMyClaimsSchema.parse(validRequest);
-      expect(result).toEqual(validRequest);
-    });
+      const result = listMyClaimsSchema.parse(validRequest)
+      expect(result).toEqual(validRequest)
+    })
 
     it("should use default values", () => {
-      const result = listMyClaimsSchema.parse({});
+      const result = listMyClaimsSchema.parse({})
       expect(result).toEqual({
         limit: 20, // Default from paginationSchema
         sort: "new", // Default
-      });
-    });
+      })
+    })
 
     it("should accept partial parameters", () => {
       const validRequest = {
         limit: 10,
         status: "APPROVED" as const,
-      };
+      }
 
-      const result = listMyClaimsSchema.parse(validRequest);
+      const result = listMyClaimsSchema.parse(validRequest)
       expect(result).toEqual({
         limit: 10,
         status: "APPROVED",
         sort: "new", // Default
-      });
-    });
+      })
+    })
 
     it("should accept all valid status values", () => {
-      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const;
+      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const
 
-      statuses.forEach((status) => {
-        const result = listMyClaimsSchema.parse({ status });
-        expect(result.status).toBe(status);
-      });
-    });
+      statuses.forEach(status => {
+        const result = listMyClaimsSchema.parse({ status })
+        expect(result.status).toBe(status)
+      })
+    })
 
     it("should accept all valid sort values", () => {
-      const sorts = ["new", "old"] as const;
+      const sorts = ["new", "old"] as const
 
-      sorts.forEach((sort) => {
-        const result = listMyClaimsSchema.parse({ sort });
-        expect(result.sort).toBe(sort);
-      });
-    });
+      sorts.forEach(sort => {
+        const result = listMyClaimsSchema.parse({ sort })
+        expect(result.sort).toBe(sort)
+      })
+    })
 
     it("should reject invalid status", () => {
       expect(() =>
         listMyClaimsSchema.parse({
           status: "INVALID",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid sort", () => {
       expect(() =>
         listMyClaimsSchema.parse({
           sort: "invalid",
         })
-      ).toThrow();
+      ).toThrow()
 
       expect(() =>
         listMyClaimsSchema.parse({
           sort: "priority", // Not available for user claims
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should validate pagination parameters", () => {
       expect(() =>
         listMyClaimsSchema.parse({
           limit: 0,
         })
-      ).toThrow();
+      ).toThrow()
 
       expect(() =>
         listMyClaimsSchema.parse({
           limit: 101,
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const request: ListMyClaimsInput = {
@@ -358,11 +358,11 @@ describe("Claims Schemas", () => {
         limit: 25,
         status: "PENDING",
         sort: "old",
-      };
+      }
 
-      expect(listMyClaimsSchema.parse(request)).toEqual(request);
-    });
-  });
+      expect(listMyClaimsSchema.parse(request)).toEqual(request)
+    })
+  })
 
   describe("listClaimsForReviewSchema", () => {
     it("should accept valid list request with all parameters", () => {
@@ -372,104 +372,104 @@ describe("Claims Schemas", () => {
         status: "PENDING" as const,
         sort: "priority" as const,
         assignedToMe: true,
-      };
+      }
 
-      const result = listClaimsForReviewSchema.parse(validRequest);
-      expect(result).toEqual(validRequest);
-    });
+      const result = listClaimsForReviewSchema.parse(validRequest)
+      expect(result).toEqual(validRequest)
+    })
 
     it("should use default values", () => {
-      const result = listClaimsForReviewSchema.parse({});
+      const result = listClaimsForReviewSchema.parse({})
       expect(result).toEqual({
         limit: 20, // Default from paginationSchema
         sort: "new", // Default
         assignedToMe: false, // Default
-      });
-    });
+      })
+    })
 
     it("should accept partial parameters", () => {
       const validRequest = {
         limit: 10,
         assignedToMe: true,
-      };
+      }
 
-      const result = listClaimsForReviewSchema.parse(validRequest);
+      const result = listClaimsForReviewSchema.parse(validRequest)
       expect(result).toEqual({
         limit: 10,
         sort: "new", // Default
         assignedToMe: true,
-      });
-    });
+      })
+    })
 
     it("should accept all valid status values", () => {
-      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const;
+      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const
 
-      statuses.forEach((status) => {
-        const result = listClaimsForReviewSchema.parse({ status });
-        expect(result.status).toBe(status);
-      });
-    });
+      statuses.forEach(status => {
+        const result = listClaimsForReviewSchema.parse({ status })
+        expect(result.status).toBe(status)
+      })
+    })
 
     it("should accept all valid sort values", () => {
-      const sorts = ["new", "old", "priority"] as const;
+      const sorts = ["new", "old", "priority"] as const
 
-      sorts.forEach((sort) => {
-        const result = listClaimsForReviewSchema.parse({ sort });
-        expect(result.sort).toBe(sort);
-      });
-    });
+      sorts.forEach(sort => {
+        const result = listClaimsForReviewSchema.parse({ sort })
+        expect(result.sort).toBe(sort)
+      })
+    })
 
     it("should accept both assignedToMe values", () => {
       expect(listClaimsForReviewSchema.parse({ assignedToMe: true })).toEqual({
         limit: 20,
         sort: "new",
         assignedToMe: true,
-      });
+      })
 
       expect(listClaimsForReviewSchema.parse({ assignedToMe: false })).toEqual({
         limit: 20,
         sort: "new",
         assignedToMe: false,
-      });
-    });
+      })
+    })
 
     it("should reject invalid status", () => {
       expect(() =>
         listClaimsForReviewSchema.parse({
           status: "INVALID",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid sort", () => {
       expect(() =>
         listClaimsForReviewSchema.parse({
           sort: "invalid",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid assignedToMe", () => {
       expect(() =>
         listClaimsForReviewSchema.parse({
           assignedToMe: "true", // String instead of boolean
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should validate pagination parameters", () => {
       expect(() =>
         listClaimsForReviewSchema.parse({
           limit: 0,
         })
-      ).toThrow();
+      ).toThrow()
 
       expect(() =>
         listClaimsForReviewSchema.parse({
           limit: 101,
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const request: ListClaimsForReviewInput = {
@@ -478,42 +478,42 @@ describe("Claims Schemas", () => {
         status: "PENDING",
         sort: "priority",
         assignedToMe: true,
-      };
+      }
 
-      expect(listClaimsForReviewSchema.parse(request)).toEqual(request);
-    });
-  });
+      expect(listClaimsForReviewSchema.parse(request)).toEqual(request)
+    })
+  })
 
   describe("getClaimByIdSchema", () => {
     it("should accept valid claim ID", () => {
       const validRequest = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
-      };
+      }
 
-      const result = getClaimByIdSchema.parse(validRequest);
-      expect(result).toEqual(validRequest);
-    });
+      const result = getClaimByIdSchema.parse(validRequest)
+      expect(result).toEqual(validRequest)
+    })
 
     it("should reject invalid claim ID", () => {
       expect(() =>
         getClaimByIdSchema.parse({
           claimId: "invalid-id",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject missing claim ID", () => {
-      expect(() => getClaimByIdSchema.parse({})).toThrow();
-    });
+      expect(() => getClaimByIdSchema.parse({})).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const request: GetClaimByIdInput = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
-      };
+      }
 
-      expect(getClaimByIdSchema.parse(request)).toEqual(request);
-    });
-  });
+      expect(getClaimByIdSchema.parse(request)).toEqual(request)
+    })
+  })
 
   describe("assignClaimSchema", () => {
     it("should accept valid assignment", () => {
@@ -521,21 +521,21 @@ describe("Claims Schemas", () => {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         reviewerId: "reviewer-user-id",
         idempotencyKey: "assign-key-123",
-      };
+      }
 
-      const result = assignClaimSchema.parse(validAssignment);
-      expect(result).toEqual(validAssignment);
-    });
+      const result = assignClaimSchema.parse(validAssignment)
+      expect(result).toEqual(validAssignment)
+    })
 
     it("should accept assignment without idempotency key", () => {
       const validAssignment = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         reviewerId: "reviewer-user-id",
-      };
+      }
 
-      const result = assignClaimSchema.parse(validAssignment);
-      expect(result).toEqual(validAssignment);
-    });
+      const result = assignClaimSchema.parse(validAssignment)
+      expect(result).toEqual(validAssignment)
+    })
 
     it("should reject invalid claim ID", () => {
       expect(() =>
@@ -543,33 +543,33 @@ describe("Claims Schemas", () => {
           claimId: "invalid-id",
           reviewerId: "reviewer-user-id",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject missing required fields", () => {
-      expect(() => assignClaimSchema.parse({})).toThrow();
+      expect(() => assignClaimSchema.parse({})).toThrow()
 
       expect(() =>
         assignClaimSchema.parse({
           claimId: "clkv6tv5l0001l608w5i10wd7",
         })
-      ).toThrow(); // Missing reviewerId
+      ).toThrow() // Missing reviewerId
 
       expect(() =>
         assignClaimSchema.parse({
           reviewerId: "reviewer-user-id",
         })
-      ).toThrow(); // Missing claimId
-    });
+      ).toThrow() // Missing claimId
+    })
 
     it("should accept any string as reviewerId", () => {
       const validAssignment = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         reviewerId: "any-string-id",
-      };
+      }
 
-      expect(() => assignClaimSchema.parse(validAssignment)).not.toThrow();
-    });
+      expect(() => assignClaimSchema.parse(validAssignment)).not.toThrow()
+    })
 
     it("should accept empty reviewerId", () => {
       // Note: The schema only validates that reviewerId is a string, not that it's non-empty
@@ -578,19 +578,19 @@ describe("Claims Schemas", () => {
           claimId: "clkv6tv5l0001l608w5i10wd7",
           reviewerId: "",
         })
-      ).not.toThrow();
-    });
+      ).not.toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const assignment: AssignClaimInput = {
         claimId: "clkv6tv5l0001l608w5i10wd7",
         reviewerId: "reviewer-user-id",
         idempotencyKey: "assign-key-123",
-      };
+      }
 
-      expect(assignClaimSchema.parse(assignment)).toEqual(assignment);
-    });
-  });
+      expect(assignClaimSchema.parse(assignment)).toEqual(assignment)
+    })
+  })
 
   describe("getClaimsByRuleSchema", () => {
     it("should accept valid request with all parameters", () => {
@@ -599,54 +599,54 @@ describe("Claims Schemas", () => {
         cursor: "cursor-123",
         limit: 50,
         status: "APPROVED" as const,
-      };
+      }
 
-      const result = getClaimsByRuleSchema.parse(validRequest);
-      expect(result).toEqual(validRequest);
-    });
+      const result = getClaimsByRuleSchema.parse(validRequest)
+      expect(result).toEqual(validRequest)
+    })
 
     it("should accept minimal request", () => {
       const validRequest = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
-      };
+      }
 
-      const result = getClaimsByRuleSchema.parse(validRequest);
+      const result = getClaimsByRuleSchema.parse(validRequest)
       expect(result).toEqual({
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         limit: 20, // Default from paginationSchema
-      });
-    });
+      })
+    })
 
     it("should accept partial parameters", () => {
       const validRequest = {
         ruleId: "clkv6tv5l0001l608w5i10wd7",
         limit: 10,
         status: "PENDING" as const,
-      };
+      }
 
-      const result = getClaimsByRuleSchema.parse(validRequest);
-      expect(result).toEqual(validRequest);
-    });
+      const result = getClaimsByRuleSchema.parse(validRequest)
+      expect(result).toEqual(validRequest)
+    })
 
     it("should accept all valid status values", () => {
-      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const;
+      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const
 
-      statuses.forEach((status) => {
+      statuses.forEach(status => {
         const result = getClaimsByRuleSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           status,
-        });
-        expect(result.status).toBe(status);
-      });
-    });
+        })
+        expect(result.status).toBe(status)
+      })
+    })
 
     it("should reject invalid rule ID", () => {
       expect(() =>
         getClaimsByRuleSchema.parse({
           ruleId: "invalid-id",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject invalid status", () => {
       expect(() =>
@@ -654,12 +654,12 @@ describe("Claims Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           status: "INVALID",
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should reject missing rule ID", () => {
-      expect(() => getClaimsByRuleSchema.parse({})).toThrow();
-    });
+      expect(() => getClaimsByRuleSchema.parse({})).toThrow()
+    })
 
     it("should validate pagination parameters", () => {
       expect(() =>
@@ -667,15 +667,15 @@ describe("Claims Schemas", () => {
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           limit: 0,
         })
-      ).toThrow();
+      ).toThrow()
 
       expect(() =>
         getClaimsByRuleSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           limit: 101,
         })
-      ).toThrow();
-    });
+      ).toThrow()
+    })
 
     it("should have correct TypeScript type", () => {
       const request: GetClaimsByRuleInput = {
@@ -683,11 +683,11 @@ describe("Claims Schemas", () => {
         cursor: "cursor-123",
         limit: 25,
         status: "APPROVED",
-      };
+      }
 
-      expect(getClaimsByRuleSchema.parse(request)).toEqual(request);
-    });
-  });
+      expect(getClaimsByRuleSchema.parse(request)).toEqual(request)
+    })
+  })
 
   describe("Schema Integration", () => {
     it("should work with complex nested validation", () => {
@@ -697,38 +697,38 @@ describe("Claims Schemas", () => {
         description: "I am the original author of this rule",
         evidenceUrl: "https://github.com/user/repo/commit/abc123",
         idempotencyKey: "unique-submission-key",
-      });
+      })
 
       const claimReview = reviewClaimSchema.parse({
         claimId: "clkv6tv5l0001l608w5i10wd8",
         verdict: "APPROVED",
         note: "Evidence verified successfully",
         idempotencyKey: "unique-review-key",
-      });
+      })
 
-      expect(claimSubmission.ruleId).toBe("clkv6tv5l0001l608w5i10wd7");
-      expect(claimReview.verdict).toBe("APPROVED");
-    });
+      expect(claimSubmission.ruleId).toBe("clkv6tv5l0001l608w5i10wd7")
+      expect(claimReview.verdict).toBe("APPROVED")
+    })
 
     it("should handle edge cases consistently", () => {
       // Test boundary conditions across schemas
-      const minDescription = "a".repeat(10);
-      const maxDescription = "a".repeat(1000);
-      const maxNote = "a".repeat(1000);
+      const minDescription = "a".repeat(10)
+      const maxDescription = "a".repeat(1000)
+      const maxNote = "a".repeat(1000)
 
       expect(() =>
         submitClaimSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           description: minDescription,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         submitClaimSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           description: maxDescription,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         reviewClaimSchema.parse({
@@ -736,11 +736,11 @@ describe("Claims Schemas", () => {
           verdict: "APPROVED",
           note: maxNote,
         })
-      ).not.toThrow();
-    });
+      ).not.toThrow()
+    })
 
     it("should validate CUID consistency", () => {
-      const validCuid = "clkv6tv5l0001l608w5i10wd7";
+      const validCuid = "clkv6tv5l0001l608w5i10wd7"
 
       // All schemas should accept the same valid CUID format
       expect(() =>
@@ -748,72 +748,70 @@ describe("Claims Schemas", () => {
           ruleId: validCuid,
           description: "Valid description",
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         reviewClaimSchema.parse({
           claimId: validCuid,
           verdict: "APPROVED",
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         getClaimByIdSchema.parse({
           claimId: validCuid,
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         assignClaimSchema.parse({
           claimId: validCuid,
           reviewerId: "reviewer-id",
         })
-      ).not.toThrow();
+      ).not.toThrow()
 
       expect(() =>
         getClaimsByRuleSchema.parse({
           ruleId: validCuid,
         })
-      ).not.toThrow();
-    });
+      ).not.toThrow()
+    })
 
     it("should handle pagination consistently", () => {
       const paginationParams = {
         cursor: "test-cursor",
         limit: 50,
-      };
+      }
 
       // All list schemas should handle pagination the same way
-      expect(() => listMyClaimsSchema.parse(paginationParams)).not.toThrow();
+      expect(() => listMyClaimsSchema.parse(paginationParams)).not.toThrow()
 
-      expect(() =>
-        listClaimsForReviewSchema.parse(paginationParams)
-      ).not.toThrow();
+      expect(() => listClaimsForReviewSchema.parse(paginationParams)).not.toThrow()
 
       expect(() =>
         getClaimsByRuleSchema.parse({
           ruleId: "clkv6tv5l0001l608w5i10wd7",
           ...paginationParams,
         })
-      ).not.toThrow();
-    });
+      ).not.toThrow()
+    })
 
     it("should handle status filtering consistently", () => {
-      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const;
+      const statuses = ["PENDING", "APPROVED", "REJECTED"] as const
 
-      statuses.forEach((status) => {
+      statuses.forEach(status => {
         // All schemas with status filtering should accept the same values
-        expect(() => listMyClaimsSchema.parse({ status })).not.toThrow();
+        expect(() => listMyClaimsSchema.parse({ status })).not.toThrow()
 
-        expect(() => listClaimsForReviewSchema.parse({ status })).not.toThrow();
+        expect(() => listClaimsForReviewSchema.parse({ status })).not.toThrow()
 
         expect(() =>
           getClaimsByRuleSchema.parse({
             ruleId: "clkv6tv5l0001l608w5i10wd7",
             status,
           })
-        ).not.toThrow();
-      });
-    });
-  });
-});
+        ).not.toThrow()
+      })
+    })
+  })
+})
