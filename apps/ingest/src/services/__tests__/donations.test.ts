@@ -97,7 +97,7 @@ const { mockStripeInstance, MockStripeSignatureVerificationError, MockStripe } =
     };
 
     const MockStripe = vi.fn(() => mockStripeInstance);
-    MockStripe.errors = {
+    (MockStripe as any).errors = {
       StripeSignatureVerificationError: MockStripeSignatureVerificationError,
     };
 
@@ -126,7 +126,7 @@ describe("Donations Service", () => {
 
     // Import mocked modules
     mockPrisma = vi.mocked((await import("@repo/db")).prisma);
-    mockLogger = vi.mocked((await import("../logger")).logger);
+    mockLogger = vi.mocked(((await import("../../logger")) as any).logger);
     mockNotifications = vi.mocked(
       (await import("@repo/trpc/services/notify")).Notifications
     );
@@ -142,7 +142,7 @@ describe("Donations Service", () => {
     mockPrisma.donation.update.mockResolvedValue({} as any);
     mockPrisma.authorMetricDaily.upsert.mockResolvedValue({} as any);
     mockPrisma.event.create.mockResolvedValue({} as any);
-    mockPrisma.$transaction.mockImplementation((callback) =>
+    mockPrisma.$transaction.mockImplementation((callback: any) =>
       callback(mockPrisma)
     );
     mockNotifications.donationReceived.mockResolvedValue(undefined);
@@ -172,7 +172,7 @@ describe("Donations Service", () => {
             },
             amount_total: 1000,
             currency: "usd",
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -419,7 +419,7 @@ describe("Donations Service", () => {
           object: {
             id: "cs_no_metadata",
             metadata: null,
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -444,7 +444,7 @@ describe("Donations Service", () => {
               // Missing donationId and toUserId
               ruleId: "rule_123",
             },
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -469,7 +469,7 @@ describe("Donations Service", () => {
               donationId: "nonexistent_donation",
               toUserId: "user_456",
             },
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -492,7 +492,7 @@ describe("Donations Service", () => {
               donationId: "donation_already_processed",
               toUserId: "user_456",
             },
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -547,7 +547,7 @@ describe("Donations Service", () => {
             },
             amount_total: 1000,
             currency: "usd",
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -600,7 +600,7 @@ describe("Donations Service", () => {
             },
             amount_total: 2500,
             currency: "usd",
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -665,7 +665,7 @@ describe("Donations Service", () => {
               donationId: "donation_non_error",
               toUserId: "user_456",
             },
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 
@@ -703,7 +703,7 @@ describe("Donations Service", () => {
             },
             amount_total: 5000,
             currency: "eur",
-          } as Stripe.Checkout.Session,
+          } as unknown as Stripe.Checkout.Session,
         },
       } as Stripe.Event;
 

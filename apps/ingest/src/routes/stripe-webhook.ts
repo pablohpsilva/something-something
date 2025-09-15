@@ -13,7 +13,7 @@ stripeWebhook.post(
   async (c) => {
     // Get raw body for signature verification
     const rawBody = await c.req.text();
-    const signature = c.get("stripeSignature") as string;
+    const signature = (c as any).get("stripeSignature") as string;
 
     if (!signature) {
       return c.json({ error: "missing stripe signature" }, 400);
